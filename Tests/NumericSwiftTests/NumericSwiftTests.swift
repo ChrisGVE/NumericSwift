@@ -793,4 +793,253 @@ final class NumericSwiftTests: XCTestCase {
             XCTAssertEqual(val, 0, accuracy: 0.001)
         }
     }
+
+    // MARK: - Linear Algebra Tests
+
+    func testMatrixCreation() {
+        let m = Matrix([[1, 2], [3, 4]])
+        XCTAssertEqual(m.rows, 2)
+        XCTAssertEqual(m.cols, 2)
+        XCTAssertEqual(m[0, 0], 1)
+        XCTAssertEqual(m[1, 1], 4)
+    }
+
+    func testVectorCreation() {
+        let v = Matrix([1, 2, 3])
+        XCTAssertEqual(v.rows, 3)
+        XCTAssertEqual(v.cols, 1)
+        XCTAssertTrue(v.isVector)
+    }
+
+    func testZerosAndOnes() {
+        let z = zeros(3, 2)
+        XCTAssertEqual(z.rows, 3)
+        XCTAssertEqual(z.cols, 2)
+        XCTAssertEqual(z[1, 1], 0)
+
+        let o = ones(2, 3)
+        XCTAssertEqual(o.rows, 2)
+        XCTAssertEqual(o.cols, 3)
+        XCTAssertEqual(o[0, 2], 1)
+    }
+
+    func testEye() {
+        let I = eye(3)
+        XCTAssertEqual(I[0, 0], 1)
+        XCTAssertEqual(I[1, 1], 1)
+        XCTAssertEqual(I[2, 2], 1)
+        XCTAssertEqual(I[0, 1], 0)
+    }
+
+    func testDiag() {
+        let d = diag([1, 2, 3])
+        XCTAssertEqual(d[0, 0], 1)
+        XCTAssertEqual(d[1, 1], 2)
+        XCTAssertEqual(d[2, 2], 3)
+        XCTAssertEqual(d[0, 1], 0)
+    }
+
+    func testMatrixAddSub() {
+        let a = Matrix([[1, 2], [3, 4]])
+        let b = Matrix([[5, 6], [7, 8]])
+
+        let sum = a + b
+        XCTAssertEqual(sum[0, 0], 6)
+        XCTAssertEqual(sum[1, 1], 12)
+
+        let diff = b - a
+        XCTAssertEqual(diff[0, 0], 4)
+        XCTAssertEqual(diff[1, 1], 4)
+    }
+
+    func testScalarMultiply() {
+        let a = Matrix([[1, 2], [3, 4]])
+        let scaled = 2.0 * a
+        XCTAssertEqual(scaled[0, 0], 2)
+        XCTAssertEqual(scaled[1, 1], 8)
+    }
+
+    func testMatrixMultiply() {
+        let a = Matrix([[1, 2], [3, 4]])
+        let b = Matrix([[5, 6], [7, 8]])
+        let c = a * b  // [[19, 22], [43, 50]]
+        XCTAssertEqual(c[0, 0], 19)
+        XCTAssertEqual(c[0, 1], 22)
+        XCTAssertEqual(c[1, 0], 43)
+        XCTAssertEqual(c[1, 1], 50)
+    }
+
+    func testDotProduct() {
+        let u = Matrix([1, 2, 3])
+        let v = Matrix([4, 5, 6])
+        let d = dot(u, v)  // 1*4 + 2*5 + 3*6 = 32
+        XCTAssertEqual(d[0], 32)
+    }
+
+    func testTranspose() {
+        let a = Matrix([[1, 2, 3], [4, 5, 6]])
+        let t = a.T
+        XCTAssertEqual(t.rows, 3)
+        XCTAssertEqual(t.cols, 2)
+        XCTAssertEqual(t[0, 1], 4)
+        XCTAssertEqual(t[2, 0], 3)
+    }
+
+    func testTrace() {
+        let a = Matrix([[1, 2], [3, 4]])
+        XCTAssertEqual(trace(a), 5)
+    }
+
+    func testDeterminant() {
+        let a = Matrix([[1, 2], [3, 4]])
+        XCTAssertEqual(det(a), -2, accuracy: 1e-10)
+
+        let b = Matrix([[6, 1, 1], [4, -2, 5], [2, 8, 7]])
+        XCTAssertEqual(det(b), -306, accuracy: 1e-10)
+    }
+
+    func testInverse() {
+        let a = Matrix([[1, 2], [3, 4]])
+        guard let aInv = inv(a) else {
+            XCTFail("Inverse should exist")
+            return
+        }
+
+        // A * A^(-1) should be identity
+        let product = a * aInv
+        XCTAssertEqual(product[0, 0], 1, accuracy: 1e-10)
+        XCTAssertEqual(product[0, 1], 0, accuracy: 1e-10)
+        XCTAssertEqual(product[1, 0], 0, accuracy: 1e-10)
+        XCTAssertEqual(product[1, 1], 1, accuracy: 1e-10)
+    }
+
+    func testNorm() {
+        let v = Matrix([3, 4])
+        XCTAssertEqual(norm(v, 2), 5)  // sqrt(9 + 16) = 5
+        XCTAssertEqual(norm(v, 1), 7)  // |3| + |4| = 7
+    }
+
+    func testLU() {
+        let a = Matrix([[2, 1], [1, 3]])
+        let (L, U, P) = lu(a)
+
+        // P @ L @ U should equal A
+        let reconstructed = P * L * U
+        XCTAssertEqual(reconstructed[0, 0], a[0, 0], accuracy: 1e-10)
+        XCTAssertEqual(reconstructed[1, 1], a[1, 1], accuracy: 1e-10)
+    }
+
+    func testQR() {
+        let a = Matrix([[1, 2], [3, 4], [5, 6]])
+        let (Q, R) = qr(a)
+
+        // Q @ R should equal A
+        let reconstructed = Q * R
+        for i in 0..<a.rows {
+            for j in 0..<a.cols {
+                XCTAssertEqual(reconstructed[i, j], a[i, j], accuracy: 1e-10)
+            }
+        }
+    }
+
+    func testSVD() {
+        let a = Matrix([[1, 2], [3, 4], [5, 6]])
+        let (s, U, Vt) = svd(a)
+
+        XCTAssertEqual(s.count, 2)
+        XCTAssertTrue(s[0] >= s[1])  // Singular values in descending order
+    }
+
+    func testEigenvalues() {
+        // Symmetric matrix has real eigenvalues
+        let a = Matrix([[2, 1], [1, 2]])
+        let (real, imag) = eigvals(a)
+
+        // Eigenvalues should be 3 and 1
+        XCTAssertTrue(imag.allSatisfy { abs($0) < 1e-10 })  // All real
+        let sorted = real.sorted()
+        XCTAssertEqual(sorted[0], 1, accuracy: 1e-10)
+        XCTAssertEqual(sorted[1], 3, accuracy: 1e-10)
+    }
+
+    func testCholesky() {
+        // Symmetric positive definite matrix
+        let a = Matrix([[4, 2], [2, 5]])
+        guard let L = cholesky(a) else {
+            XCTFail("Cholesky should succeed")
+            return
+        }
+
+        // L @ L^T should equal A
+        let reconstructed = L * L.T
+        XCTAssertEqual(reconstructed[0, 0], a[0, 0], accuracy: 1e-10)
+        XCTAssertEqual(reconstructed[1, 1], a[1, 1], accuracy: 1e-10)
+    }
+
+    func testSolve() {
+        // Solve [[2, 1], [1, 3]] * x = [1, 2]
+        let A = Matrix([[2, 1], [1, 3]])
+        let b = Matrix([1, 2])
+
+        guard let x = solve(A, b) else {
+            XCTFail("Solve should succeed")
+            return
+        }
+
+        // A @ x should equal b
+        let result = A * x
+        XCTAssertEqual(result[0], b[0], accuracy: 1e-10)
+        XCTAssertEqual(result[1], b[1], accuracy: 1e-10)
+    }
+
+    func testLstSq() {
+        // Overdetermined system: fit y = ax + b to points
+        let A = Matrix([[1, 1], [2, 1], [3, 1]])  // [x, 1]
+        let b = Matrix([2, 3, 4])  // y values for y = x + 1
+
+        guard let x = lstsq(A, b) else {
+            XCTFail("Lstsq should succeed")
+            return
+        }
+
+        XCTAssertEqual(x[0], 1, accuracy: 1e-10)  // slope = 1
+        XCTAssertEqual(x[1], 1, accuracy: 1e-10)  // intercept = 1
+    }
+
+    func testExpm() {
+        // exp(0) = I
+        let Z = zeros(2, 2)
+        let expZ = expm(Z)
+        XCTAssertEqual(expZ[0, 0], 1, accuracy: 1e-10)
+        XCTAssertEqual(expZ[1, 1], 1, accuracy: 1e-10)
+        XCTAssertEqual(expZ[0, 1], 0, accuracy: 1e-10)
+
+        // exp(diag(a, b)) = diag(exp(a), exp(b))
+        // Note: Padé approximation has accuracy around 1e-5
+        let D = Matrix([[1, 0], [0, 2]])
+        let expD = expm(D)
+        XCTAssertEqual(expD[0, 0], exp(1.0), accuracy: 1e-5)
+        XCTAssertEqual(expD[1, 1], exp(2.0), accuracy: 1e-5)
+    }
+
+    func testLinspace() {
+        let v = linspace(0, 1, 5)
+        XCTAssertEqual(v.rows, 5)
+        XCTAssertEqual(v[0], 0, accuracy: 1e-10)
+        XCTAssertEqual(v[2], 0.5, accuracy: 1e-10)
+        XCTAssertEqual(v[4], 1, accuracy: 1e-10)
+    }
+
+    func testRank() {
+        let a = Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])  // Rank 2
+        XCTAssertEqual(rank(a), 2)
+
+        let b = eye(3)  // Rank 3
+        XCTAssertEqual(rank(b), 3)
+    }
+
+    func testCond() {
+        let I = eye(3)
+        XCTAssertEqual(cond(I), 1, accuracy: 1e-10)  // Condition number of identity is 1
+    }
 }
