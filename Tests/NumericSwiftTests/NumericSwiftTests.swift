@@ -394,4 +394,130 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertTrue(eulerMascheroni > 0.577 && eulerMascheroni < 0.578)
         XCTAssertTrue(aperyConstant > 1.202 && aperyConstant < 1.203)
     }
+
+    // MARK: - Interpolation Tests
+
+    func testFindInterval() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        XCTAssertEqual(findInterval(x, 0.5), 0)
+        XCTAssertEqual(findInterval(x, 1.5), 1)
+        XCTAssertEqual(findInterval(x, 3.5), 3)
+    }
+
+    func testLinearInterp1d() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]
+
+        // Linear interpolation at midpoints
+        XCTAssertEqual(interp1d(x: x, y: y, xNew: 0.5, kind: .linear), 0.5, accuracy: 1e-10)
+        XCTAssertEqual(interp1d(x: x, y: y, xNew: 1.5, kind: .linear), 2.5, accuracy: 1e-10)
+
+        // Boundary values
+        XCTAssertEqual(interp1d(x: x, y: y, xNew: 0, kind: .linear), 0, accuracy: 1e-10)
+        XCTAssertEqual(interp1d(x: x, y: y, xNew: 4, kind: .linear), 16, accuracy: 1e-10)
+    }
+
+    func testNearestInterp1d() {
+        let x = [0.0, 1.0, 2.0, 3.0]
+        let y = [0.0, 10.0, 20.0, 30.0]
+
+        XCTAssertEqual(interp1d(x: x, y: y, xNew: 0.3, kind: .nearest), 0, accuracy: 1e-10)
+        XCTAssertEqual(interp1d(x: x, y: y, xNew: 0.6, kind: .nearest), 10, accuracy: 1e-10)
+    }
+
+    func testCubicSplineBasic() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]  // y = x²
+
+        let coeffs = computeSplineCoeffs(x: x, y: y, bc: .natural)
+        XCTAssertEqual(coeffs.count, 4)  // n-1 segments
+
+        // Evaluate at data points (should match exactly)
+        XCTAssertEqual(evalCubicSpline(x: x, coeffs: coeffs, xNew: 0), 0, accuracy: 1e-10)
+        XCTAssertEqual(evalCubicSpline(x: x, coeffs: coeffs, xNew: 2), 4, accuracy: 1e-10)
+        XCTAssertEqual(evalCubicSpline(x: x, coeffs: coeffs, xNew: 4), 16, accuracy: 1e-10)
+
+        // Evaluate at intermediate point
+        let mid = evalCubicSpline(x: x, coeffs: coeffs, xNew: 1.5)
+        XCTAssertTrue(mid > 2 && mid < 2.5)  // Should be close to 1.5² = 2.25
+    }
+
+    func testCubicSplineDerivative() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]  // y = x²
+
+        let coeffs = computeSplineCoeffs(x: x, y: y, bc: .natural)
+
+        // Derivative of x² is 2x
+        // At x=2, derivative should be approximately 4
+        let deriv = evalCubicSplineDerivative(x: x, coeffs: coeffs, xNew: 2, order: 1)
+        XCTAssertEqual(deriv, 4, accuracy: 0.5)  // Some error expected due to spline approximation
+    }
+
+    func testPchipInterpolation() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]
+
+        let d = computePchipDerivatives(x: x, y: y)
+        XCTAssertEqual(d.count, 5)
+
+        // Should interpolate through data points
+        XCTAssertEqual(evalPchip(x: x, y: y, d: d, xNew: 0), 0, accuracy: 1e-10)
+        XCTAssertEqual(evalPchip(x: x, y: y, d: d, xNew: 2), 4, accuracy: 1e-10)
+        XCTAssertEqual(evalPchip(x: x, y: y, d: d, xNew: 4), 16, accuracy: 1e-10)
+    }
+
+    func testAkimaInterpolation() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]
+
+        let coeffs = computeAkimaCoeffs(x: x, y: y)
+        XCTAssertEqual(coeffs.count, 4)
+
+        // Should interpolate through data points
+        XCTAssertEqual(evalAkima(x: x, coeffs: coeffs, xNew: 0), 0, accuracy: 1e-10)
+        XCTAssertEqual(evalAkima(x: x, coeffs: coeffs, xNew: 2), 4, accuracy: 1e-10)
+    }
+
+    func testLagrangeInterpolation() {
+        let x = [0.0, 1.0, 2.0]
+        let y = [0.0, 1.0, 4.0]  // y = x²
+
+        // Lagrange through 3 points of x² should be exact
+        XCTAssertEqual(evalLagrange(x: x, y: y, xNew: 0), 0, accuracy: 1e-10)
+        XCTAssertEqual(evalLagrange(x: x, y: y, xNew: 1), 1, accuracy: 1e-10)
+        XCTAssertEqual(evalLagrange(x: x, y: y, xNew: 0.5), 0.25, accuracy: 1e-10)
+        XCTAssertEqual(evalLagrange(x: x, y: y, xNew: 1.5), 2.25, accuracy: 1e-10)
+    }
+
+    func testBarycentricInterpolation() {
+        let x = [0.0, 1.0, 2.0]
+        let y = [0.0, 1.0, 4.0]  // y = x²
+
+        let w = computeBarycentricWeights(x: x)
+        XCTAssertEqual(w.count, 3)
+
+        // Should match Lagrange results
+        XCTAssertEqual(evalBarycentric(x: x, y: y, w: w, xNew: 0), 0, accuracy: 1e-10)
+        XCTAssertEqual(evalBarycentric(x: x, y: y, w: w, xNew: 1), 1, accuracy: 1e-10)
+        XCTAssertEqual(evalBarycentric(x: x, y: y, w: w, xNew: 0.5), 0.25, accuracy: 1e-10)
+    }
+
+    func testTridiagonalSolver() {
+        // Solve: [2 1 0] [x0]   [5]
+        //        [1 2 1] [x1] = [6]
+        //        [0 1 2] [x2]   [5]
+        // Solution: x = [1, 2, 1.5] (approximately)
+        let diag = [2.0, 2.0, 2.0]
+        let offDiag = [1.0, 1.0]
+        let rhs = [5.0, 6.0, 5.0]
+
+        let result = solveTridiagonal(diag: diag, offDiag: offDiag, rhs: rhs)
+        XCTAssertEqual(result.count, 3)
+
+        // Verify solution satisfies equations
+        XCTAssertEqual(2*result[0] + result[1], 5, accuracy: 1e-10)
+        XCTAssertEqual(result[0] + 2*result[1] + result[2], 6, accuracy: 1e-10)
+        XCTAssertEqual(result[1] + 2*result[2], 5, accuracy: 1e-10)
+    }
 }
