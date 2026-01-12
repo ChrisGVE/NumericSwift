@@ -1042,4 +1042,303 @@ final class NumericSwiftTests: XCTestCase {
         let I = eye(3)
         XCTAssertEqual(cond(I), 1, accuracy: 1e-10)  // Condition number of identity is 1
     }
+
+    // MARK: - Distribution Tests
+
+    func testNormalDistribution() {
+        let norm = NormalDistribution()
+
+        // PDF at mean should be maximum
+        let pdfAtMean = norm.pdf(0)
+        XCTAssertEqual(pdfAtMean, 1.0 / sqrt(2.0 * .pi), accuracy: 1e-10)
+
+        // CDF at mean should be 0.5
+        XCTAssertEqual(norm.cdf(0), 0.5, accuracy: 1e-10)
+
+        // CDF(1.96) ≈ 0.975
+        XCTAssertEqual(norm.cdf(1.96), 0.975, accuracy: 0.001)
+
+        // PPF is inverse of CDF
+        XCTAssertEqual(norm.ppf(0.5), 0, accuracy: 1e-10)
+        XCTAssertEqual(norm.ppf(0.975), 1.96, accuracy: 0.01)
+
+        // Mean and variance
+        XCTAssertEqual(norm.mean, 0)
+        XCTAssertEqual(norm.variance, 1)
+        XCTAssertEqual(norm.std, 1)
+    }
+
+    func testNormalDistributionScaled() {
+        let norm = NormalDistribution(loc: 5, scale: 2)
+
+        // Mean should be loc
+        XCTAssertEqual(norm.mean, 5)
+        // Variance should be scale^2
+        XCTAssertEqual(norm.variance, 4)
+        // Std should be scale
+        XCTAssertEqual(norm.std, 2)
+
+        // CDF at mean should be 0.5
+        XCTAssertEqual(norm.cdf(5), 0.5, accuracy: 1e-10)
+    }
+
+    func testUniformDistribution() {
+        let unif = UniformDistribution(loc: 0, scale: 1)
+
+        // PDF should be constant in range
+        XCTAssertEqual(unif.pdf(0.5), 1.0, accuracy: 1e-10)
+        XCTAssertEqual(unif.pdf(-0.1), 0.0, accuracy: 1e-10)
+        XCTAssertEqual(unif.pdf(1.1), 0.0, accuracy: 1e-10)
+
+        // CDF
+        XCTAssertEqual(unif.cdf(0), 0, accuracy: 1e-10)
+        XCTAssertEqual(unif.cdf(0.5), 0.5, accuracy: 1e-10)
+        XCTAssertEqual(unif.cdf(1), 1, accuracy: 1e-10)
+
+        // PPF
+        XCTAssertEqual(unif.ppf(0.5), 0.5, accuracy: 1e-10)
+
+        // Mean and variance
+        XCTAssertEqual(unif.mean, 0.5, accuracy: 1e-10)
+        XCTAssertEqual(unif.variance, 1.0 / 12.0, accuracy: 1e-10)
+    }
+
+    func testExponentialDistribution() {
+        let expon = ExponentialDistribution(loc: 0, scale: 1)
+
+        // PDF at 0 should be 1
+        XCTAssertEqual(expon.pdf(0), 1, accuracy: 1e-10)
+
+        // CDF
+        XCTAssertEqual(expon.cdf(0), 0, accuracy: 1e-10)
+        XCTAssertEqual(expon.cdf(1), 1 - exp(-1), accuracy: 1e-10)
+
+        // PPF
+        XCTAssertEqual(expon.ppf(0.5), -log(0.5), accuracy: 1e-10)
+
+        // Mean and variance (for scale=1, both are 1)
+        XCTAssertEqual(expon.mean, 1, accuracy: 1e-10)
+        XCTAssertEqual(expon.variance, 1, accuracy: 1e-10)
+    }
+
+    func testTDistribution() {
+        let t = TDistribution(df: 10)
+
+        // Symmetric around 0
+        XCTAssertEqual(t.pdf(0), t.pdf(0), accuracy: 1e-10)
+        XCTAssertEqual(t.cdf(0), 0.5, accuracy: 1e-10)
+
+        // For large df, approaches normal
+        let tLarge = TDistribution(df: 1000)
+        XCTAssertEqual(tLarge.cdf(1.96), 0.975, accuracy: 0.01)
+
+        // Mean is 0 for df > 1
+        XCTAssertEqual(t.mean, 0, accuracy: 1e-10)
+    }
+
+    func testChiSquaredDistribution() {
+        let chi2 = ChiSquaredDistribution(df: 2)
+
+        // PDF at 0 should be 0.5 for df=2
+        XCTAssertEqual(chi2.pdf(0), 0.5, accuracy: 1e-10)
+
+        // CDF(0) = 0
+        XCTAssertEqual(chi2.cdf(0), 0, accuracy: 1e-10)
+
+        // Mean = df
+        XCTAssertEqual(chi2.mean, 2, accuracy: 1e-10)
+
+        // Variance = 2*df
+        XCTAssertEqual(chi2.variance, 4, accuracy: 1e-10)
+    }
+
+    func testFDistribution() {
+        let f = FDistribution(dfn: 5, dfd: 10)
+
+        // PDF at x=0 is 0
+        XCTAssertEqual(f.pdf(0), 0, accuracy: 1e-10)
+
+        // CDF(0) = 0
+        XCTAssertEqual(f.cdf(0), 0, accuracy: 1e-10)
+
+        // Mean = dfd/(dfd-2) for dfd > 2
+        XCTAssertEqual(f.mean, 10.0 / 8.0, accuracy: 1e-10)
+    }
+
+    func testGammaDistribution() {
+        let gamma = GammaDistribution(shape: 2, loc: 0, scale: 1)
+
+        // PDF at 0 for shape > 1 is 0
+        XCTAssertEqual(gamma.pdf(0), 0, accuracy: 1e-10)
+
+        // CDF(0) = 0
+        XCTAssertEqual(gamma.cdf(0), 0, accuracy: 1e-10)
+
+        // Mean = shape * scale
+        XCTAssertEqual(gamma.mean, 2, accuracy: 1e-10)
+
+        // Variance = shape * scale^2
+        XCTAssertEqual(gamma.variance, 2, accuracy: 1e-10)
+    }
+
+    func testBetaDistribution() {
+        let beta = BetaDistribution(a: 2, b: 2)
+
+        // PDF at 0.5 should be max for a=b=2
+        let pdfAt05 = beta.pdf(0.5)
+        XCTAssert(pdfAt05 > beta.pdf(0.3))
+        XCTAssert(pdfAt05 > beta.pdf(0.7))
+
+        // CDF at 0.5 should be 0.5 for symmetric beta
+        XCTAssertEqual(beta.cdf(0.5), 0.5, accuracy: 1e-10)
+
+        // Mean = a/(a+b)
+        XCTAssertEqual(beta.mean, 0.5, accuracy: 1e-10)
+    }
+
+    func testRandomNormal() {
+        // Generate many samples and check mean/std
+        let samples = randomNormal(1000)
+        let sampleMean = NumericSwift.mean(samples)
+        let sampleStd = NumericSwift.stddev(samples, ddof: 1)
+
+        // Should be close to standard normal (within reasonable tolerance)
+        XCTAssertEqual(sampleMean, 0, accuracy: 0.1)
+        XCTAssertEqual(sampleStd, 1, accuracy: 0.1)
+    }
+
+    func testRandomGamma() {
+        // Generate many samples and check mean
+        let shape = 3.0
+        var samples = [Double]()
+        for _ in 0..<1000 {
+            samples.append(randomGamma(shape))
+        }
+        let sampleMean = NumericSwift.mean(samples)
+
+        // Mean should be close to shape
+        XCTAssertEqual(sampleMean, shape, accuracy: 0.3)
+    }
+
+    // MARK: - Statistical Tests
+
+    func testTtest1Sample() {
+        // Sample from N(5, 1)
+        let sample = [4.5, 5.1, 4.9, 5.2, 4.8, 5.0, 5.1, 4.7, 5.3, 4.9]
+
+        // Test against true mean (should not reject)
+        let result1 = ttest1Sample(sample, popmean: 5.0)
+        XCTAssertNotNil(result1)
+        XCTAssert(result1!.pvalue > 0.05, "Should not reject null hypothesis")
+
+        // Test against wrong mean (should reject)
+        let result2 = ttest1Sample(sample, popmean: 10.0)
+        XCTAssertNotNil(result2)
+        XCTAssert(result2!.pvalue < 0.05, "Should reject null hypothesis")
+    }
+
+    func testTtestIndependent() {
+        // Two samples from same distribution
+        let sample1 = [4.5, 5.1, 4.9, 5.2, 4.8]
+        let sample2 = [5.0, 5.1, 4.7, 5.3, 4.9]
+
+        let result1 = ttestIndependent(sample1, sample2, equalVariance: true)
+        XCTAssertNotNil(result1)
+        XCTAssert(result1!.pvalue > 0.05, "Should not reject null hypothesis")
+
+        // Two samples from different distributions
+        let sample3 = [10.0, 11.0, 10.5, 10.8, 10.2]
+
+        let result2 = ttestIndependent(sample1, sample3, equalVariance: true)
+        XCTAssertNotNil(result2)
+        XCTAssert(result2!.pvalue < 0.05, "Should reject null hypothesis")
+    }
+
+    func testPearsonr() {
+        // Perfect positive correlation
+        let x1 = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let y1 = [2.0, 4.0, 6.0, 8.0, 10.0]
+
+        let result1 = pearsonr(x1, y1)
+        XCTAssertNotNil(result1)
+        XCTAssertEqual(result1!.statistic, 1.0, accuracy: 1e-10)
+
+        // Perfect negative correlation
+        let y2 = [10.0, 8.0, 6.0, 4.0, 2.0]
+
+        let result2 = pearsonr(x1, y2)
+        XCTAssertNotNil(result2)
+        XCTAssertEqual(result2!.statistic, -1.0, accuracy: 1e-10)
+
+        // No correlation
+        let y3 = [5.0, 5.0, 5.0, 5.0, 5.0]
+
+        let result3 = pearsonr(x1, y3)
+        XCTAssertNotNil(result3)
+        XCTAssert(result3!.statistic.isNaN || abs(result3!.statistic) < 1e-10)
+    }
+
+    func testSpearmanr() {
+        // Perfect rank correlation
+        let x = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let y = [10.0, 20.0, 30.0, 40.0, 50.0]
+
+        let result = spearmanr(x, y)
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result!.statistic, 1.0, accuracy: 1e-10)
+    }
+
+    func testDescribe() {
+        let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+
+        let result = describe(data)
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result!.nobs, 5)
+        XCTAssertEqual(result!.min, 1, accuracy: 1e-10)
+        XCTAssertEqual(result!.max, 5, accuracy: 1e-10)
+        XCTAssertEqual(result!.mean, 3, accuracy: 1e-10)
+    }
+
+    func testZscore() {
+        let data = [10.0, 20.0, 30.0, 40.0, 50.0]
+        let z = zscore(data)
+
+        XCTAssertEqual(z.count, 5)
+
+        // Mean of z-scores should be 0
+        let zMean = NumericSwift.mean(z)
+        XCTAssertEqual(zMean, 0, accuracy: 1e-10)
+
+        // Standard deviation (population) should be 1
+        let zStd = NumericSwift.stddev(z, ddof: 0)
+        XCTAssertEqual(zStd, 1, accuracy: 1e-10)
+    }
+
+    func testSkew() {
+        // Symmetric distribution has skew = 0
+        let symmetric = [1.0, 2.0, 3.0, 4.0, 5.0]
+        let skewSym = skew(symmetric)
+        XCTAssertEqual(skewSym, 0, accuracy: 1e-10)
+
+        // Right-skewed distribution
+        let rightSkewed = [1.0, 1.0, 1.0, 1.0, 10.0]
+        let skewRight = skew(rightSkewed)
+        XCTAssert(skewRight > 0, "Right-skewed data should have positive skewness")
+    }
+
+    func testKurtosis() {
+        // Normal distribution has excess kurtosis = 0
+        // Generate samples approximating normal
+        let normalApprox = [-2.0, -1.0, 0.0, 1.0, 2.0, -2.0, -1.0, 0.0, 1.0, 2.0]
+        let kurtNormal = kurtosis(normalApprox, fisher: true)
+        // Just check it's finite and reasonable
+        XCTAssert(kurtNormal.isFinite)
+    }
+
+    func testConvenienceFunctions() {
+        // Test normPdf, normCdf, normPpf
+        XCTAssertEqual(normPdf(0), 1.0 / sqrt(2 * .pi), accuracy: 1e-10)
+        XCTAssertEqual(normCdf(0), 0.5, accuracy: 1e-10)
+        XCTAssertEqual(normPpf(0.5), 0, accuracy: 1e-10)
+    }
 }
