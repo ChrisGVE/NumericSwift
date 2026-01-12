@@ -171,4 +171,116 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(clip(15, min: 0, max: 10), 10)
         XCTAssertEqual(clip([1, 5, 10, 15], min: 3, max: 12), [3, 5, 10, 12])
     }
+
+    // MARK: - Number Theory Tests
+
+    func testIsPrime() {
+        XCTAssertFalse(isPrime(0))
+        XCTAssertFalse(isPrime(1))
+        XCTAssertTrue(isPrime(2))
+        XCTAssertTrue(isPrime(3))
+        XCTAssertFalse(isPrime(4))
+        XCTAssertTrue(isPrime(5))
+        XCTAssertTrue(isPrime(97))
+        XCTAssertFalse(isPrime(100))
+    }
+
+    func testPrimeFactors() {
+        XCTAssertEqual(primeFactors(1).count, 0)
+        XCTAssertEqual(primeFactors(12).map { $0.prime }, [2, 3])
+        XCTAssertEqual(primeFactors(12).map { $0.exponent }, [2, 1])
+        XCTAssertEqual(primeFactors(100).map { $0.prime }, [2, 5])
+        XCTAssertEqual(primeFactors(100).map { $0.exponent }, [2, 2])
+    }
+
+    func testPrimesUpTo() {
+        XCTAssertEqual(primesUpTo(10), [2, 3, 5, 7])
+        XCTAssertEqual(primesUpTo(20), [2, 3, 5, 7, 11, 13, 17, 19])
+        XCTAssertEqual(primesUpTo(1), [])
+    }
+
+    func testGCD() {
+        XCTAssertEqual(gcd(12, 18), 6)
+        XCTAssertEqual(gcd(17, 13), 1)
+        XCTAssertEqual(gcd(0, 5), 5)
+        XCTAssertEqual(gcd(-12, 18), 6)
+    }
+
+    func testLCM() {
+        XCTAssertEqual(lcm(4, 6), 12)
+        XCTAssertEqual(lcm(3, 5), 15)
+        XCTAssertEqual(lcm(0, 5), 0)
+    }
+
+    func testEulerPhi() {
+        XCTAssertEqual(eulerPhi(1), 1)
+        XCTAssertEqual(eulerPhi(10), 4)  // 1, 3, 7, 9 are coprime to 10
+        XCTAssertEqual(eulerPhi(12), 4)  // 1, 5, 7, 11 are coprime to 12
+        XCTAssertEqual(eulerPhi(7), 6)   // All 1-6 coprime (7 is prime)
+    }
+
+    func testDivisorSigma() {
+        // σ_0(12) = 6 (divisors: 1, 2, 3, 4, 6, 12)
+        XCTAssertEqual(divisorSigma(12, k: 0)!, 6, accuracy: 1e-10)
+        // σ_1(12) = 28 (sum: 1+2+3+4+6+12)
+        XCTAssertEqual(divisorSigma(12, k: 1)!, 28, accuracy: 1e-10)
+    }
+
+    func testMobius() {
+        XCTAssertEqual(mobius(1), 1)
+        XCTAssertEqual(mobius(2), -1)    // Prime
+        XCTAssertEqual(mobius(6), 1)     // 2*3, two distinct primes
+        XCTAssertEqual(mobius(30), -1)   // 2*3*5, three distinct primes
+        XCTAssertEqual(mobius(4), 0)     // 2^2, has squared factor
+        XCTAssertEqual(mobius(12), 0)    // 2^2*3, has squared factor
+    }
+
+    func testLiouville() {
+        XCTAssertEqual(liouville(1), 1)
+        XCTAssertEqual(liouville(2), -1)   // Ω(2) = 1
+        XCTAssertEqual(liouville(4), 1)    // Ω(4) = 2
+        XCTAssertEqual(liouville(8), -1)   // Ω(8) = 3
+        XCTAssertEqual(liouville(12), -1)  // 12 = 2^2 * 3, Ω = 2 + 1 = 3, (-1)^3 = -1
+    }
+
+    func testVonMangoldt() {
+        XCTAssertEqual(vonMangoldt(1), 0, accuracy: 1e-10)
+        XCTAssertEqual(vonMangoldt(2), log(2), accuracy: 1e-10)
+        XCTAssertEqual(vonMangoldt(4), log(2), accuracy: 1e-10)  // 2^2
+        XCTAssertEqual(vonMangoldt(6), 0, accuracy: 1e-10)       // Not a prime power
+    }
+
+    func testPrimePi() {
+        XCTAssertEqual(primePi(10), 4)    // 2, 3, 5, 7
+        XCTAssertEqual(primePi(100), 25)
+        XCTAssertEqual(primePi(1), 0)
+    }
+
+    func testModPow() {
+        XCTAssertEqual(modPow(2, 10, 1000), 24)  // 1024 mod 1000
+        XCTAssertEqual(modPow(3, 5, 7), 5)       // 243 mod 7
+        XCTAssertEqual(modPow(2, 0, 5), 1)
+    }
+
+    func testExtendedGcd() {
+        let (g, x, y) = extendedGcd(35, 15)
+        XCTAssertEqual(g, 5)
+        XCTAssertEqual(35 * x + 15 * y, 5)
+    }
+
+    func testModInverse() {
+        XCTAssertEqual(modInverse(3, 7), 5)  // 3*5 = 15 ≡ 1 (mod 7)
+        XCTAssertNil(modInverse(2, 4))        // gcd(2,4) = 2 ≠ 1
+    }
+
+    func testDigitSum() {
+        XCTAssertEqual(digitSum(123), 6)
+        XCTAssertEqual(digitSum(9999), 36)
+        XCTAssertEqual(digitSum(15, base: 2), 4)  // 15 = 1111 in binary
+    }
+
+    func testDigitalRoot() {
+        XCTAssertEqual(digitalRoot(123), 6)   // 1+2+3 = 6
+        XCTAssertEqual(digitalRoot(9999), 9)  // 36 -> 9
+    }
 }
