@@ -520,4 +520,159 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(result[0] + 2*result[1] + result[2], 6, accuracy: 1e-10)
         XCTAssertEqual(result[1] + 2*result[2], 5, accuracy: 1e-10)
     }
+
+    // MARK: - Integration Tests
+
+    func testQuadBasic() {
+        // ∫₀¹ x² dx = 1/3
+        let result = quad({ x in x * x }, 0, 1)
+        XCTAssertEqual(result.value, 1.0/3.0, accuracy: 1e-10)
+        XCTAssertTrue(result.error < 1e-10)
+    }
+
+    func testQuadSin() {
+        // ∫₀^π sin(x) dx = 2
+        let result = quad({ x in Darwin.sin(x) }, 0, .pi)
+        XCTAssertEqual(result.value, 2, accuracy: 1e-10)
+    }
+
+    func testQuadGaussian() {
+        // ∫_{-∞}^{∞} e^(-x²) dx = √π
+        let result = quad({ x in Darwin.exp(-x * x) }, -.infinity, .infinity, limit: 100)
+        XCTAssertEqual(result.value, sqrt(.pi), accuracy: 1e-6)
+    }
+
+    func testDblquadRectangle() {
+        // ∫₀¹ ∫₀¹ xy dydx = 0.25
+        let result = dblquad({ y, x in x * y }, xa: 0, xb: 1, ya: 0, yb: 1)
+        XCTAssertEqual(result.value, 0.25, accuracy: 1e-8)
+    }
+
+    func testTplquadCube() {
+        // ∫₀¹ ∫₀¹ ∫₀¹ xyz dzdydx = 0.125
+        let result = tplquad({ z, y, x in x * y * z }, xa: 0, xb: 1, ya: 0, yb: 1, za: 0, zb: 1)
+        XCTAssertEqual(result.value, 0.125, accuracy: 1e-6)
+    }
+
+    func testFixedQuad() {
+        // ∫₀¹ x² dx = 1/3
+        let result = fixedQuad({ x in x * x }, 0, 1, n: 5)
+        XCTAssertEqual(result, 1.0/3.0, accuracy: 1e-10)
+    }
+
+    func testRomberg() {
+        // ∫₀^π sin(x) dx = 2
+        let result = romberg({ x in Darwin.sin(x) }, 0, .pi)
+        XCTAssertEqual(result.value, 2, accuracy: 1e-8)
+    }
+
+    func testSimps() {
+        // Simpson's rule for x² from 0 to 4 with h=1
+        // y = [0, 1, 4, 9, 16]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]
+        let result = simps(y, dx: 1)
+        // Exact integral of x² from 0 to 4 is 64/3 ≈ 21.333
+        XCTAssertEqual(result, 64.0/3.0, accuracy: 0.1)
+    }
+
+    func testTrapz() {
+        // Trapezoidal rule for x² from 0 to 4
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]
+        let result = trapz(y, dx: 1)
+        // Trapezoidal will overestimate for convex functions
+        XCTAssertTrue(result > 21)
+    }
+
+    func testTrapzNonUniform() {
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = [0.0, 1.0, 4.0, 9.0, 16.0]
+        let result = trapz(y, x: x)
+        XCTAssertTrue(result > 21)
+    }
+
+    func testSolveIVPExponential() {
+        // dy/dt = y with y(0) = 1 => y(t) = e^t
+        let result = solveIVP(
+            { y, t in [y[0]] },  // dy/dt = y
+            tSpan: (0, 1),
+            y0: [1.0],
+            method: .rk45
+        )
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.y.last![0], Darwin.exp(1), accuracy: 0.01)
+    }
+
+    func testSolveIVPOscillator() {
+        // Simple harmonic oscillator: y'' = -y
+        // Let y[0] = position, y[1] = velocity
+        // dy[0]/dt = y[1], dy[1]/dt = -y[0]
+        // y(0) = 1, y'(0) = 0 => y(t) = cos(t)
+        let result = solveIVP(
+            { y, t in [y[1], -y[0]] },
+            tSpan: (0, .pi),
+            y0: [1.0, 0.0],
+            method: .rk45
+        )
+
+        XCTAssertTrue(result.success)
+        // At t=π, cos(π) = -1
+        XCTAssertEqual(result.y.last![0], -1, accuracy: 0.01)
+    }
+
+    func testSolveIVPWithTEval() {
+        // dy/dt = 1 with y(0) = 0 => y(t) = t
+        let result = solveIVP(
+            { y, t in [1.0] },
+            tSpan: (0, 5),
+            y0: [0.0],
+            tEval: [0, 1, 2, 3, 4, 5]
+        )
+
+        XCTAssertEqual(result.t.count, 6)
+        for (i, tVal) in result.t.enumerated() {
+            XCTAssertEqual(result.y[i][0], tVal, accuracy: 0.01)
+        }
+    }
+
+    func testOdeint() {
+        // dy/dt = -y with y(0) = 1 => y(t) = e^(-t)
+        let t = [0.0, 0.5, 1.0, 1.5, 2.0]
+        let result = odeint(
+            { y, t in [-y[0]] },
+            y0: [1.0],
+            t: t
+        )
+
+        XCTAssertEqual(result.count, 5)
+        for (i, tVal) in t.enumerated() {
+            XCTAssertEqual(result[i][0], Darwin.exp(-tVal), accuracy: 0.01)
+        }
+    }
+
+    func testRK4Method() {
+        // Test RK4 specifically
+        let result = solveIVP(
+            { y, t in [y[0]] },
+            tSpan: (0, 1),
+            y0: [1.0],
+            method: .rk4
+        )
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.y.last![0], Darwin.exp(1), accuracy: 0.01)
+    }
+
+    func testRK23Method() {
+        // Test RK23 specifically
+        let result = solveIVP(
+            { y, t in [y[0]] },
+            tSpan: (0, 1),
+            y0: [1.0],
+            method: .rk23
+        )
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.y.last![0], Darwin.exp(1), accuracy: 0.05)  // Lower order, less accurate
+    }
 }
