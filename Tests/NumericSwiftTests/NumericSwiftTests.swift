@@ -283,4 +283,115 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(digitalRoot(123), 6)   // 1+2+3 = 6
         XCTAssertEqual(digitalRoot(9999), 9)  // 36 -> 9
     }
+
+    // MARK: - Series Tests
+
+    func testPolyval() {
+        // p(x) = 1 + 2x + 3x² evaluated at x=2: 1 + 4 + 12 = 17
+        XCTAssertEqual(polyval([1, 2, 3], at: 2), 17, accuracy: 1e-10)
+        // Empty polynomial
+        XCTAssertEqual(polyval([], at: 5), 0)
+        // Constant
+        XCTAssertEqual(polyval([7], at: 100), 7, accuracy: 1e-10)
+    }
+
+    func testPolyvalCentered() {
+        // p(x) = 1 + 2(x-1) + 3(x-1)² at x=2: 1 + 2 + 3 = 6
+        XCTAssertEqual(polyval([1, 2, 3], at: 2, center: 1), 6, accuracy: 1e-10)
+    }
+
+    func testPolyadd() {
+        // (1 + 2x) + (3 + 4x + 5x²) = 4 + 6x + 5x²
+        XCTAssertEqual(polyadd([1, 2], [3, 4, 5]), [4, 6, 5])
+    }
+
+    func testPolymul() {
+        // (1 + x) * (1 + x) = 1 + 2x + x²
+        XCTAssertEqual(polymul([1, 1], [1, 1]), [1, 2, 1])
+        // (1 + 2x) * (3 + 4x) = 3 + 10x + 8x²
+        XCTAssertEqual(polymul([1, 2], [3, 4]), [3, 10, 8])
+    }
+
+    func testPolyder() {
+        // d/dx (1 + 2x + 3x²) = 2 + 6x
+        XCTAssertEqual(polyder([1, 2, 3]), [2, 6])
+    }
+
+    func testPolyint() {
+        // ∫(2 + 6x)dx = 2x + 3x² (constant = 0)
+        XCTAssertEqual(polyint([2, 6]), [0, 2, 3])
+    }
+
+    func testTaylorCoefficients() {
+        // sin(x) = x - x³/6 + x⁵/120 - ...
+        let sinCoeffs = taylorCoefficients(for: "sin", terms: 6)!
+        XCTAssertEqual(sinCoeffs[0], 0, accuracy: 1e-10)
+        XCTAssertEqual(sinCoeffs[1], 1, accuracy: 1e-10)
+        XCTAssertEqual(sinCoeffs[2], 0, accuracy: 1e-10)
+        XCTAssertEqual(sinCoeffs[3], -1.0/6.0, accuracy: 1e-10)
+
+        // exp(x) = 1 + x + x²/2 + x³/6 + ...
+        let expCoeffs = taylorCoefficients(for: "exp", terms: 4)!
+        XCTAssertEqual(expCoeffs[0], 1, accuracy: 1e-10)
+        XCTAssertEqual(expCoeffs[1], 1, accuracy: 1e-10)
+        XCTAssertEqual(expCoeffs[2], 0.5, accuracy: 1e-10)
+        XCTAssertEqual(expCoeffs[3], 1.0/6.0, accuracy: 1e-10)
+    }
+
+    func testTaylorEval() {
+        // Taylor approximation of sin(0.5) should be close to actual
+        let approx = taylorEval("sin", at: 0.5, terms: 10)!
+        let actual = Darwin.sin(0.5)
+        XCTAssertEqual(approx, actual, accuracy: 1e-10)
+
+        // Taylor approximation of exp(1) ≈ e
+        let expApprox = taylorEval("exp", at: 1, terms: 20)!
+        XCTAssertEqual(expApprox, Darwin.exp(1), accuracy: 1e-10)
+    }
+
+    func testSeriesSum() {
+        // Sum of 1/2^n from n=0 to 10
+        let (sum, converged, _) = seriesSum(from: 0, to: 10) { n in
+            Darwin.pow(0.5, Double(n))
+        }
+        XCTAssertTrue(converged)
+        // Geometric series: (1 - 0.5^11) / (1 - 0.5) = 2 * (1 - 1/2048)
+        XCTAssertEqual(sum, 2.0 - Darwin.pow(0.5, 10), accuracy: 1e-10)
+    }
+
+    func testSeriesSumConvergence() {
+        // Sum of 1/n² converges to π²/6 (slowly - need many terms)
+        let (sum, _, _) = seriesSum(from: 1, tolerance: 1e-10, maxIterations: 100000) { n in
+            1.0 / Double(n * n)
+        }
+        // 1/n² converges slowly, within 0.001 of limit with 100k terms
+        XCTAssertEqual(sum, baselSum, accuracy: 0.001)
+    }
+
+    func testSeriesProduct() {
+        // Product of (1 - 1/n²) from n=2 to 10: equals 1/2 * (n+1)/n for Wallis-like product
+        let (product, _, _) = seriesProduct(from: 2, to: 10) { n in
+            1.0 - 1.0 / Double(n * n)
+        }
+        XCTAssertTrue(product > 0)
+        XCTAssertTrue(product < 1)
+    }
+
+    func testPartialSums() {
+        let sums = partialSums(from: 1, count: 5) { n in Double(n) }
+        XCTAssertEqual(sums, [1, 3, 6, 10, 15])  // Triangular numbers
+    }
+
+    func testChebyshevPoints() {
+        let points = chebyshevPoints(center: 0, scale: 1, count: 5)
+        XCTAssertEqual(points.count, 5)
+        XCTAssertEqual(points[0], 1, accuracy: 1e-10)  // cos(0) = 1
+        XCTAssertEqual(points[4], -1, accuracy: 1e-10)  // cos(π) = -1
+    }
+
+    func testWellKnownConstants() {
+        XCTAssertEqual(baselSum, Double.pi * Double.pi / 6, accuracy: 1e-10)
+        XCTAssertTrue(eulerMascheroni > 0.577 && eulerMascheroni < 0.578)
+        XCTAssertTrue(aperyConstant > 1.202 && aperyConstant < 1.203)
+    }
 }
