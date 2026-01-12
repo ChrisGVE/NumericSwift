@@ -675,4 +675,122 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertTrue(result.success)
         XCTAssertEqual(result.y.last![0], Darwin.exp(1), accuracy: 0.05)  // Lower order, less accurate
     }
+
+    // MARK: - Optimization Tests
+
+    func testGoldenSection() {
+        // Minimize (x-2)²
+        let result = goldenSection({ x in (x - 2) * (x - 2) }, a: 0, b: 5)
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.x, 2, accuracy: 1e-6)
+        XCTAssertEqual(result.fun, 0, accuracy: 1e-10)
+    }
+
+    func testBrentMinimization() {
+        // Minimize (x-3)²
+        let result = brent({ x in (x - 3) * (x - 3) }, a: 0, b: 10)
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.x, 3, accuracy: 1e-6)
+        XCTAssertEqual(result.fun, 0, accuracy: 1e-10)
+    }
+
+    func testBisect() {
+        // Find root of x² - 4 = 0 in [0, 5]
+        let result = bisect({ x in x * x - 4 }, a: 0, b: 5)
+        XCTAssertTrue(result.converged)
+        XCTAssertEqual(result.root, 2, accuracy: 1e-6)
+    }
+
+    func testNewtonScalar() {
+        // Find root of x³ - x - 2 = 0 starting at x=1.5
+        let result = newton({ x in x*x*x - x - 2 }, x0: 1.5)
+        XCTAssertTrue(result.converged)
+        // Verify it's actually a root
+        let residual = result.root * result.root * result.root - result.root - 2
+        XCTAssertEqual(residual, 0, accuracy: 1e-8)
+    }
+
+    func testSecant() {
+        // Find root of x² - 2 = 0
+        let result = secant({ x in x * x - 2 }, x0: 1)
+        XCTAssertTrue(result.converged)
+        XCTAssertEqual(result.root, sqrt(2), accuracy: 1e-6)
+    }
+
+    func testNelderMead() {
+        // Minimize Rosenbrock function: (1-x)² + 100(y-x²)²
+        // Minimum is at (1, 1)
+        let result = nelderMead({ x in
+            let a = 1 - x[0]
+            let b = x[1] - x[0] * x[0]
+            return a * a + 100 * b * b
+        }, x0: [0.0, 0.0])
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.x[0], 1, accuracy: 0.01)
+        XCTAssertEqual(result.x[1], 1, accuracy: 0.01)
+    }
+
+    func testNewtonMulti() {
+        // Solve x² + y² = 1, x = y
+        // Solution is (±1/√2, ±1/√2)
+        let result = newtonMulti({ x in
+            [x[0] * x[0] + x[1] * x[1] - 1, x[0] - x[1]]
+        }, x0: [0.5, 0.5])
+
+        XCTAssertTrue(result.success)
+        let target = 1.0 / sqrt(2.0)
+        XCTAssertEqual(result.x[0], target, accuracy: 1e-6)
+        XCTAssertEqual(result.x[1], target, accuracy: 1e-6)
+    }
+
+    func testLeastSquares() {
+        // Fit y = a*x + b to data
+        let xdata = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let ydata = [1.0, 3.0, 5.0, 7.0, 9.0]  // y = 2x + 1
+
+        let residuals: ([Double]) -> [Double] = { params in
+            var r = [Double]()
+            for i in 0..<xdata.count {
+                r.append(ydata[i] - (params[0] * xdata[i] + params[1]))
+            }
+            return r
+        }
+
+        let result = leastSquares(residuals, x0: [1.0, 0.0])
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.x[0], 2, accuracy: 1e-6)  // Slope
+        XCTAssertEqual(result.x[1], 1, accuracy: 1e-6)  // Intercept
+    }
+
+    func testCurveFit() {
+        // Fit y = a*exp(-b*x) to data
+        let xdata = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let ydata = xdata.map { 2.0 * exp(-0.5 * $0) }  // y = 2*exp(-0.5*x)
+
+        let (popt, pcov, info) = curveFit(
+            { params, x in params[0] * exp(-params[1] * x) },
+            xdata: xdata,
+            ydata: ydata,
+            p0: [1.0, 1.0]
+        )
+
+        XCTAssertTrue(info.success)
+        XCTAssertEqual(popt[0], 2, accuracy: 0.01)    // Amplitude
+        XCTAssertEqual(popt[1], 0.5, accuracy: 0.01) // Decay rate
+        XCTAssertEqual(pcov.count, 2)  // 2x2 covariance matrix
+    }
+
+    func testMinimizeQuadratic() {
+        // Minimize x² + y² + z²
+        let result = nelderMead({ x in
+            x[0]*x[0] + x[1]*x[1] + x[2]*x[2]
+        }, x0: [1.0, 2.0, 3.0])
+
+        XCTAssertTrue(result.success)
+        XCTAssertEqual(result.fun, 0, accuracy: 0.001)
+        for val in result.x {
+            XCTAssertEqual(val, 0, accuracy: 0.001)
+        }
+    }
 }
