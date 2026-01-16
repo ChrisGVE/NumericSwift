@@ -23,9 +23,11 @@ public func erfc(_ x: Double) -> Double {
     Darwin.erfc(x)
 }
 
-/// Inverse error function using rational approximation.
+/// Inverse error function.
 /// Returns y such that erf(y) = x. Domain: x ∈ (-1, 1)
-/// Accuracy: ~15 digits for central region, ~10 digits for tails
+///
+/// Uses Winitzki approximation for initial guess followed by Halley refinement
+/// for full double precision (~15 digits) across the entire domain.
 public func erfinv(_ x: Double) -> Double {
     guard x > -1 && x < 1 else {
         if x == -1 { return -.infinity }
@@ -36,34 +38,31 @@ public func erfinv(_ x: Double) -> Double {
 
     let a = abs(x)
 
-    // For |x| <= 0.7, use central approximation
-    if a <= 0.7 {
-        let x2 = x * x
-        let r = x * ((((-0.140543331 * x2 + 0.914624893) * x2 - 1.645349621) * x2 + 0.886226899))
-        let s = (((0.012229801 * x2 - 0.329097515) * x2 + 1.442710462) * x2 - 2.118377725) * x2 + 1.0
-        return r / s
+    // Winitzki approximation for initial guess
+    // Based on: S. Winitzki, "A handy approximation for the error function and its inverse" (2008)
+    let a2 = a * a
+    let lnTerm = Darwin.log(1.0 - a2)
+    let c = 2.0 / (.pi * 0.147) + lnTerm / 2.0
+    let sqrtTerm = Darwin.sqrt(c * c - lnTerm / 0.147)
+    var w = Darwin.sqrt(sqrtTerm - c)
+
+    // Halley refinement for full double precision
+    // Uses cubic convergence: w_new = w - f/(f' - f*f''/(2*f'))
+    // where f(w) = erf(w) - a, f' = (2/sqrt(pi)) * exp(-w^2), f'' = -2w * f'
+    let twoOverSqrtPi = 1.1283791670955126  // 2/sqrt(pi)
+
+    for _ in 0..<4 {
+        let erfW = Darwin.erf(w)
+        let expW2 = Darwin.exp(-w * w)
+        let f = erfW - a
+        let fp = twoOverSqrtPi * expW2
+        let fpp = -2.0 * w * fp
+        let delta = f / (fp - f * fpp / (2.0 * fp))
+        w -= delta
+        if abs(delta) < 1e-16 * abs(w) { break }
     }
 
-    // For |x| > 0.7, use tail approximation
-    let y = sqrt(-log((1.0 - a) / 2.0))
-
-    // Rational approximation for the tail
-    let r: Double
-    if y <= 5.0 {
-        let t = y - 1.6
-        r = ((((((0.00077454501427834 * t + 0.0227238449892691) * t + 0.24178072517745) * t +
-               1.27045825245237) * t + 3.64784832476320) * t + 5.76949722146069) * t + 4.63033784615655) /
-            ((((((0.00080529518738563 * t + 0.02287663117085) * t + 0.23601290952344) * t +
-               1.21357729517684) * t + 3.34305755540406) * t + 4.77629303102970) * t + 1.0)
-    } else {
-        let t = y - 5.0
-        r = ((((((0.0000100950558 * t + 0.000280756651) * t + 0.00326196717) * t +
-               0.0206706341) * t + 0.0783478783) * t + 0.169827922) * t + 0.161895932) /
-            ((((((0.0000100950558 * t + 0.000280756651) * t + 0.00326196717) * t +
-               0.0206706341) * t + 0.0783478783) * t + 0.169827922) * t + 1.0)
-    }
-
-    return x >= 0 ? r : -r
+    return x >= 0 ? w : -w
 }
 
 /// Inverse complementary error function
