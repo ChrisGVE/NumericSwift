@@ -1,4 +1,4 @@
 # NumericSwift
 Scientific computing library for Swift - distributions, integration, optimization, interpolation
 
-Currently under development, keep tuned
+Currently under development, stay tuned
