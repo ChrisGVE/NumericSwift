@@ -20,7 +20,9 @@ let package = Package(
         ),
     ],
     dependencies: {
-        var deps: [Package.Dependency] = []
+        var deps: [Package.Dependency] = [
+            .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+        ]
         if includeArraySwift {
             deps.append(.package(path: "../ArraySwift"))
         }
