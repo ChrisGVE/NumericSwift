@@ -255,8 +255,9 @@ public struct TDistribution {
     /// Probability density function.
     public func pdf(_ x: Double) -> Double {
         let z = (x - loc) / scale
-        let coef = Darwin.tgamma((df + 1) / 2.0) / (Darwin.sqrt(df * .pi) * Darwin.tgamma(df / 2.0))
-        return coef * Darwin.pow(1.0 + z * z / df, -(df + 1) / 2.0) / scale
+        // Use lgamma for numerical stability with large df (tgamma overflows for df > 340)
+        let logCoef = Darwin.lgamma((df + 1) / 2.0) - Darwin.lgamma(df / 2.0) - 0.5 * Darwin.log(df * .pi)
+        return Darwin.exp(logCoef) * Darwin.pow(1.0 + z * z / df, -(df + 1) / 2.0) / scale
     }
 
     /// Cumulative distribution function using incomplete beta.
@@ -274,19 +275,25 @@ public struct TDistribution {
 
     /// Percent point function using Newton-Raphson iteration.
     public func ppf(_ p: Double) -> Double {
-        // Use normal approximation as starting point
+        if p <= 0 { return -.infinity }
+        if p >= 1 { return .infinity }
+        if p == 0.5 { return loc }
+
+        // Initial approximation: normal quantile (erfinv now fixed for full precision)
         var x = Darwin.sqrt(2.0) * erfinv(2.0 * p - 1.0)
 
-        // Newton-Raphson iteration
-        for _ in 0..<50 {
+        // Newton-Raphson iteration with lgamma for numerical stability
+        for _ in 0..<100 {
             let t2 = x * x
             let cdfVal = 0.5 + 0.5 * (1.0 - betainc(df / 2.0, 0.5, df / (df + t2))) * (x >= 0 ? 1 : -1)
-            let coef = Darwin.tgamma((df + 1) / 2.0) / (Darwin.sqrt(df * .pi) * Darwin.tgamma(df / 2.0))
-            let pdfVal = coef * Darwin.pow(1.0 + t2 / df, -(df + 1) / 2.0)
+
+            // Use lgamma for stability with large df (tgamma overflows for df > 340)
+            let logCoef = Darwin.lgamma((df + 1) / 2.0) - Darwin.lgamma(df / 2.0) - 0.5 * Darwin.log(df * .pi)
+            let pdfVal = Darwin.exp(logCoef) * Darwin.pow(1.0 + t2 / df, -(df + 1) / 2.0)
 
             let dx = (cdfVal - p) / pdfVal
             x -= dx
-            if abs(dx) < 1e-10 { break }
+            if abs(dx) < 1e-14 * max(abs(x), 1.0) { break }
         }
 
         return loc + scale * x
