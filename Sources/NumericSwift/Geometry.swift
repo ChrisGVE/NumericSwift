@@ -423,6 +423,11 @@ public func circleFrom3Points(_ p1: Vec2, _ p2: Vec2, _ p3: Vec2) -> CircleResul
 public struct PlaneResult {
     public let normal: Vec3
     public let d: Double  // ax + by + cz + d = 0
+
+    public init(normal: Vec3, d: Double) {
+        self.normal = normal
+        self.d = d
+    }
 }
 
 /// Compute plane through 3 points.
@@ -895,4 +900,825 @@ public func bsplineDerivative(controlPoints: [Vec2], degree: Int, t: Double, kno
 
     // Evaluate derivative B-spline
     return bsplineEvaluate(controlPoints: derivCP, degree: degree - 1, t: t, knots: Array(actualKnots.dropFirst().dropLast()))
+}
+
+// MARK: - Ellipse Fitting
+
+/// Result of ellipse fitting.
+public struct EllipseFitResult {
+    /// Center x-coordinate.
+    public let cx: Double
+    /// Center y-coordinate.
+    public let cy: Double
+    /// Semi-major axis length.
+    public let a: Double
+    /// Semi-minor axis length.
+    public let b: Double
+    /// Rotation angle (radians).
+    public let theta: Double
+    /// Conic coefficients [A, B, C, D, E, F] for Ax² + Bxy + Cy² + Dx + Ey + F = 0.
+    public let conic: [Double]
+    /// Residuals for each input point.
+    public let residuals: [Double]
+    /// Root mean square error.
+    public let rmse: Double
+}
+
+/// Fit ellipse to 2D points using Fitzgibbon's direct least squares method.
+/// Guarantees result is always an ellipse (not hyperbola/parabola).
+/// - Parameter points: Array of 2D points (minimum 5 required).
+/// - Returns: Ellipse fit result, or nil if fitting fails.
+public func ellipseFitDirect(points: [Vec2]) -> EllipseFitResult? {
+    guard points.count >= 5 else { return nil }
+
+    let n = points.count
+
+    // Center the data for numerical stability
+    var meanX = 0.0, meanY = 0.0
+    for p in points {
+        meanX += p.x
+        meanY += p.y
+    }
+    meanX /= Double(n)
+    meanY /= Double(n)
+
+    // Create centered points
+    let centered = points.map { ($0.x - meanX, $0.y - meanY) }
+
+    // Compute scatter matrix S = D' * D (6x6)
+    var S = [[Double]](repeating: [Double](repeating: 0.0, count: 6), count: 6)
+
+    for p in centered {
+        let x = p.0, y = p.1
+        let x2 = x * x
+        let y2 = y * y
+        let xy = x * y
+
+        let d = [x2, xy, y2, x, y, 1.0]
+
+        for i in 0..<6 {
+            for j in 0..<6 {
+                S[i][j] += d[i] * d[j]
+            }
+        }
+    }
+
+    // Partition S into blocks
+    var S1 = [[Double]](repeating: [Double](repeating: 0.0, count: 3), count: 3)
+    var S2 = [[Double]](repeating: [Double](repeating: 0.0, count: 3), count: 3)
+    var S3 = [[Double]](repeating: [Double](repeating: 0.0, count: 3), count: 3)
+
+    for i in 0..<3 {
+        for j in 0..<3 {
+            S1[i][j] = S[i][j]
+            S2[i][j] = S[i][j + 3]
+            S3[i][j] = S[i + 3][j + 3]
+        }
+    }
+
+    // Constraint matrix C1 for 4ac - b² = 1
+    let C1: [[Double]] = [[0, 0, 2], [0, -1, 0], [2, 0, 0]]
+
+    // Compute inverse of S3
+    guard let S3inv = invert3x3(S3) else { return nil }
+
+    // Compute T = -S3^(-1) * S2'
+    var T = [[Double]](repeating: [Double](repeating: 0.0, count: 3), count: 3)
+    for i in 0..<3 {
+        for j in 0..<3 {
+            for k in 0..<3 {
+                T[i][j] -= S3inv[i][k] * S2[j][k]
+            }
+        }
+    }
+
+    // Compute M = S1 + S2 * T
+    var M = [[Double]](repeating: [Double](repeating: 0.0, count: 3), count: 3)
+    for i in 0..<3 {
+        for j in 0..<3 {
+            M[i][j] = S1[i][j]
+            for k in 0..<3 {
+                M[i][j] += S2[i][k] * T[k][j]
+            }
+        }
+    }
+
+    // Compute C1^(-1) * M
+    guard let C1inv = invert3x3(C1) else { return nil }
+
+    var C1invM = [[Double]](repeating: [Double](repeating: 0.0, count: 3), count: 3)
+    for i in 0..<3 {
+        for j in 0..<3 {
+            for k in 0..<3 {
+                C1invM[i][j] += C1inv[i][k] * M[k][j]
+            }
+        }
+    }
+
+    // Find eigenvalues/eigenvectors
+    guard let (eigenvalues, eigenvectors) = eigenDecomposition3x3(C1invM) else { return nil }
+
+    // Find eigenvector for smallest positive eigenvalue with valid ellipse constraint
+    var bestIdx = -1
+    var bestEig = Double.infinity
+    for i in 0..<min(eigenvalues.count, eigenvectors.count) {
+        guard eigenvectors[i].count >= 3 else { continue }
+        let a = eigenvectors[i][0]
+        let b = eigenvectors[i][1]
+        let c = eigenvectors[i][2]
+        let constraint = 4 * a * c - b * b
+
+        if constraint > 0 && eigenvalues[i] < bestEig && eigenvalues[i] > -1e-10 {
+            bestEig = eigenvalues[i]
+            bestIdx = i
+        }
+    }
+
+    guard bestIdx >= 0 else { return nil }
+
+    // Get conic coefficients
+    let a1 = [eigenvectors[bestIdx][0], eigenvectors[bestIdx][1], eigenvectors[bestIdx][2]]
+
+    // Recover linear coefficients
+    var a2 = [0.0, 0.0, 0.0]
+    for i in 0..<3 {
+        for j in 0..<3 {
+            a2[i] += T[i][j] * a1[j]
+        }
+    }
+
+    let A = a1[0], B = a1[1], C = a1[2]
+    let D0 = a2[0], E0 = a2[1], F0 = a2[2]
+
+    // Un-center
+    let D = D0 - 2 * A * meanX - B * meanY
+    let E = E0 - 2 * C * meanY - B * meanX
+    let F = F0 + A * meanX * meanX + C * meanY * meanY + B * meanX * meanY - D0 * meanX - E0 * meanY
+
+    // Convert to parametric form
+    let det = 4 * A * C - B * B
+    guard abs(det) > 1e-15 else { return nil }
+
+    let cx = (B * E - 2 * C * D) / det
+    let cy = (B * D - 2 * A * E) / det
+
+    let Fc = A * cx * cx + B * cx * cy + C * cy * cy + D * cx + E * cy + F
+
+    // Rotation angle
+    let theta: Double
+    if abs(A - C) < 1e-15 {
+        theta = B > 0 ? Double.pi / 4 : -Double.pi / 4
+    } else {
+        theta = 0.5 * atan2(B, A - C)
+    }
+
+    // Semi-axes
+    let cos2t = cos(theta) * cos(theta)
+    let sin2t = sin(theta) * sin(theta)
+    let sincos = sin(theta) * cos(theta)
+
+    let Ap = A * cos2t + B * sincos + C * sin2t
+    let Cp = A * sin2t - B * sincos + C * cos2t
+
+    guard Ap * Fc < 0 && Cp * Fc < 0 else { return nil }
+
+    let semiMajor = sqrt(-Fc / min(Ap, Cp))
+    let semiMinor = sqrt(-Fc / max(Ap, Cp))
+
+    var finalTheta = theta
+    if Ap > Cp {
+        finalTheta += Double.pi / 2
+    }
+
+    // Normalize angle
+    while finalTheta > Double.pi / 2 { finalTheta -= Double.pi }
+    while finalTheta < -Double.pi / 2 { finalTheta += Double.pi }
+
+    // Compute residuals
+    var residuals = [Double]()
+    var sumResidualsSq = 0.0
+    for p in points {
+        let val = A * p.x * p.x + B * p.x * p.y + C * p.y * p.y + D * p.x + E * p.y + F
+        let grad = sqrt(pow(2 * A * p.x + B * p.y + D, 2) + pow(2 * C * p.y + B * p.x + E, 2))
+        let residual = grad > 1e-10 ? val / grad : val
+        residuals.append(residual)
+        sumResidualsSq += residual * residual
+    }
+
+    let rmse = sqrt(sumResidualsSq / Double(n))
+
+    return EllipseFitResult(
+        cx: cx, cy: cy, a: semiMajor, b: semiMinor, theta: finalTheta,
+        conic: [A, B, C, D, E, F], residuals: residuals, rmse: rmse
+    )
+}
+
+// MARK: - Cubic Spline Coefficients
+
+/// Cubic spline segment coefficients.
+public struct CubicSplineSegment {
+    /// Constant term.
+    public let a: Double
+    /// Linear coefficient.
+    public let b: Double
+    /// Quadratic coefficient.
+    public let c: Double
+    /// Cubic coefficient.
+    public let d: Double
+}
+
+/// Result of cubic spline coefficient computation.
+public struct CubicSplineCoeffs {
+    /// Knot positions (x values).
+    public let knots: [Double]
+    /// Values at knots (y values).
+    public let values: [Double]
+    /// Coefficients for each segment.
+    public let coeffs: [CubicSplineSegment]
+}
+
+/// Compute cubic spline coefficients using natural boundary conditions.
+/// - Parameter points: Array of (x, y) points, must have at least 2 points.
+/// - Returns: Spline coefficients, or nil if computation fails.
+public func cubicSplineCoeffs(points: [(x: Double, y: Double)]) -> CubicSplineCoeffs? {
+    guard points.count >= 2 else { return nil }
+
+    let sortedPoints = points.sorted { $0.x < $1.x }
+    let n = sortedPoints.count - 1
+
+    // Handle 2-point case (linear)
+    if n == 1 {
+        let h = sortedPoints[1].x - sortedPoints[0].x
+        let slope = (sortedPoints[1].y - sortedPoints[0].y) / h
+        return CubicSplineCoeffs(
+            knots: sortedPoints.map { $0.x },
+            values: sortedPoints.map { $0.y },
+            coeffs: [CubicSplineSegment(a: sortedPoints[0].y, b: slope, c: 0, d: 0)]
+        )
+    }
+
+    // Calculate interval widths
+    var h = [Double](repeating: 0, count: n)
+    for i in 0..<n {
+        h[i] = sortedPoints[i + 1].x - sortedPoints[i].x
+    }
+
+    // Build tridiagonal system for natural cubic spline
+    let systemSize = n - 1
+    guard systemSize > 0 else { return nil }
+
+    var dl = [Double](repeating: 0, count: systemSize - 1)
+    var d = [Double](repeating: 0, count: systemSize)
+    var du = [Double](repeating: 0, count: systemSize - 1)
+    var b = [Double](repeating: 0, count: systemSize)
+
+    for i in 0..<systemSize {
+        let hi = h[i]
+        let hi1 = h[i + 1]
+        d[i] = 2 * (hi + hi1)
+
+        let di0 = (sortedPoints[i + 1].y - sortedPoints[i].y) / hi
+        let di1 = (sortedPoints[i + 2].y - sortedPoints[i + 1].y) / hi1
+        b[i] = 6 * (di1 - di0)
+
+        if i > 0 { dl[i - 1] = hi }
+        if i < systemSize - 1 { du[i] = hi1 }
+    }
+
+    // Solve tridiagonal system using Thomas algorithm
+    // Forward sweep
+    for i in 1..<systemSize {
+        let w = dl[i - 1] / d[i - 1]
+        d[i] -= w * du[i - 1]
+        b[i] -= w * b[i - 1]
+    }
+
+    // Back substitution
+    b[systemSize - 1] /= d[systemSize - 1]
+    for i in stride(from: systemSize - 2, through: 0, by: -1) {
+        b[i] = (b[i] - du[i] * b[i + 1]) / d[i]
+    }
+
+    // M[0] = 0 and M[n] = 0 (natural spline)
+    var M = [Double](repeating: 0, count: n + 1)
+    for i in 0..<systemSize {
+        M[i + 1] = b[i]
+    }
+
+    // Calculate coefficients
+    var coeffs = [CubicSplineSegment]()
+    for i in 0..<n {
+        let hi = h[i]
+        let yi = sortedPoints[i].y
+        let yi1 = sortedPoints[i + 1].y
+        let mi = M[i]
+        let mi1 = M[i + 1]
+
+        let a = yi
+        let bi = (yi1 - yi) / hi - hi * (2 * mi + mi1) / 6
+        let c = mi / 2
+        let di = (mi1 - mi) / (6 * hi)
+
+        coeffs.append(CubicSplineSegment(a: a, b: bi, c: c, d: di))
+    }
+
+    return CubicSplineCoeffs(
+        knots: sortedPoints.map { $0.x },
+        values: sortedPoints.map { $0.y },
+        coeffs: coeffs
+    )
+}
+
+// MARK: - B-Spline Fitting
+
+/// Result of B-spline least squares fitting.
+public struct BSplineFitResult {
+    /// Fitted control points.
+    public let controlPoints: [Vec2]
+    /// Knot vector.
+    public let knots: [Double]
+    /// Spline degree.
+    public let degree: Int
+    /// Residuals (distances from data points to fitted curve).
+    public let residuals: [Double]
+    /// Root mean square error.
+    public let rmse: Double
+    /// Maximum error.
+    public let maxError: Double
+    /// Parameter values for each data point.
+    public let parameters: [Double]
+}
+
+/// Result of 3D B-spline least squares fitting.
+public struct BSplineFitResult3D {
+    /// Fitted control points.
+    public let controlPoints: [Vec3]
+    /// Knot vector.
+    public let knots: [Double]
+    /// Spline degree.
+    public let degree: Int
+    /// Residuals (distances from data points to fitted curve).
+    public let residuals: [Double]
+    /// Root mean square error.
+    public let rmse: Double
+    /// Maximum error.
+    public let maxError: Double
+    /// Parameter values for each data point.
+    public let parameters: [Double]
+}
+
+/// Parameterization method for B-spline fitting.
+public enum BSplineParameterization {
+    case uniform
+    case chordLength
+    case centripetal
+}
+
+/// Fit B-spline to 2D data points using least squares.
+/// - Parameters:
+///   - points: Array of 2D data points.
+///   - degree: B-spline degree (1-5).
+///   - numControlPoints: Number of control points (must be >= degree + 1).
+///   - parameterization: Method for computing parameter values.
+/// - Returns: Fit result, or nil if fitting fails.
+public func bsplineFit(
+    points: [Vec2],
+    degree: Int,
+    numControlPoints: Int,
+    parameterization: BSplineParameterization = .chordLength
+) -> BSplineFitResult? {
+    let nData = points.count
+    guard nData >= numControlPoints, numControlPoints >= degree + 1, degree >= 1, degree <= 5 else {
+        return nil
+    }
+
+    // Generate parameter values
+    var t = [Double](repeating: 0, count: nData)
+
+    switch parameterization {
+    case .uniform:
+        for i in 0..<nData {
+            t[i] = Double(i) / Double(nData - 1)
+        }
+    case .chordLength, .centripetal:
+        var chordLengths = [0.0]
+        for i in 1..<nData {
+            let dist = simd_distance(points[i], points[i-1])
+            let d = parameterization == .centripetal ? sqrt(dist) : dist
+            chordLengths.append(chordLengths.last! + d)
+        }
+        let totalLength = chordLengths.last!
+        if totalLength > 1e-15 {
+            for i in 0..<nData {
+                t[i] = chordLengths[i] / totalLength
+            }
+        } else {
+            for i in 0..<nData {
+                t[i] = Double(i) / Double(nData - 1)
+            }
+        }
+    }
+
+    // Generate clamped uniform knot vector
+    let m = numControlPoints + degree + 1
+    var knots = [Double](repeating: 0, count: m)
+    for i in 0..<m {
+        if i <= degree {
+            knots[i] = 0.0
+        } else if i >= m - degree - 1 {
+            knots[i] = 1.0
+        } else {
+            let interior = i - degree
+            let numInterior = m - 2 * (degree + 1) + 1
+            knots[i] = Double(interior) / Double(numInterior)
+        }
+    }
+
+    // Build design matrix
+    var A = [Double](repeating: 0, count: nData * numControlPoints)
+    for i in 0..<nData {
+        for j in 0..<numControlPoints {
+            A[i + j * nData] = bsplineBasis(i: j, degree: degree, t: t[i], knots: knots)
+        }
+    }
+
+    // Solve least squares for x and y separately using normal equations
+    // A'A * x = A'b
+    var AtA = [Double](repeating: 0, count: numControlPoints * numControlPoints)
+    for i in 0..<numControlPoints {
+        for j in 0..<numControlPoints {
+            var sum = 0.0
+            for k in 0..<nData {
+                sum += A[k + i * nData] * A[k + j * nData]
+            }
+            AtA[i + j * numControlPoints] = sum
+        }
+    }
+
+    // Solve for x coordinates
+    var Atbx = [Double](repeating: 0, count: numControlPoints)
+    for i in 0..<numControlPoints {
+        var sum = 0.0
+        for k in 0..<nData {
+            sum += A[k + i * nData] * points[k].x
+        }
+        Atbx[i] = sum
+    }
+
+    guard let xCoords = solvePositiveDefinite(AtA, Atbx, n: numControlPoints) else { return nil }
+
+    // Solve for y coordinates
+    var Atby = [Double](repeating: 0, count: numControlPoints)
+    for i in 0..<numControlPoints {
+        var sum = 0.0
+        for k in 0..<nData {
+            sum += A[k + i * nData] * points[k].y
+        }
+        Atby[i] = sum
+    }
+
+    guard let yCoords = solvePositiveDefinite(AtA, Atby, n: numControlPoints) else { return nil }
+
+    // Build control points
+    var controlPoints = [Vec2]()
+    for j in 0..<numControlPoints {
+        controlPoints.append(Vec2(xCoords[j], yCoords[j]))
+    }
+
+    // Compute residuals
+    var residuals = [Double]()
+    var sumResidualsSq = 0.0
+    var maxResidual = 0.0
+
+    for i in 0..<nData {
+        let fitted = bsplineEvaluate(controlPoints: controlPoints, degree: degree, t: t[i], knots: knots)
+        let dist = simd_distance(fitted, points[i])
+        residuals.append(dist)
+        sumResidualsSq += dist * dist
+        maxResidual = max(maxResidual, dist)
+    }
+
+    let rmse = sqrt(sumResidualsSq / Double(nData))
+
+    return BSplineFitResult(
+        controlPoints: controlPoints,
+        knots: knots,
+        degree: degree,
+        residuals: residuals,
+        rmse: rmse,
+        maxError: maxResidual,
+        parameters: t
+    )
+}
+
+/// Fit B-spline to 3D data points using least squares.
+public func bsplineFit3D(
+    points: [Vec3],
+    degree: Int,
+    numControlPoints: Int,
+    parameterization: BSplineParameterization = .chordLength
+) -> BSplineFitResult3D? {
+    let nData = points.count
+    guard nData >= numControlPoints, numControlPoints >= degree + 1, degree >= 1, degree <= 5 else {
+        return nil
+    }
+
+    // Generate parameter values
+    var t = [Double](repeating: 0, count: nData)
+
+    switch parameterization {
+    case .uniform:
+        for i in 0..<nData {
+            t[i] = Double(i) / Double(nData - 1)
+        }
+    case .chordLength, .centripetal:
+        var chordLengths = [0.0]
+        for i in 1..<nData {
+            let dist = simd_distance(points[i], points[i-1])
+            let d = parameterization == .centripetal ? sqrt(dist) : dist
+            chordLengths.append(chordLengths.last! + d)
+        }
+        let totalLength = chordLengths.last!
+        if totalLength > 1e-15 {
+            for i in 0..<nData {
+                t[i] = chordLengths[i] / totalLength
+            }
+        } else {
+            for i in 0..<nData {
+                t[i] = Double(i) / Double(nData - 1)
+            }
+        }
+    }
+
+    // Generate knot vector
+    let m = numControlPoints + degree + 1
+    var knots = [Double](repeating: 0, count: m)
+    for i in 0..<m {
+        if i <= degree {
+            knots[i] = 0.0
+        } else if i >= m - degree - 1 {
+            knots[i] = 1.0
+        } else {
+            let interior = i - degree
+            let numInterior = m - 2 * (degree + 1) + 1
+            knots[i] = Double(interior) / Double(numInterior)
+        }
+    }
+
+    // Build design matrix
+    var A = [Double](repeating: 0, count: nData * numControlPoints)
+    for i in 0..<nData {
+        for j in 0..<numControlPoints {
+            A[i + j * nData] = bsplineBasis(i: j, degree: degree, t: t[i], knots: knots)
+        }
+    }
+
+    // Build A'A
+    var AtA = [Double](repeating: 0, count: numControlPoints * numControlPoints)
+    for i in 0..<numControlPoints {
+        for j in 0..<numControlPoints {
+            var sum = 0.0
+            for k in 0..<nData {
+                sum += A[k + i * nData] * A[k + j * nData]
+            }
+            AtA[i + j * numControlPoints] = sum
+        }
+    }
+
+    // Solve for each coordinate
+    var coords = [[Double]](repeating: [], count: 3)
+    for dim in 0..<3 {
+        var Atb = [Double](repeating: 0, count: numControlPoints)
+        for i in 0..<numControlPoints {
+            var sum = 0.0
+            for k in 0..<nData {
+                let val: Double
+                switch dim {
+                case 0: val = points[k].x
+                case 1: val = points[k].y
+                default: val = points[k].z
+                }
+                sum += A[k + i * nData] * val
+            }
+            Atb[i] = sum
+        }
+        guard let solution = solvePositiveDefinite(AtA, Atb, n: numControlPoints) else { return nil }
+        coords[dim] = solution
+    }
+
+    // Build control points
+    var controlPoints = [Vec3]()
+    for j in 0..<numControlPoints {
+        controlPoints.append(Vec3(coords[0][j], coords[1][j], coords[2][j]))
+    }
+
+    // Compute residuals
+    var residuals = [Double]()
+    var sumResidualsSq = 0.0
+    var maxResidual = 0.0
+
+    for i in 0..<nData {
+        let fitted = bsplineEvaluate3D(controlPoints: controlPoints, degree: degree, t: t[i], knots: knots)
+        let dist = simd_distance(fitted, points[i])
+        residuals.append(dist)
+        sumResidualsSq += dist * dist
+        maxResidual = max(maxResidual, dist)
+    }
+
+    let rmse = sqrt(sumResidualsSq / Double(nData))
+
+    return BSplineFitResult3D(
+        controlPoints: controlPoints,
+        knots: knots,
+        degree: degree,
+        residuals: residuals,
+        rmse: rmse,
+        maxError: maxResidual,
+        parameters: t
+    )
+}
+
+// MARK: - Private Helper Functions
+
+/// Invert a 3x3 matrix.
+private func invert3x3(_ m: [[Double]]) -> [[Double]]? {
+    let a = m[0][0], b = m[0][1], c = m[0][2]
+    let d = m[1][0], e = m[1][1], f = m[1][2]
+    let g = m[2][0], h = m[2][1], i = m[2][2]
+
+    let det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
+    guard abs(det) > 1e-15 else { return nil }
+
+    let invDet = 1.0 / det
+
+    return [
+        [(e * i - f * h) * invDet, (c * h - b * i) * invDet, (b * f - c * e) * invDet],
+        [(f * g - d * i) * invDet, (a * i - c * g) * invDet, (c * d - a * f) * invDet],
+        [(d * h - e * g) * invDet, (b * g - a * h) * invDet, (a * e - b * d) * invDet]
+    ]
+}
+
+/// Eigendecomposition of a 3x3 matrix using characteristic polynomial.
+private func eigenDecomposition3x3(_ m: [[Double]]) -> (eigenvalues: [Double], eigenvectors: [[Double]])? {
+    let a = m[0][0], b = m[0][1], c = m[0][2]
+    let d = m[1][0], e = m[1][1], f = m[1][2]
+    let g = m[2][0], h = m[2][1], i = m[2][2]
+
+    let trace = a + e + i
+    let minor1 = e * i - f * h
+    let minor2 = a * i - c * g
+    let minor3 = a * e - b * d
+    let sumMinors = minor1 + minor2 + minor3
+    let det = a * minor1 - b * (d * i - f * g) + c * (d * h - e * g)
+
+    guard let roots = solveCubic(1.0, -trace, sumMinors, -det) else { return nil }
+
+    var eigenvectors = [[Double]]()
+
+    for lambda in roots {
+        let A_lambda = [
+            [m[0][0] - lambda, m[0][1], m[0][2]],
+            [m[1][0], m[1][1] - lambda, m[1][2]],
+            [m[2][0], m[2][1], m[2][2] - lambda]
+        ]
+
+        let r1 = [A_lambda[0][0], A_lambda[0][1], A_lambda[0][2]]
+        let r2 = [A_lambda[1][0], A_lambda[1][1], A_lambda[1][2]]
+        let r3 = [A_lambda[2][0], A_lambda[2][1], A_lambda[2][2]]
+
+        var v = cross3(r1, r2)
+        var norm = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+
+        if norm < 1e-10 {
+            v = cross3(r1, r3)
+            norm = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+        }
+
+        if norm < 1e-10 {
+            v = cross3(r2, r3)
+            norm = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+        }
+
+        if norm < 1e-10 {
+            v = [1, 0, 0]
+            norm = 1
+        }
+
+        eigenvectors.append([v[0] / norm, v[1] / norm, v[2] / norm])
+    }
+
+    return (roots, eigenvectors)
+}
+
+/// Cross product of two 3-vectors.
+private func cross3(_ a: [Double], _ b: [Double]) -> [Double] {
+    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+}
+
+/// Solve cubic equation ax³ + bx² + cx + d = 0.
+private func solveCubic(_ a: Double, _ b: Double, _ c: Double, _ d: Double) -> [Double]? {
+    guard abs(a) > 1e-15 else {
+        return solveQuadratic(b, c, d)
+    }
+
+    let p = b / a, q = c / a, r = d / a
+    let p1 = q - p * p / 3
+    let q1 = 2 * p * p * p / 27 - p * q / 3 + r
+    let discriminant = q1 * q1 / 4 + p1 * p1 * p1 / 27
+
+    var roots = [Double]()
+
+    // Use Foundation's cbrt for real cube root
+    func realCbrt(_ x: Double) -> Double {
+        x >= 0 ? pow(x, 1.0/3.0) : -pow(-x, 1.0/3.0)
+    }
+
+    if discriminant > 1e-15 {
+        let sqrtD = sqrt(discriminant)
+        let u = realCbrt(-q1 / 2 + sqrtD)
+        let v = realCbrt(-q1 / 2 - sqrtD)
+        roots.append(u + v - p / 3)
+    } else if discriminant < -1e-15 {
+        let rho = sqrt(-p1 * p1 * p1 / 27)
+        let theta = acos(-q1 / 2 / rho)
+        let m = 2.0 * realCbrt(rho)
+        roots.append(m * cos(theta / 3) - p / 3)
+        roots.append(m * cos((theta + 2 * Double.pi) / 3) - p / 3)
+        roots.append(m * cos((theta + 4 * Double.pi) / 3) - p / 3)
+    } else {
+        if abs(q1) < 1e-15 {
+            roots.append(-p / 3)
+        } else {
+            let u = realCbrt(-q1 / 2)
+            roots.append(2 * u - p / 3)
+            roots.append(-u - p / 3)
+        }
+    }
+
+    return roots.isEmpty ? nil : roots
+}
+
+/// Solve quadratic equation ax² + bx + c = 0.
+private func solveQuadratic(_ a: Double, _ b: Double, _ c: Double) -> [Double]? {
+    guard abs(a) > 1e-15 else {
+        guard abs(b) > 1e-15 else { return nil }
+        return [-c / b]
+    }
+
+    let discriminant = b * b - 4 * a * c
+    if discriminant < -1e-15 {
+        return []
+    } else if discriminant < 1e-15 {
+        return [-b / (2 * a)]
+    } else {
+        let sqrtD = sqrt(discriminant)
+        return [(-b + sqrtD) / (2 * a), (-b - sqrtD) / (2 * a)]
+    }
+}
+
+/// Solve positive definite system using Cholesky decomposition.
+private func solvePositiveDefinite(_ A: [Double], _ b: [Double], n: Int) -> [Double]? {
+    // Cholesky decomposition: A = L * L^T
+    var L = [Double](repeating: 0, count: n * n)
+
+    for i in 0..<n {
+        for j in 0...i {
+            var sum = 0.0
+            if i == j {
+                for k in 0..<j {
+                    sum += L[j * n + k] * L[j * n + k]
+                }
+                let val = A[j * n + j] - sum
+                guard val > 1e-15 else { return nil }
+                L[j * n + j] = sqrt(val)
+            } else {
+                for k in 0..<j {
+                    sum += L[i * n + k] * L[j * n + k]
+                }
+                L[i * n + j] = (A[i * n + j] - sum) / L[j * n + j]
+            }
+        }
+    }
+
+    // Forward substitution: L * y = b
+    var y = [Double](repeating: 0, count: n)
+    for i in 0..<n {
+        var sum = b[i]
+        for j in 0..<i {
+            sum -= L[i * n + j] * y[j]
+        }
+        y[i] = sum / L[i * n + i]
+    }
+
+    // Backward substitution: L^T * x = y
+    var x = [Double](repeating: 0, count: n)
+    for i in stride(from: n - 1, through: 0, by: -1) {
+        var sum = y[i]
+        for j in (i + 1)..<n {
+            sum -= L[j * n + i] * x[j]
+        }
+        x[i] = sum / L[i * n + i]
+    }
+
+    return x
 }
