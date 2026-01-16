@@ -371,6 +371,100 @@ public func modInverse(_ a: Int, _ m: Int) -> Int? {
     return ((x % m) + m) % m
 }
 
+// MARK: - Combinatorics
+
+/// Factorial: n!
+///
+/// For n ≤ 20, computes exactly using multiplication.
+/// For n > 20, uses the gamma function approximation.
+///
+/// - Parameter n: Non-negative integer
+/// - Returns: n!, or NaN if n < 0
+public func factorial(_ n: Int) -> Double {
+    guard n >= 0 else { return .nan }
+
+    if n <= 1 { return 1.0 }
+
+    if n <= 20 {
+        var result: Double = 1.0
+        for i in 2...n {
+            result *= Double(i)
+        }
+        return result
+    } else {
+        return Darwin.exp(Darwin.lgamma(Double(n) + 1))
+    }
+}
+
+/// Permutations: P(n, k) = n! / (n-k)!
+///
+/// The number of ways to arrange k items from n distinct items.
+///
+/// - Parameters:
+///   - n: Total number of items
+///   - k: Number of items to arrange
+/// - Returns: P(n, k), or NaN if inputs are invalid
+public func perm(_ n: Int, _ k: Int) -> Double {
+    guard n >= 0 && k >= 0 else { return .nan }
+
+    if k > n { return 0 }
+    if k == 0 { return 1 }
+
+    if n <= 20 {
+        var result: Double = 1.0
+        for i in (n - k + 1)...n {
+            result *= Double(i)
+        }
+        return result
+    }
+
+    return Darwin.exp(Darwin.lgamma(Double(n) + 1) - Darwin.lgamma(Double(n - k) + 1))
+}
+
+/// Combinations: C(n, k) = n! / (k! * (n-k)!)
+///
+/// The number of ways to choose k items from n distinct items (order doesn't matter).
+/// Also known as the binomial coefficient "n choose k".
+///
+/// - Parameters:
+///   - n: Total number of items
+///   - k: Number of items to choose
+/// - Returns: C(n, k), or NaN if inputs are invalid
+public func comb(_ n: Int, _ k: Int) -> Double {
+    guard n >= 0 && k >= 0 else { return .nan }
+
+    if k > n { return 0 }
+    if k == 0 || k == n { return 1 }
+
+    // Use symmetry for efficiency
+    let kUse = min(k, n - k)
+
+    if n <= 20 {
+        var result: Double = 1.0
+        for i in 0..<kUse {
+            result = result * Double(n - i) / Double(i + 1)
+        }
+        return Darwin.round(result)
+    }
+
+    let result = Darwin.exp(
+        Darwin.lgamma(Double(n) + 1) -
+        Darwin.lgamma(Double(kUse) + 1) -
+        Darwin.lgamma(Double(n - kUse) + 1)
+    )
+    return Darwin.round(result)
+}
+
+/// Alias for comb (binomial coefficient).
+///
+/// - Parameters:
+///   - n: Total number of items
+///   - k: Number of items to choose
+/// - Returns: The binomial coefficient C(n, k)
+public func binomial(_ n: Int, _ k: Int) -> Double {
+    comb(n, k)
+}
+
 // MARK: - Digit Functions
 
 /// Sum of digits of n in given base.
