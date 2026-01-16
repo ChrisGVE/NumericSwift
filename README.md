@@ -2,9 +2,12 @@
 
 A comprehensive scientific computing library for Swift, inspired by SciPy.
 
-![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-orange.svg)
-![Platforms](https://img.shields.io/badge/Platforms-iOS%2015+%20|%20macOS%2012+-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+[![Swift 5.9+](https://img.shields.io/badge/Swift-5.9+-F05138.svg?style=flat&logo=swift&logoColor=white)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/Platforms-iOS%2015+%20|%20macOS%2012+-007AFF.svg?style=flat&logo=apple&logoColor=white)](https://developer.apple.com)
+[![SPM Compatible](https://img.shields.io/badge/SPM-Compatible-brightgreen.svg?style=flat&logo=swift&logoColor=white)](https://swift.org/package-manager/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](https://opensource.org/licenses/MIT)
+[![GitHub Release](https://img.shields.io/github/v/release/ChrisGVE/NumericSwift?style=flat&logo=github)](https://github.com/ChrisGVE/NumericSwift/releases)
+[![Documentation](https://img.shields.io/badge/Documentation-DocC-blue.svg?style=flat&logo=readthedocs&logoColor=white)](https://github.com/ChrisGVE/NumericSwift)
 
 ## Overview
 
