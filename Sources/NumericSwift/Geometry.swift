@@ -259,6 +259,81 @@ extension Mat4 {
     }
 }
 
+// MARK: - Coordinate Conversions
+
+/// Convert degrees to radians.
+///
+/// - Parameter degrees: Angle in degrees
+/// - Returns: Angle in radians
+public func deg2rad(_ degrees: Double) -> Double {
+    degrees * .pi / 180.0
+}
+
+/// Convert radians to degrees.
+///
+/// - Parameter radians: Angle in radians
+/// - Returns: Angle in degrees
+public func rad2deg(_ radians: Double) -> Double {
+    radians * 180.0 / .pi
+}
+
+/// Convert polar coordinates to Cartesian.
+///
+/// - Parameters:
+///   - r: Radius
+///   - theta: Angle in radians
+/// - Returns: Tuple (x, y)
+public func polarToCart(r: Double, theta: Double) -> (x: Double, y: Double) {
+    (r * cos(theta), r * sin(theta))
+}
+
+/// Convert Cartesian coordinates to polar.
+///
+/// - Parameters:
+///   - x: X coordinate
+///   - y: Y coordinate
+/// - Returns: Tuple (r, theta) where theta is in radians
+public func cartToPolar(x: Double, y: Double) -> (r: Double, theta: Double) {
+    (sqrt(x * x + y * y), atan2(y, x))
+}
+
+/// Convert spherical coordinates to Cartesian.
+///
+/// Uses physics convention:
+/// - theta: polar angle (from z-axis) in radians
+/// - phi: azimuthal angle (from x-axis in xy-plane) in radians
+///
+/// - Parameters:
+///   - r: Radius
+///   - theta: Polar angle (from z-axis) in radians
+///   - phi: Azimuthal angle (from x-axis in xy-plane) in radians
+/// - Returns: Tuple (x, y, z)
+public func sphericalToCart(r: Double, theta: Double, phi: Double) -> (x: Double, y: Double, z: Double) {
+    let sinTheta = sin(theta)
+    let x = r * sinTheta * cos(phi)
+    let y = r * sinTheta * sin(phi)
+    let z = r * cos(theta)
+    return (x, y, z)
+}
+
+/// Convert Cartesian coordinates to spherical.
+///
+/// Uses physics convention:
+/// - theta: polar angle (from z-axis) in radians
+/// - phi: azimuthal angle (from x-axis in xy-plane) in radians
+///
+/// - Parameters:
+///   - x: X coordinate
+///   - y: Y coordinate
+///   - z: Z coordinate
+/// - Returns: Tuple (r, theta, phi) where angles are in radians
+public func cartToSpherical(x: Double, y: Double, z: Double) -> (r: Double, theta: Double, phi: Double) {
+    let r = sqrt(x * x + y * y + z * z)
+    let theta = r > 0 ? acos(z / r) : 0
+    let phi = atan2(y, x)
+    return (r, theta, phi)
+}
+
 // MARK: - Geometric Calculations
 
 /// Compute distance between two 2D points.
