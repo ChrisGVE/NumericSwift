@@ -4,8 +4,9 @@
 import Foundation
 import PackageDescription
 
-// Check for optional ArraySwift dependency
+// Check for optional dependencies
 let includeArraySwift = ProcessInfo.processInfo.environment["NUMERICSWIFT_INCLUDE_ARRAYSWIFT"] == "1"
+let includePlotSwift = ProcessInfo.processInfo.environment["NUMERICSWIFT_INCLUDE_PLOTSWIFT"] == "1"
 
 let package = Package(
     name: "NumericSwift",
@@ -29,6 +30,9 @@ let package = Package(
         if includeArraySwift {
             deps.append(.package(path: "../ArraySwift"))
         }
+        if includePlotSwift {
+            deps.append(.package(path: "../PlotSwift"))
+        }
         return deps
     }(),
     targets: [
@@ -39,6 +43,9 @@ let package = Package(
                 if includeArraySwift {
                     deps.append(.product(name: "ArraySwift", package: "ArraySwift"))
                 }
+                if includePlotSwift {
+                    deps.append(.product(name: "PlotSwift", package: "PlotSwift"))
+                }
                 return deps
             }(),
             path: "Sources/NumericSwift",
@@ -46,6 +53,9 @@ let package = Package(
                 var settings: [SwiftSetting] = []
                 if includeArraySwift {
                     settings.append(.define("NUMERICSWIFT_ARRAYSWIFT"))
+                }
+                if includePlotSwift {
+                    settings.append(.define("NUMERICSWIFT_PLOTSWIFT"))
                 }
                 return settings
             }()
@@ -57,12 +67,18 @@ let package = Package(
                 if includeArraySwift {
                     deps.append(.product(name: "ArraySwift", package: "ArraySwift"))
                 }
+                if includePlotSwift {
+                    deps.append(.product(name: "PlotSwift", package: "PlotSwift"))
+                }
                 return deps
             }(),
             swiftSettings: {
                 var settings: [SwiftSetting] = []
                 if includeArraySwift {
                     settings.append(.define("NUMERICSWIFT_ARRAYSWIFT"))
+                }
+                if includePlotSwift {
+                    settings.append(.define("NUMERICSWIFT_PLOTSWIFT"))
                 }
                 return settings
             }()
