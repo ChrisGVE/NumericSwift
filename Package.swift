@@ -11,7 +11,10 @@ let package = Package(
     name: "NumericSwift",
     platforms: [
         .iOS(.v15),
-        .macOS(.v12)
+        .macOS(.v12),
+        .visionOS(.v1),
+        .watchOS(.v8),
+        .tvOS(.v15)
     ],
     products: [
         .library(
