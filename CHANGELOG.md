@@ -5,6 +5,19 @@ All notable changes to NumericSwift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-01-17
+
+### Fixed
+
+- Resolve DocC cycle warnings in LinAlg documentation
+  - Renamed LinAlg.md article to LinearAlgebra.md to avoid conflict with LinAlg type
+  - Fixed overloaded function disambiguations for `diag(_:)` and `mul(_:_:)`
+  - Corrected `solveTriangular` parameter documentation (trans instead of unitDiagonal)
+
+### Documentation
+
+- Documentation now builds with zero warnings for Swift Package Index compatibility
+
 ## [0.1.2] - 2026-01-17
 
 ### Added
