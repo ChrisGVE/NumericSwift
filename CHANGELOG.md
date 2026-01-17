@@ -5,6 +5,27 @@ All notable changes to NumericSwift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-01-17
+
+### Added
+
+- **ArraySwift Integration**: Comprehensive integration with ArraySwift library when compiled with `NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1`
+  - `LinAlg.Matrix` ↔ `NDArray` bidirectional conversion: `toNDArray()`, `Matrix(ndarray:)`
+  - Linear algebra methods on `NDArray`: `solve(_:)`, `inv()`, `det()`, `rank()`, `trace()`, `norm()`
+  - Matrix decompositions on `NDArray`: `lu()`, `qr()`, `svd()`, `eig()`, `cholesky()`
+  - Statistics functions for `NDArray`: `sum`, `mean`, `median`, `variance`, `stddev`, `percentile`, `amin`, `amax`, `ptp`
+  - Cumulative operations: `cumsum`, `cumprod`, `diff`
+  - Utility functions: `clip`, `roundArray`, `floorArray`, `ceilArray`, `absArray`, `sqrtArray`, `logArray`, `expArray`
+  - Trigonometric functions: `sinArray`, `cosArray`, `tanArray`
+
+### Changed
+
+- `Package.swift` test target now conditionally includes ArraySwift dependency and compile flag
+
+### Tests
+
+- Added 32 integration tests for ArraySwift functionality
+
 ## [0.1.1] - 2026-01-17
 
 ### Added

@@ -49,7 +49,20 @@ let package = Package(
         ),
         .testTarget(
             name: "NumericSwiftTests",
-            dependencies: ["NumericSwift"]
+            dependencies: {
+                var deps: [Target.Dependency] = ["NumericSwift"]
+                if includeArraySwift {
+                    deps.append(.product(name: "ArraySwift", package: "ArraySwift"))
+                }
+                return deps
+            }(),
+            swiftSettings: {
+                var settings: [SwiftSetting] = []
+                if includeArraySwift {
+                    settings.append(.define("NUMERICSWIFT_ARRAYSWIFT"))
+                }
+                return settings
+            }()
         ),
     ]
 )
