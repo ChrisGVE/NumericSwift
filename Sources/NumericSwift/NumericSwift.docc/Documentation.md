@@ -45,7 +45,7 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 
 ### Linear Algebra
 
-- <doc:LinAlg>
+- <doc:LinearAlgebra>
 
 ### Data Analysis
 
