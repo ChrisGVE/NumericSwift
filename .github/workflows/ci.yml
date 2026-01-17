@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  test-standalone:
+    name: Test Standalone
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Run Tests
+        run: swift test
+
+  test-with-arrayswift:
+    name: Test with ArraySwift
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
+
+      - name: Clone ArraySwift
+        uses: actions/checkout@v4
+        with:
+          repository: ChrisGVE/ArraySwift
+          path: ArraySwift
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Build with ArraySwift
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+        run: swift build
+
+      - name: Run Tests with ArraySwift
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+        run: swift test
+
+  test-with-plotswift:
+    name: Test with PlotSwift
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
+
+      - name: Clone PlotSwift
+        uses: actions/checkout@v4
+        with:
+          repository: ChrisGVE/PlotSwift
+          path: PlotSwift
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Build with PlotSwift
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift build
+
+      - name: Run Tests with PlotSwift
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift test
+
+  test-combined:
+    name: Test with ArraySwift + PlotSwift
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
+
+      - name: Clone ArraySwift
+        uses: actions/checkout@v4
+        with:
+          repository: ChrisGVE/ArraySwift
+          path: ArraySwift
+
+      - name: Clone PlotSwift
+        uses: actions/checkout@v4
+        with:
+          repository: ChrisGVE/PlotSwift
+          path: PlotSwift
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Build with ArraySwift + PlotSwift
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift build
+
+      - name: Run Tests with ArraySwift + PlotSwift
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift test
