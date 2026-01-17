@@ -722,7 +722,203 @@ public func newtonMulti(
 
 // MARK: - Least Squares
 
-/// Levenberg-Marquardt algorithm for nonlinear least squares.
+/// Levenberg-Marquardt algorithm for nonlinear least squares with optional bounds.
+///
+/// Minimizes sum(residuals(x)^2) using the Levenberg-Marquardt method.
+/// When bounds are provided, uses Projected Levenberg-Marquardt which
+/// projects parameters onto the feasible region after each step.
+///
+/// - Parameters:
+///   - residuals: Function returning residuals vector
+///   - x0: Initial guess
+///   - bounds: Optional tuple of (lower, upper) bounds arrays
+///   - ftol: Relative tolerance for cost function
+///   - xtol: Relative tolerance for parameters
+///   - maxiter: Maximum iterations
+/// - Returns: Least squares result
+public func leastSquares(
+    _ residuals: @escaping ([Double]) -> [Double],
+    x0: [Double],
+    bounds: (lower: [Double], upper: [Double])? = nil,
+    ftol: Double = 1e-8,
+    xtol: Double = 1e-8,
+    maxiter: Int = 100
+) -> LeastSquaresResult {
+    // If no bounds, use standard LM
+    guard let bounds = bounds else {
+        return leastSquaresUnbounded(residuals, x0: x0, ftol: ftol, xtol: xtol, maxiter: maxiter)
+    }
+
+    let lower = bounds.lower
+    let upper = bounds.upper
+    let n = x0.count
+
+    // Validate bounds
+    guard lower.count == n, upper.count == n else {
+        return LeastSquaresResult(
+            x: x0, cost: .infinity, fun: [], nfev: 0, njev: 0,
+            success: false, message: "Bounds arrays must have same length as x0"
+        )
+    }
+
+    // Project function: clamp x to [lower, upper]
+    func project(_ x: [Double]) -> [Double] {
+        return zip(zip(x, lower), upper).map { arg in
+            let ((xi, lo), hi) = arg
+            return min(max(xi, lo), hi)
+        }
+    }
+
+    // Start with projected x0
+    var x = project(x0)
+    var nfev = 0
+    var njev = 0
+
+    // Initial residual evaluation
+    var r = residuals(x); nfev += 1
+    let m = r.count
+
+    // Compute initial cost
+    var cost = 0.5 * r.reduce(0) { $0 + $1 * $1 }
+
+    // Levenberg-Marquardt parameters
+    var lambda = 0.001
+    let lambdaUp = 10.0
+    let lambdaDown = 0.1
+
+    for _ in 0..<maxiter {
+        // Compute Jacobian numerically (m x n matrix)
+        var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
+        let h = sqrt(Double.ulpOfOne) * max(1.0, x.map { abs($0) }.max() ?? 1.0)
+        for j in 0..<n {
+            var xp = x
+            xp[j] += h
+            xp = project(xp)  // Project perturbed point
+            let rp = residuals(xp); nfev += 1
+            let actualH = xp[j] - x[j]  // Actual step after projection
+            if abs(actualH) > 1e-14 {
+                for i in 0..<m {
+                    J[i][j] = (rp[i] - r[i]) / actualH
+                }
+            }
+        }
+        njev += 1
+
+        // Compute J^T * J (n x n)
+        var JTJ = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
+        for i in 0..<n {
+            for j in 0..<n {
+                var sum = 0.0
+                for k in 0..<m {
+                    sum += J[k][i] * J[k][j]
+                }
+                JTJ[i][j] = sum
+            }
+        }
+
+        // Compute J^T * r (n x 1)
+        var JTr = [Double](repeating: 0, count: n)
+        for i in 0..<n {
+            var sum = 0.0
+            for k in 0..<m {
+                sum += J[k][i] * r[k]
+            }
+            JTr[i] = sum
+        }
+
+        // Solve (J^T*J + lambda*diag(J^T*J)) * dx = -J^T*r
+        var A = JTJ
+        for i in 0..<n {
+            A[i][i] += lambda * max(JTJ[i][i], 1e-10)
+        }
+        var b = JTr.map { -$0 }
+
+        // Gaussian elimination with partial pivoting
+        for col in 0..<n {
+            var maxRow = col
+            for row in (col+1)..<n {
+                if abs(A[row][col]) > abs(A[maxRow][col]) {
+                    maxRow = row
+                }
+            }
+            A.swapAt(col, maxRow)
+            b.swapAt(col, maxRow)
+
+            guard abs(A[col][col]) > 1e-14 else {
+                return LeastSquaresResult(
+                    x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                    success: false, message: "Singular matrix in LM step."
+                )
+            }
+
+            for row in (col+1)..<n {
+                let factor = A[row][col] / A[col][col]
+                for k in col..<n {
+                    A[row][k] -= factor * A[col][k]
+                }
+                b[row] -= factor * b[col]
+            }
+        }
+
+        // Back substitution
+        var dx = [Double](repeating: 0, count: n)
+        for i in stride(from: n-1, through: 0, by: -1) {
+            var sum = b[i]
+            for j in (i+1)..<n {
+                sum -= A[i][j] * dx[j]
+            }
+            dx[i] = sum / A[i][i]
+        }
+
+        // Trial step with projection
+        var xNew = x
+        for i in 0..<n {
+            xNew[i] += dx[i]
+        }
+        xNew = project(xNew)  // Project onto bounds
+
+        let rNew = residuals(xNew); nfev += 1
+        let costNew = 0.5 * rNew.reduce(0) { $0 + $1 * $1 }
+
+        // Check if step is accepted
+        if costNew < cost {
+            // Accept step
+            let costRatio = abs(cost - costNew) / max(cost, 1e-14)
+            let actualDx = zip(xNew, x).map { $0 - $1 }
+            let xNorm = sqrt(actualDx.reduce(0) { $0 + $1 * $1 })
+            let paramNorm = sqrt(x.reduce(0) { $0 + $1 * $1 })
+
+            x = xNew
+            r = rNew
+            cost = costNew
+            lambda *= lambdaDown
+
+            // Check convergence
+            if costRatio < ftol {
+                return LeastSquaresResult(
+                    x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                    success: true, message: "Convergence: cost function tolerance satisfied."
+                )
+            }
+            if xNorm < xtol * (1 + paramNorm) {
+                return LeastSquaresResult(
+                    x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                    success: true, message: "Convergence: parameter tolerance satisfied."
+                )
+            }
+        } else {
+            // Reject step, increase damping
+            lambda *= lambdaUp
+        }
+    }
+
+    return LeastSquaresResult(
+        x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+        success: false, message: "Maximum iterations reached."
+    )
+}
+
+/// Unbounded Levenberg-Marquardt algorithm for nonlinear least squares.
 ///
 /// Minimizes sum(residuals(x)^2) using the Levenberg-Marquardt method.
 ///
@@ -733,7 +929,7 @@ public func newtonMulti(
 ///   - xtol: Relative tolerance for parameters
 ///   - maxiter: Maximum iterations
 /// - Returns: Least squares result
-public func leastSquares(
+private func leastSquaresUnbounded(
     _ residuals: @escaping ([Double]) -> [Double],
     x0: [Double],
     ftol: Double = 1e-8,
