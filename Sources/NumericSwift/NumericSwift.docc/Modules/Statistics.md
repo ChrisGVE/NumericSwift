@@ -79,6 +79,14 @@ let clipped = clip(15.0, min: 0, max: 10)  // 10.0
 let clippedArray = clip(values, min: 0, max: 1)
 ```
 
+## Aggregation
+
+```swift
+let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+
+let total = sum(data)  // 15.0
+```
+
 ## Topics
 
 ### Central Tendency
@@ -110,9 +118,14 @@ let clippedArray = clip(values, min: 0, max: 1)
 - ``cumprod(_:)``
 - ``diff(_:)``
 
+### Aggregation
+
+- ``sum(_:)``
+
 ### Rounding and Clipping
 
 - ``round(_:decimals:)``
 - ``trunc(_:)``
 - ``sign(_:)``
-- ``clip(_:min:max:)-7x9y2``
+- ``clip(_:min:max:)->Double``
+- ``clip(_:min:max:)->[Double]``

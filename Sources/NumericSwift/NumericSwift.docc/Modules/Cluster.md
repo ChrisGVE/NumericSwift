@@ -26,8 +26,8 @@ let result = kmeans(
     k: 3,
     maxIterations: 300,
     tolerance: 1e-4,
-    nInit: 10,           // Number of random initializations
-    seed: 42             // Random seed for reproducibility
+    nInit: 10,              // Number of random initializations
+    initMethod: "kmeans++"  // Initialization method
 )
 ```
 
@@ -49,13 +49,13 @@ print(result.coreIndices)   // Indices of core points
 ## Hierarchical Clustering
 
 ```swift
-// Compute linkage matrix
-let Z = hierarchicalCluster(data, method: .ward)
+// Compute linkage matrix and cut tree at specific number of clusters
+let result = hierarchicalClustering(data, linkage: .ward, nClusters: 3)
+print(result.linkageMatrix)  // Linkage matrix for dendrogram
+print(result.labels)         // Cluster labels
 
-// Cut tree at specific distance or number of clusters
-let labels = cutTree(Z, nClusters: 3)
-// or
-let labels = cutTree(Z, distance: 5.0)
+// Or cut at a specific distance threshold
+let result2 = hierarchicalClustering(data, linkage: .ward, distanceThreshold: 5.0)
 ```
 
 ### Linkage Methods
@@ -79,7 +79,7 @@ let dist = chebyshevDistance(point1, point2)
 
 ### K-means
 
-- ``kmeans(_:k:maxIterations:tolerance:nInit:seed:)``
+- ``kmeans(_:k:maxIterations:tolerance:nInit:initMethod:)``
 - ``KMeansResult``
 
 ### DBSCAN
@@ -89,13 +89,20 @@ let dist = chebyshevDistance(point1, point2)
 
 ### Hierarchical Clustering
 
-- ``hierarchicalCluster(_:method:)``
-- ``cutTree(_:nClusters:)``
-- ``cutTree(_:distance:)``
+- ``hierarchicalClustering(_:linkage:nClusters:distanceThreshold:)``
+- ``HierarchicalResult``
 - ``LinkageMethod``
+
+### Cluster Evaluation
+
+- ``silhouetteScore(_:labels:)``
+- ``elbowMethod(_:maxK:)``
+- ``ElbowResult``
 
 ### Distance Functions
 
 - ``euclideanDistance(_:_:)``
+- ``squaredEuclideanDistance(_:_:)``
 - ``manhattanDistance(_:_:)``
 - ``chebyshevDistance(_:_:)``
+- ``pairwiseDistances(_:)``

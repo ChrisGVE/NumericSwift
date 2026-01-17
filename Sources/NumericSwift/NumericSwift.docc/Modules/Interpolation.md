@@ -28,7 +28,7 @@ let integral = integrateCubicSpline(x: x, coeffs: coeffs, a: 0, b: 4)
 ### Boundary Conditions
 
 - `.natural` - Second derivative is zero at boundaries
-- `.clamped(d0, dn)` - Specify first derivative at boundaries
+- `.clamped` - Specify first derivative at boundaries
 - `.notAKnot` - Not-a-knot condition (default)
 
 ## PCHIP Interpolation
@@ -70,14 +70,26 @@ let yNew = interp1d(x: x, y: y, xNew: 2.5, kind: .cubic)
 let yNew = interp1d(x: x, y: y, xNew: 2.5, kind: .nearest)
 ```
 
+## Lagrange and Barycentric Interpolation
+
+```swift
+// Lagrange interpolation
+let yNew = evalLagrange(x: x, y: y, xNew: 2.5)
+
+// Barycentric interpolation (more stable)
+let weights = computeBarycentricWeights(x: x)
+let yNew = evalBarycentric(x: x, y: y, w: weights, xNew: 2.5)
+```
+
 ## Topics
 
 ### Cubic Spline
 
 - ``computeSplineCoeffs(x:y:bc:)``
-- ``evalCubicSpline(x:coeffs:xNew:)``
-- ``evalCubicSplineDerivative(x:coeffs:xNew:)``
+- ``evalCubicSpline(x:coeffs:xNew:extrapolate:)``
+- ``evalCubicSplineDerivative(x:coeffs:xNew:order:)``
 - ``integrateCubicSpline(x:coeffs:a:b:)``
+- ``CubicCoeffs``
 - ``SplineBoundaryCondition``
 
 ### PCHIP
@@ -92,5 +104,16 @@ let yNew = interp1d(x: x, y: y, xNew: 2.5, kind: .nearest)
 
 ### Generic
 
-- ``interp1d(x:y:xNew:kind:)``
+- ``interp1d(x:y:xNew:kind:fillValue:boundsError:coeffs:)``
 - ``InterpolationKind``
+
+### Lagrange and Barycentric
+
+- ``evalLagrange(x:y:xNew:)``
+- ``computeBarycentricWeights(x:)``
+- ``evalBarycentric(x:y:w:xNew:)``
+
+### Utilities
+
+- ``findInterval(_:_:)``
+- ``solveTridiagonal(diag:offDiag:rhs:)``

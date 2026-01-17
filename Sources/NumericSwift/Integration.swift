@@ -268,9 +268,14 @@ public func dblquad(
 ///
 /// - Parameters:
 ///   - f: Function f(z, y, x) to integrate
-///   - xa, xb: x limits
-///   - ya, yb: y limits (functions of x)
-///   - za, zb: z limits (functions of x, y)
+///   - xa: Lower x limit
+///   - xb: Upper x limit
+///   - ya: Lower y limit as function of x
+///   - yb: Upper y limit as function of x
+///   - za: Lower z limit as function of x, y
+///   - zb: Upper z limit as function of x, y
+///   - epsabs: Absolute error tolerance
+///   - epsrel: Relative error tolerance
 public func tplquad(
     _ f: @escaping (Double, Double, Double) -> Double,
     xa: Double,

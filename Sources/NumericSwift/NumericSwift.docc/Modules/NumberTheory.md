@@ -68,7 +68,7 @@ let mu = mobius(12)           // 0
 let lambda = liouville(12)    // 1
 
 // Carmichael function
-let carmichael = carmichael(12)  // 2
+let carm = carmichael(12)     // 2
 
 // von Mangoldt function
 let vonM = vonMangoldt(8)     // log(2)
@@ -151,6 +151,6 @@ let count = digitCount(n)    // 5
 
 ### Digit Functions
 
-- ``digitSum(_:)``
+- ``digitSum(_:base:)``
 - ``digitalRoot(_:)``
-- ``digitCount(_:)``
+- ``digitCount(_:base:)``

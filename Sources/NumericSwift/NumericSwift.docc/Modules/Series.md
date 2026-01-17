@@ -67,20 +67,37 @@ let y = taylorEval("sin", at: 0.1, terms: 10)  // sin(0.1)
 
 ```swift
 // Sum a series until convergence
-let (sum, converged, iterations) = seriesSum(
+let result = seriesSum(
     from: 1,
     tolerance: 1e-12
 ) { n in 1.0 / Double(n * n) }
-// sum ≈ pi^2/6 (Basel sum)
+
+print(result.sum)        // ≈ pi^2/6 (Basel sum)
+print(result.converged)  // true
+print(result.terms)      // Number of terms used
+
+// Product of series
+let productResult = seriesProduct(
+    from: 1,
+    tolerance: 1e-12
+) { n in 1.0 - 1.0 / Double(n * n) }
+
+// Partial sums for analysis
+let sums = partialSums(from: 1, count: 100) { n in 1.0 / Double(n) }
 ```
 
-## Mathematical Constants via Series
+## Chebyshev Points
 
 ```swift
-let baselSum = baselSum           // pi^2/6
-let gamma = eulerMascheroni       // Euler-Mascheroni constant
-let catalan = catalanConstant     // Catalan's constant
-let apery = aperyConstant         // zeta(3)
+// Generate Chebyshev points for stable polynomial interpolation
+let points = chebyshevPoints(center: 0, scale: 1, count: 10)
+```
+
+## Divided Differences
+
+```swift
+// Newton's divided differences for interpolation
+let diffs = dividedDifferences(xs: x, ys: y)
 ```
 
 ## Topics
@@ -107,11 +124,11 @@ let apery = aperyConstant         // zeta(3)
 
 ### Series Summation
 
-- ``seriesSum(from:tolerance:term:)``
+- ``seriesSum(from:to:tolerance:maxIterations:term:)``
+- ``seriesProduct(from:to:tolerance:maxIterations:term:)``
+- ``partialSums(from:count:term:)``
 
-### Constants
+### Interpolation Support
 
-- ``baselSum``
-- ``eulerMascheroni``
-- ``catalanConstant``
-- ``aperyConstant``
+- ``chebyshevPoints(center:scale:count:)``
+- ``dividedDifferences(xs:ys:)``

@@ -56,27 +56,40 @@ let sigma = norm.std            // 1
 
 ```swift
 // One-sample t-test
-let (statistic, pvalue) = ttest1Sample(data, popmean: 0)
+if let result = ttest1Sample(data, popmean: 0) {
+    print(result.statistic, result.pvalue)
+}
 
 // Two-sample t-test
-let (t, p) = ttestIndependent(group1, group2)
+if let result = ttestIndependent(group1, group2) {
+    print(result.statistic, result.pvalue)
+}
 
 // Correlation tests
-let (r, p) = pearsonr(x, y)     // Pearson correlation
-let (rho, p) = spearmanr(x, y)  // Spearman correlation
+if let result = pearsonr(x, y) {      // Pearson correlation
+    print(result.statistic, result.pvalue)
+}
+if let result = spearmanr(x, y) {     // Spearman correlation
+    print(result.statistic, result.pvalue)
+}
 ```
 
 ## Descriptive Statistics
 
 ```swift
-let stats = describe(data)
-print(stats.mean)
-print(stats.variance)
-print(stats.skewness)
-print(stats.kurtosis)
+if let stats = describe(data) {
+    print(stats.mean)
+    print(stats.variance)
+    print(stats.skewness)
+    print(stats.kurtosis)
+}
 
 // Z-scores
 let standardized = zscore(data)
+
+// Skewness and kurtosis
+let s = skew(data)
+let k = kurtosis(data)  // Fisher=true by default (excess kurtosis)
 ```
 
 ## Topics
@@ -98,10 +111,25 @@ let standardized = zscore(data)
 - ``ttestIndependent(_:_:equalVariance:)``
 - ``pearsonr(_:_:)``
 - ``spearmanr(_:_:)``
+- ``TestResult``
 
 ### Descriptive Functions
 
 - ``describe(_:)``
-- ``zscore(_:)``
+- ``DescribeResult``
+- ``zscore(_:ddof:)``
 - ``skew(_:)``
-- ``kurtosis(_:)``
+- ``kurtosis(_:fisher:)``
+
+### Random Number Generation
+
+- ``randomNormal()``
+- ``randomNormal(_:)``
+- ``randomGamma(_:)``
+- ``randomGamma(_:n:)``
+
+### Convenience Functions
+
+- ``normPdf(_:loc:scale:)``
+- ``normCdf(_:loc:scale:)``
+- ``normPpf(_:loc:scale:)``

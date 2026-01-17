@@ -53,29 +53,24 @@ z.pow(3)     // z^3
 z.sin
 z.cos
 z.tan
+
+// Hyperbolic functions
+z.sinh
+z.cosh
+z.tanh
+```
+
+## Complex Square Root of Negative Reals
+
+Use `csqrt` to get complex results from negative real numbers:
+
+```swift
+let result = csqrt(-4.0)  // Complex(re: 0, im: 2)
 ```
 
 ## Topics
 
-### Type
-
-- ``Complex``
-
-### Properties
-
-- ``Complex/re``
-- ``Complex/im``
-- ``Complex/abs``
-- ``Complex/arg``
-- ``Complex/conjugate``
-
-### Static Properties
-
-- ``Complex/i``
-- ``Complex/zero``
-- ``Complex/one``
-
-### Mathematical Functions
+### Free Functions
 
 - ``csqrt(_:)``
 - ``cgamma(_:)``

@@ -1,4 +1,4 @@
-# QuickStart
+# Quick Start
 
 Get started with NumericSwift's core features.
 
@@ -49,12 +49,12 @@ Integrate functions and solve differential equations:
 
 ```swift
 // Adaptive quadrature
-let (result, error) = quad({ x in sin(x) }, 0, .pi)
-print(result)  // 2.0
+let result = quad({ x in sin(x) }, 0, .pi)
+print(result.value)  // 2.0
 
 // Solve ODE: dy/dt = -y, y(0) = 1
 let solution = solveIVP(
-    f: { t, y in [-y[0]] },
+    { y, t in [-y[0]] },
     tSpan: (0, 5),
     y0: [1.0]
 )
@@ -65,16 +65,18 @@ let solution = solveIVP(
 Work with matrices and solve linear systems:
 
 ```swift
-let A = Matrix([[4, 3], [6, 3]])
-let b = Matrix([[1], [2]])
+let A = LinAlg.Matrix([[4, 3], [6, 3]])
+let b = LinAlg.Matrix([[1], [2]])
 
 // Solve Ax = b
-let x = solve(A, b)
+if let x = LinAlg.solve(A, b) {
+    print(x)
+}
 
 // Matrix decompositions
-let (L, U, P) = A.lu()
-let (Q, R) = A.qr()
-let eigenvalues = A.eigenvalues()
+let (L, U, P) = LinAlg.lu(A)
+let (Q, R) = LinAlg.qr(A)
+let (values, _, _) = LinAlg.eig(A)
 ```
 
 ## Optimization
@@ -84,11 +86,11 @@ Find roots and minimize functions:
 ```swift
 // Find root of x^2 - 2 = 0
 let root = bisect({ x in x*x - 2 }, a: 0, b: 2)
-print(root)  // 1.414... (sqrt(2))
+print(root.root)  // 1.414... (sqrt(2))
 
 // Minimize (x-2)^2
-let minimum = brent({ x in (x-2)*(x-2) }, a: 0, b: 4)
-print(minimum)  // 2.0
+let minimum = goldenSection({ x in (x-2)*(x-2) }, a: 0, b: 4)
+print(minimum.x)  // 2.0
 ```
 
 ## Special Functions
@@ -112,7 +114,7 @@ print(digamma(2.0))  // 0.4228...
 
 Explore the individual module documentation for detailed API references:
 
-- ``Complex`` for complex number operations
-- ``Matrix`` for linear algebra
+- <doc:Complex> for complex number operations
+- <doc:LinAlg> for linear algebra
 - <doc:Distributions> for probability distributions
 - <doc:SpecialFunctions> for mathematical special functions

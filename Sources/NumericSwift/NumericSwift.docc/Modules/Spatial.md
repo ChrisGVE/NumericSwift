@@ -16,9 +16,6 @@ let tree = KDTree(points)
 
 // Find k nearest neighbors
 let (distances, indices) = tree.query([0.5, 0.5], k: 2)
-
-// Find all points within radius
-let indices = tree.queryBallPoint([0.5, 0.5], r: 1.0)
 ```
 
 ## Distance Metrics
@@ -32,6 +29,8 @@ let euclidean = euclideanDistance(a, b)    // 5.0
 let manhattan = manhattanDistance(a, b)    // 7.0
 let chebyshev = chebyshevDistance(a, b)    // 4.0
 let minkowski = minkowskiDistance(a, b, p: 3)
+let cosine = cosineDistance(a, b)
+let correlation = correlationDistance(a, b)
 ```
 
 ### Distance Matrices
@@ -39,41 +38,50 @@ let minkowski = minkowskiDistance(a, b, p: 3)
 ```swift
 let points = [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
 
-// Pairwise distance matrix
-let D = pdist(points)  // Condensed form
-let squareD = squareform(D)  // Square matrix form
+// Pairwise distances between all points (condensed form)
+let condensed = pdist(points)
+
+// Convert to square matrix
+let square = squareformToMatrix(condensed)
+
+// Distance matrix between two sets of points
+let X = [[0.0, 0.0], [1.0, 1.0]]
+let Y = [[0.5, 0.5], [2.0, 2.0]]
+let dist = cdist(X, Y, metric: .euclidean)
 ```
 
 ## Voronoi Diagrams
 
 ```swift
 let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 1.0]]
-let voronoi = Voronoi(points)
+let result = voronoi(points)
 
-print(voronoi.vertices)    // Voronoi vertices
-print(voronoi.regions)     // Region indices for each point
-print(voronoi.ridgePoints) // Pairs of input points sharing a ridge
+print(result.vertices)      // Voronoi vertices
+print(result.regions)       // Region indices for each point
+print(result.ridgeVertices) // Vertices forming each ridge
+print(result.ridgePoints)   // Pairs of input points sharing a ridge
 ```
 
 ## Delaunay Triangulation
 
 ```swift
 let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 1.0], [0.5, 0.5]]
-let tri = Delaunay(points)
+let result = delaunay(points)
 
-print(tri.simplices)    // Triangle vertex indices
-print(tri.neighbors)    // Neighboring triangles
-print(tri.convexHull)   // Convex hull indices
+print(result.simplices)    // Triangle vertex indices
+print(result.neighbors)    // Neighboring triangles
+print(result.hullIndices)  // Convex hull indices
 ```
 
 ## Convex Hull
 
 ```swift
 let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 1.0], [0.5, 0.3]]
-let hull = ConvexHull(points)
+let result = convexHull(points)
 
-print(hull.vertices)  // Indices of hull vertices
-print(hull.area)      // Area of convex hull
+print(result.vertices)   // Hull vertex coordinates
+print(result.indices)    // Indices of hull vertices
+print(result.area)       // Area of convex hull
 ```
 
 ## Topics
@@ -81,26 +89,38 @@ print(hull.area)      // Area of convex hull
 ### KDTree
 
 - ``KDTree``
-- ``KDTree/query(_:k:)``
-- ``KDTree/queryBallPoint(_:r:)``
+- ``KDTreeNode``
 
 ### Distance Functions
 
 - ``euclideanDistance(_:_:)``
 - ``manhattanDistance(_:_:)``
+- ``cityblockDistance(_:_:)``
 - ``chebyshevDistance(_:_:)``
 - ``minkowskiDistance(_:_:p:)``
+- ``cosineDistance(_:_:)``
+- ``correlationDistance(_:_:)``
+- ``DistanceMetric``
+- ``distanceFunction(for:)``
+
+### Distance Matrices
+
+- ``cdist(_:_:metric:)``
 - ``pdist(_:metric:)``
 - ``squareform(_:)``
+- ``squareformToMatrix(_:)``
 
 ### Voronoi
 
-- ``Voronoi``
+- ``voronoi(_:)``
+- ``VoronoiResult``
 
 ### Delaunay
 
-- ``Delaunay``
+- ``delaunay(_:)``
+- ``DelaunayResult``
 
 ### Convex Hull
 
-- ``ConvexHull``
+- ``convexHull(_:)``
+- ``ConvexHullResult``
