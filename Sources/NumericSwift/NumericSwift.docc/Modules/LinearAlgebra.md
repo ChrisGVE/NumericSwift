@@ -110,7 +110,8 @@ if let sqrtA = LinAlg.sqrtm(A) {
 - ``LinAlg/zeros(_:_:)``
 - ``LinAlg/ones(_:_:)``
 - ``LinAlg/eye(_:)``
-- ``LinAlg/diag(_:)``
+- ``LinAlg/diag(_:)->LinAlg.Matrix``
+- ``LinAlg/diag(_:)->[Double]``
 - ``LinAlg/arange(_:_:_:)``
 - ``LinAlg/linspace(_:_:_:)``
 
@@ -118,7 +119,8 @@ if let sqrtA = LinAlg.sqrtm(A) {
 
 - ``LinAlg/add(_:_:)``
 - ``LinAlg/sub(_:_:)``
-- ``LinAlg/mul(_:_:)``
+- ``LinAlg/mul(_:_:)-(Double,_)``
+- ``LinAlg/mul(_:_:)-(_,Double)``
 - ``LinAlg/dot(_:_:)``
 - ``LinAlg/hadamard(_:_:)``
 - ``LinAlg/elementDiv(_:_:)``
@@ -146,7 +148,7 @@ if let sqrtA = LinAlg.sqrtm(A) {
 
 - ``LinAlg/solve(_:_:)``
 - ``LinAlg/lstsq(_:_:)``
-- ``LinAlg/solveTriangular(_:_:lower:unitDiagonal:)``
+- ``LinAlg/solveTriangular(_:_:lower:trans:)``
 - ``LinAlg/choSolve(_:_:)``
 - ``LinAlg/luSolve(_:_:_:_:)``
 
