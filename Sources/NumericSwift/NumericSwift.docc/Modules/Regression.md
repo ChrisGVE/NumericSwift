@@ -4,130 +4,157 @@ Linear and nonlinear regression, ARIMA time series.
 
 ## Overview
 
-The Regression module provides regression analysis tools including ordinary least squares, polynomial regression, and ARIMA time series modeling, inspired by statsmodels.
+The Regression module provides regression analysis tools including ordinary least squares, weighted least squares, generalized linear models, and ARIMA time series modeling, inspired by statsmodels.
 
 ## Linear Regression
 
 ### Ordinary Least Squares
 
 ```swift
-let x = [[1.0], [2.0], [3.0], [4.0], [5.0]]
+let X = [[1.0], [2.0], [3.0], [4.0], [5.0]]
 let y = [2.0, 4.0, 5.0, 4.0, 5.0]
 
-let result = ols(y: y, x: x)
+// Add constant column for intercept
+let XWithConst = addConstant(X)
 
-print(result.coefficients)  // [intercept, slope]
-print(result.rSquared)      // R-squared
-print(result.residuals)     // Residuals
-print(result.standardErrors) // Standard errors
-print(result.tValues)       // t-statistics
-print(result.pValues)       // p-values
+if let result = ols(y, XWithConst) {
+    print(result.params)        // Coefficients [intercept, slope]
+    print(result.rSquared)      // R-squared
+    print(result.residuals)     // Residuals
+    print(result.bse)           // Standard errors
+    print(result.tvalues)       // t-statistics
+    print(result.pvalues)       // p-values
+}
 ```
 
-### Multiple Regression
+### Weighted Least Squares
 
 ```swift
-let x = [
-    [1.0, 2.0],
-    [2.0, 3.0],
-    [3.0, 4.0],
-    [4.0, 5.0]
-]
-let y = [3.0, 5.0, 7.0, 9.0]
+let weights = [1.0, 2.0, 1.0, 2.0, 1.0]
 
-let result = ols(y: y, x: x, addConstant: true)
+if let result = wls(y, X, weights: weights) {
+    print(result.params)
+}
 ```
 
-## Polynomial Regression
+### OLS Diagnostics
 
 ```swift
-let x = [1.0, 2.0, 3.0, 4.0, 5.0]
-let y = [1.0, 4.0, 9.0, 16.0, 25.0]
+if let result = ols(y, X) {
+    // Confidence intervals
+    let ci = result.confInt(alpha: 0.05)
 
-// Fit polynomial of degree 2
-let coeffs = polyfit(x: x, y: y, degree: 2)
-// coeffs ≈ [0, 0, 1] for y = x^2
+    // Robust standard errors
+    let hc0 = result.hc0_se   // White's estimator
+    let hc3 = result.hc3_se   // HC3 (small sample bias corrected)
 
-// Evaluate fitted polynomial
-let yPred = polyval(coeffs, at: 3.0)  // 9.0
+    // Influence diagnostics
+    print(result.hatDiag)            // Leverage
+    print(result.studentizedResid)   // Studentized residuals
+    print(result.cooksDistance)      // Cook's distance
+    print(result.dffits)             // DFFITS
+
+    // Model fit
+    print(result.aic)                // Akaike Information Criterion
+    print(result.bic)                // Bayesian Information Criterion
+    print(result.fstat)              // F-statistic
+    print(result.fPvalue)            // F-statistic p-value
+    print(result.conditionNumber)    // Condition number
+}
 ```
 
-## Nonlinear Regression
+## Generalized Linear Models
 
 ```swift
-// Define model: y = a * exp(b * x)
-func model(_ x: Double, _ params: [Double]) -> Double {
-    return params[0] * exp(params[1] * x)
+// Logistic regression
+if let result = glm(y, X, family: .binomial, link: .logit) {
+    print(result.params)
+    print(result.deviance)
+    print(result.pearsonChi2)
 }
 
-let result = nonlinearFit(
-    model: model,
-    x: xData,
-    y: yData,
-    initialGuess: [1.0, 0.1]
-)
+// Poisson regression
+if let result = glm(y, X, family: .poisson, link: .log) {
+    print(result.params)
+}
 
-print(result.parameters)
-print(result.residuals)
-print(result.rSquared)
+// Gamma regression
+if let result = glm(y, X, family: .gamma, link: .inverse) {
+    print(result.params)
+}
 ```
+
+### GLM Families and Links
+
+Families: `.gaussian`, `.binomial`, `.poisson`, `.gamma`
+
+Links: `.identity`, `.logit`, `.log`, `.inverse`, `.probit`
 
 ## ARIMA Time Series
 
 ### Model Fitting
 
 ```swift
-let data = [112.0, 118.0, 132.0, 129.0, 121.0, ...]  // Time series
+let data = [112.0, 118.0, 132.0, 129.0, 121.0, ...]
 
 // Fit ARIMA(p, d, q) model
-let model = ARIMA(data, order: (1, 1, 1))
-let fitted = model.fit()
-
-print(fitted.arCoeffs)    // AR coefficients
-print(fitted.maCoeffs)    // MA coefficients
-print(fitted.aic)         // Akaike Information Criterion
-print(fitted.bic)         // Bayesian Information Criterion
+if let result = arima(data, p: 1, d: 1, q: 1) {
+    print(result.arCoeffs)    // AR coefficients
+    print(result.maCoeffs)    // MA coefficients
+    print(result.sigma2)      // Residual variance
+    print(result.aic)         // Akaike Information Criterion
+    print(result.bic)         // Bayesian Information Criterion
+    print(result.residuals)   // Model residuals
+}
 ```
 
 ### Forecasting
 
 ```swift
-// Generate forecasts
-let forecasts = fitted.forecast(steps: 12)
-
-print(forecasts.values)         // Point forecasts
-print(forecasts.confidenceInterval) // Confidence intervals
+if let result = arima(data, p: 1, d: 1, q: 1) {
+    // Generate forecasts
+    let forecasts = arimaForecast(result, steps: 12)
+    print(forecasts)
+}
 ```
 
-### Diagnostics
+## Utility Functions
 
 ```swift
-// Residual analysis
-let residuals = fitted.residuals
-let ljungBox = fitted.ljungBoxTest(lags: 10)
+// Add constant column (intercept) to design matrix
+let XWithConst = addConstant(X)
 
-print(ljungBox.statistic)
-print(ljungBox.pValue)
+// Or for a 1D array
+let XWithConst = addConstant(x)
 ```
 
 ## Topics
 
 ### Linear Regression
 
-- ``ols(y:x:addConstant:)``
+- ``ols(_:_:weights:)``
+- ``wls(_:_:weights:)``
 - ``OLSResult``
+- ``addConstant(_:)-([[Double]])``
+- ``addConstant(_:)-([Double])``
 
-### Polynomial Regression
+### Generalized Linear Models
 
-- ``polyfit(x:y:degree:)``
-
-### Nonlinear Regression
-
-- ``nonlinearFit(model:x:y:initialGuess:)``
-- ``NonlinearFitResult``
+- ``glm(_:_:family:link:maxiter:tol:)``
+- ``GLMResult``
+- ``GLMFamily``
+- ``GLMLink``
 
 ### ARIMA
 
-- ``ARIMA``
-- ``ARIMAFitted``
-- ``ARIMAForecast``
+- ``arima(_:p:d:q:maxiter:tol:)``
+- ``arimaForecast(_:steps:)``
+- ``ARIMAResult``
+
+### Statistical Functions
+
+- ``tCDF(_:_:)``
+- ``tPPF(_:_:)``
+- ``tPDF(_:_:)``
+- ``fCDF(_:_:_:)``
+- ``standardNormalCDF(_:)``

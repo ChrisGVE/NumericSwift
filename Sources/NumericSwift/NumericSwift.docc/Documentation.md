@@ -23,7 +23,7 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 ### Core Types
 
 - ``Complex``
-- ``Matrix``
+- ``LinAlg``
 
 ### Mathematical Functions
 
@@ -52,11 +52,11 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 - <doc:Cluster>
 - <doc:Spatial>
 
-### Geometry
+### 2D/3D Geometry
 
 - <doc:Geometry>
 
-### Utilities
+### Tools and Utilities
 
 - <doc:Constants>
 - <doc:Utilities>

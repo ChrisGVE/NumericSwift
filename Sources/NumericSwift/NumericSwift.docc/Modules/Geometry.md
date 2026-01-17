@@ -17,27 +17,18 @@ let v4 = Vec4(1, 2, 3, 4)
 // Vector operations
 let sum = v3 + Vec3(1, 1, 1)
 let scaled = v3 * 2.0
-let dot = v3.dot(Vec3(1, 0, 0))
-let cross = v3.cross(Vec3(0, 1, 0))
-let magnitude = v3.length
-let normalized = v3.normalized
+let magnitude = simd_length(v3)
+let normalized = simd_normalize(v3)
 ```
 
 ## Matrix Types
 
 ```swift
-// 3x3 and 4x4 matrices
-let m3 = Mat3.identity
-let m4 = Mat4.identity
+// 4x4 matrices for transformations
+let m4 = Mat4(diagonal: Vec4(1, 1, 1, 1))  // Identity
 
-// Transformation matrices
-let rotation = Mat4.rotation(angle: .pi/4, axis: Vec3(0, 1, 0))
-let translation = Mat4.translation(Vec3(1, 2, 3))
-let scale = Mat4.scale(Vec3(2, 2, 2))
-
-// Matrix operations
-let combined = translation * rotation * scale
-let transformed = combined * Vec4(1, 0, 0, 1)
+// Quaternions for rotations
+let q = Quat(angle: .pi/4, axis: Vec3(0, 1, 0))
 ```
 
 ## Coordinate Conversions
@@ -73,33 +64,77 @@ let degrees = rad2deg(.pi)  // 180
 
 ```swift
 // 2D distance
-let d2 = distance2D((0, 0), (3, 4))  // 5
+let d2 = distance2D(Vec2(0, 0), Vec2(3, 4))  // 5
 
 // 3D distance
-let d3 = distance3D((0, 0, 0), (1, 2, 2))  // 3
+let d3 = distance3D(Vec3(0, 0, 0), Vec3(1, 2, 2))  // 3
+
+// Angle between vectors
+let angle2d = angleBetween2D(Vec2(1, 0), Vec2(0, 1))  // pi/2
+let angle3d = angleBetween3D(Vec3(1, 0, 0), Vec3(0, 1, 0))  // pi/2
 ```
 
 ## Geometric Algorithms
 
-### Ellipse Fitting
+### Circle and Ellipse Fitting
 
 ```swift
-let points: [(Double, Double)] = [...]
-let result = ellipseFitDirect(points)
+// Fit circle through 3 points
+if let circle = circleFrom3Points(p1, p2, p3) {
+    print(circle.center, circle.radius)
+}
 
-print(result.center)      // (cx, cy)
-print(result.semiAxes)    // (a, b)
-print(result.angle)       // Rotation angle
+// Fit circle to point cloud (algebraic)
+if let fit = circleFitAlgebraic(points) {
+    print(fit.center, fit.radius, fit.rmse)
+}
+
+// Fit circle to point cloud (Taubin method - more robust)
+if let fit = circleFitTaubin(points) {
+    print(fit.center, fit.radius, fit.rmse)
+}
+
+// Fit ellipse using Fitzgibbon's direct method
+if let ellipse = ellipseFitDirect(points: points) {
+    print(ellipse.center, ellipse.semiAxes, ellipse.angle)
+}
 ```
 
-### Plane Fitting
+### Planes and Spheres
 
 ```swift
-let points: [(Double, Double, Double)] = [...]
-let plane = fitPlane(points)
+// Plane from 3 points
+if let plane = planeFrom3Points(p1, p2, p3) {
+    print(plane.normal, plane.d)
+}
 
-print(plane.normal)   // Normal vector
-print(plane.d)        // Distance from origin
+// Point-to-plane distance
+let dist = pointPlaneDistance(point, plane)
+
+// Sphere from 4 points
+if let sphere = sphereFrom4Points(p1, p2, p3, p4) {
+    print(sphere.center, sphere.radius)
+}
+
+// Fit sphere to point cloud
+if let fit = sphereFitAlgebraic(points) {
+    print(fit.center, fit.radius, fit.rmse)
+}
+```
+
+### B-Splines
+
+```swift
+// Evaluate B-spline curve
+let point = bsplineEvaluate(controlPoints: controlPts, degree: 3, t: 0.5)
+
+// B-spline derivative
+let tangent = bsplineDerivative(controlPoints: controlPts, degree: 3, t: 0.5)
+
+// Fit B-spline to data
+if let fit = bsplineFit(points: dataPoints, degree: 3, numControlPoints: 10) {
+    print(fit.controlPoints, fit.rmse)
+}
 ```
 
 ## Topics
@@ -109,10 +144,10 @@ print(plane.d)        // Distance from origin
 - ``Vec2``
 - ``Vec3``
 - ``Vec4``
+- ``Quat``
 
 ### Matrix Types
 
-- ``Mat3``
 - ``Mat4``
 
 ### Coordinate Conversions
@@ -124,14 +159,57 @@ print(plane.d)        // Distance from origin
 - ``deg2rad(_:)``
 - ``rad2deg(_:)``
 
-### Distance Functions
+### Distance and Angle Functions
 
 - ``distance2D(_:_:)``
 - ``distance3D(_:_:)``
+- ``angleBetween2D(_:_:)``
+- ``angleBetween3D(_:_:)``
 
-### Geometric Algorithms
+### Circle Fitting
 
-- ``ellipseFitDirect(_:)``
+- ``circleFrom3Points(_:_:_:)``
+- ``circleFitAlgebraic(_:)``
+- ``circleFitTaubin(_:)``
+- ``CircleResult``
+- ``CircleFitResult``
+
+### Ellipse Fitting
+
+- ``ellipseFitDirect(points:)``
 - ``EllipseFitResult``
-- ``fitPlane(_:)``
+
+### Plane Operations
+
+- ``planeFrom3Points(_:_:_:)``
+- ``pointPlaneDistance(_:_:)``
+- ``linePlaneIntersection(linePoint:lineDir:plane:)``
+- ``planePlaneIntersection(_:_:)``
 - ``PlaneResult``
+
+### Sphere Operations
+
+- ``sphereFrom4Points(_:_:_:_:)``
+- ``sphereFitAlgebraic(_:)``
+- ``SphereResult``
+- ``SphereFitResult``
+
+### B-Splines
+
+- ``bsplineEvaluate(controlPoints:degree:t:knots:)``
+- ``bsplineEvaluate3D(controlPoints:degree:t:knots:)``
+- ``bsplineDerivative(controlPoints:degree:t:knots:)``
+- ``bsplineFit(points:degree:numControlPoints:parameterization:)``
+- ``bsplineFit3D(points:degree:numControlPoints:parameterization:)``
+- ``BSplineFitResult``
+- ``BSplineFitResult3D``
+- ``BSplineParameterization``
+
+### Polygon Operations
+
+- ``convexHull2D(_:)``
+- ``pointInPolygon(_:_:)``
+- ``triangleArea2D(_:_:_:)``
+- ``triangleArea3D(_:_:_:)``
+- ``centroid2D(_:)``
+- ``centroid3D(_:)``
