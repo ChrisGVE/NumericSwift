@@ -129,13 +129,40 @@ let eigenvalues = A.eigenvalues()
 
 NumericSwift is part of a suite of Swift scientific computing libraries:
 
-- **ArraySwift** (optional) - Enhanced array operations with serialization support
+- **ArraySwift** (optional) - N-dimensional array support with NumPy-style API
 - **PlotSwift** (planned) - Data visualization and plotting
 
-To enable ArraySwift integration:
+### ArraySwift Integration
+
+When compiled with ArraySwift, NumericSwift provides seamless interoperability between `LinAlg.Matrix` and `NDArray`:
 
 ```bash
 NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1 swift build
+```
+
+This enables:
+
+- **Matrix ↔ NDArray conversion**: `matrix.toNDArray()`, `LinAlg.Matrix(ndarray: arr)`
+- **Linear algebra on NDArray**: `arr.solve(b)`, `arr.inv()`, `arr.det()`, `arr.lu()`, `arr.qr()`, `arr.svd()`, `arr.eig()`
+- **Statistics functions for NDArray**: `sum(arr)`, `mean(arr)`, `stddev(arr)`, `percentile(arr, p)`
+- **Math functions for NDArray**: `sinArray(arr)`, `expArray(arr)`, `sqrtArray(arr)`, etc.
+
+```swift
+import NumericSwift
+import ArraySwift
+
+// Convert between types
+let matrix = LinAlg.Matrix([[1.0, 2.0], [3.0, 4.0]])
+let arr = matrix.toNDArray()  // NDArray with shape [2, 2]
+
+// Linear algebra directly on NDArray
+let A = NDArray([[3.0, 1.0], [1.0, 2.0]])
+let b = NDArray([9.0, 8.0])
+let x = A.solve(b)  // Solve Ax = b
+
+// Decompositions
+let (Q, R) = A.qr()!
+let (U, s, Vt) = A.svd()!
 ```
 
 ## Documentation
