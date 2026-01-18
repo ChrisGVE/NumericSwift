@@ -734,6 +734,7 @@ public func newtonMulti(
 ///   - bounds: Optional tuple of (lower, upper) bounds arrays
 ///   - ftol: Relative tolerance for cost function
 ///   - xtol: Relative tolerance for parameters
+///   - gtol: Tolerance for projected gradient (for bounded problems)
 ///   - maxiter: Maximum iterations
 /// - Returns: Least squares result
 public func leastSquares(
@@ -742,6 +743,7 @@ public func leastSquares(
     bounds: (lower: [Double], upper: [Double])? = nil,
     ftol: Double = 1e-8,
     xtol: Double = 1e-8,
+    gtol: Double = 1e-8,
     maxiter: Int = 100
 ) -> LeastSquaresResult {
     // If no bounds, use standard LM
@@ -769,6 +771,35 @@ public func leastSquares(
         }
     }
 
+    // Compute projected gradient norm for KKT optimality check
+    // At a bound-constrained optimum:
+    // - If x_i is at lower bound: gradient should be >= 0 (can't go lower)
+    // - If x_i is at upper bound: gradient should be <= 0 (can't go higher)
+    // - If x_i is interior: gradient should be 0
+    func projectedGradientNorm(_ x: [Double], _ grad: [Double]) -> Double {
+        var normSq = 0.0
+        let eps = 1e-10
+        for i in 0..<n {
+            let g = grad[i]
+            let atLower = abs(x[i] - lower[i]) < eps
+            let atUpper = abs(x[i] - upper[i]) < eps
+
+            // Projected gradient component
+            let projG: Double
+            if atLower && g > 0 {
+                // At lower bound with positive gradient (pushing up) - optimal
+                projG = 0
+            } else if atUpper && g < 0 {
+                // At upper bound with negative gradient (pushing down) - optimal
+                projG = 0
+            } else {
+                projG = g
+            }
+            normSq += projG * projG
+        }
+        return sqrt(normSq)
+    }
+
     // Start with projected x0
     var x = project(x0)
     var nfev = 0
@@ -786,6 +817,9 @@ public func leastSquares(
     let lambdaUp = 10.0
     let lambdaDown = 0.1
 
+    var stagnantCount = 0
+    let maxStagnant = 10
+
     for _ in 0..<maxiter {
         // Compute Jacobian numerically (m x n matrix)
         var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
@@ -793,13 +827,10 @@ public func leastSquares(
         for j in 0..<n {
             var xp = x
             xp[j] += h
-            xp = project(xp)  // Project perturbed point
+            // Don't project when computing Jacobian - we need the true derivative
             let rp = residuals(xp); nfev += 1
-            let actualH = xp[j] - x[j]  // Actual step after projection
-            if abs(actualH) > 1e-14 {
-                for i in 0..<m {
-                    J[i][j] = (rp[i] - r[i]) / actualH
-                }
+            for i in 0..<m {
+                J[i][j] = (rp[i] - r[i]) / h
             }
         }
         njev += 1
@@ -816,14 +847,23 @@ public func leastSquares(
             }
         }
 
-        // Compute J^T * r (n x 1)
-        var JTr = [Double](repeating: 0, count: n)
+        // Compute gradient = J^T * r (n x 1)
+        var grad = [Double](repeating: 0, count: n)
         for i in 0..<n {
             var sum = 0.0
             for k in 0..<m {
                 sum += J[k][i] * r[k]
             }
-            JTr[i] = sum
+            grad[i] = sum
+        }
+
+        // Check KKT optimality condition using projected gradient
+        let projGradNorm = projectedGradientNorm(x, grad)
+        if projGradNorm < gtol {
+            return LeastSquaresResult(
+                x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                success: true, message: "Convergence: projected gradient tolerance satisfied."
+            )
         }
 
         // Solve (J^T*J + lambda*diag(J^T*J)) * dx = -J^T*r
@@ -831,9 +871,10 @@ public func leastSquares(
         for i in 0..<n {
             A[i][i] += lambda * max(JTJ[i][i], 1e-10)
         }
-        var b = JTr.map { -$0 }
+        var b = grad.map { -$0 }
 
         // Gaussian elimination with partial pivoting
+        var singular = false
         for col in 0..<n {
             var maxRow = col
             for row in (col+1)..<n {
@@ -844,11 +885,9 @@ public func leastSquares(
             A.swapAt(col, maxRow)
             b.swapAt(col, maxRow)
 
-            guard abs(A[col][col]) > 1e-14 else {
-                return LeastSquaresResult(
-                    x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
-                    success: false, message: "Singular matrix in LM step."
-                )
+            if abs(A[col][col]) <= 1e-14 {
+                singular = true
+                break
             }
 
             for row in (col+1)..<n {
@@ -858,6 +897,19 @@ public func leastSquares(
                 }
                 b[row] -= factor * b[col]
             }
+        }
+
+        if singular {
+            // Increase lambda and retry
+            lambda *= lambdaUp
+            stagnantCount += 1
+            if stagnantCount > maxStagnant {
+                return LeastSquaresResult(
+                    x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                    success: false, message: "Singular matrix in LM step."
+                )
+            }
+            continue
         }
 
         // Back substitution
@@ -880,14 +932,45 @@ public func leastSquares(
         let rNew = residuals(xNew); nfev += 1
         let costNew = 0.5 * rNew.reduce(0) { $0 + $1 * $1 }
 
+        // Compute actual step after projection
+        let actualDx = zip(xNew, x).map { $0 - $1 }
+        let xNorm = sqrt(actualDx.reduce(0) { $0 + $1 * $1 })
+
         // Check if step is accepted
-        if costNew < cost {
-            // Accept step
+        if costNew < cost || xNorm < 1e-14 {
             let costRatio = abs(cost - costNew) / max(cost, 1e-14)
-            let actualDx = zip(xNew, x).map { $0 - $1 }
-            let xNorm = sqrt(actualDx.reduce(0) { $0 + $1 * $1 })
             let paramNorm = sqrt(x.reduce(0) { $0 + $1 * $1 })
 
+            // If we're not making any progress (projected to same point)
+            if xNorm < 1e-14 {
+                // Check if we're at a constrained optimum
+                let projGradNormFinal = projectedGradientNorm(x, grad)
+                if projGradNormFinal < gtol * 100 {  // More relaxed for stagnant case
+                    return LeastSquaresResult(
+                        x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                        success: true, message: "Convergence: at boundary optimum."
+                    )
+                }
+                // Increase lambda to try a different direction
+                lambda *= lambdaUp
+                stagnantCount += 1
+                if stagnantCount > maxStagnant {
+                    // Still declare success if projected gradient is reasonably small
+                    if projGradNormFinal < gtol * 1000 {
+                        return LeastSquaresResult(
+                            x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                            success: true, message: "Convergence: boundary solution found."
+                        )
+                    }
+                    return LeastSquaresResult(
+                        x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                        success: false, message: "Stagnation at boundary."
+                    )
+                }
+                continue
+            }
+
+            stagnantCount = 0
             x = xNew
             r = rNew
             cost = costNew
@@ -909,6 +992,17 @@ public func leastSquares(
         } else {
             // Reject step, increase damping
             lambda *= lambdaUp
+            stagnantCount += 1
+            if stagnantCount > maxStagnant {
+                // Check if current point is actually optimal
+                let projGradNormFinal = projectedGradientNorm(x, grad)
+                if projGradNormFinal < gtol * 1000 {
+                    return LeastSquaresResult(
+                        x: x, cost: cost, fun: r, nfev: nfev, njev: njev,
+                        success: true, message: "Convergence: boundary solution found."
+                    )
+                }
+            }
         }
     }
 
