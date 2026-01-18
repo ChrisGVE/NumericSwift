@@ -890,9 +890,19 @@ private func solveLinearSystem4x4(_ A: [[Double]], _ b: [Double]) -> [Double]? {
 // MARK: - B-Spline
 
 /// Evaluate B-spline basis function.
+///
+/// Uses the Cox-de Boor recursion formula. Handles the right endpoint (t = last knot)
+/// correctly for clamped B-splines by including t in the last interval.
 public func bsplineBasis(i: Int, degree: Int, t: Double, knots: [Double]) -> Double {
     if degree == 0 {
-        return (knots[i] <= t && t < knots[i + 1]) ? 1.0 : 0.0
+        // Standard half-open interval check: [knots[i], knots[i+1])
+        // Exception: include right endpoint when t equals the last knot value
+        // This ensures partition of unity property holds at t=1 for clamped splines
+        let inInterval = knots[i] <= t && t < knots[i + 1]
+        let atRightEndpoint = i + 1 < knots.count &&
+                              abs(t - knots.last!) < 1e-10 &&
+                              t <= knots[i + 1]
+        return (inInterval || atRightEndpoint) ? 1.0 : 0.0
     }
 
     var result = 0.0
