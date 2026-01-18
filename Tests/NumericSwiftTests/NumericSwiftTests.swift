@@ -763,6 +763,39 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(result.x[1], 1, accuracy: 1e-6)  // Intercept
     }
 
+    func testLeastSquaresWithBounds() {
+        // Test 1: Single parameter constrained to lower bound
+        // Minimize (x + 5)^2, optimal x = -5, but bounded to [0, 10]
+        let residuals1: ([Double]) -> [Double] = { params in
+            return [params[0] + 5]
+        }
+        let result1 = leastSquares(residuals1, x0: [1.0], bounds: (lower: [0], upper: [10]))
+        XCTAssertTrue(result1.success, "Bounded optimization should succeed")
+        XCTAssertEqual(result1.x[0], 0, accuracy: 1e-4, "Should be at lower bound")
+
+        // Test 2: Multi-parameter, optimal is within bounds
+        // Minimize (x0 - 2)^2 + (x1 + 3)^2, optimal x = [2, -3]
+        // Bounds: 0 <= x0 <= 5, -5 <= x1 <= 0
+        let residuals2: ([Double]) -> [Double] = { params in
+            return [params[0] - 2, params[1] + 3]
+        }
+        let result2 = leastSquares(residuals2, x0: [1.0, -1.0], bounds: (lower: [0, -5], upper: [5, 0]))
+        XCTAssertTrue(result2.success, "Multi-param bounded optimization should succeed")
+        XCTAssertEqual(result2.x[0], 2, accuracy: 1e-4, "x0 should be 2 (within bounds)")
+        XCTAssertEqual(result2.x[1], -3, accuracy: 1e-4, "x1 should be -3 (within bounds)")
+
+        // Test 3: Both parameters forced to bounds
+        // Minimize (x0 + 10)^2 + (x1 - 10)^2, optimal x = [-10, 10]
+        // Bounds: 0 <= x0 <= 5, 0 <= x1 <= 5
+        let residuals3: ([Double]) -> [Double] = { params in
+            return [params[0] + 10, params[1] - 10]
+        }
+        let result3 = leastSquares(residuals3, x0: [2.5, 2.5], bounds: (lower: [0, 0], upper: [5, 5]))
+        XCTAssertTrue(result3.success, "Both-at-bounds optimization should succeed")
+        XCTAssertEqual(result3.x[0], 0, accuracy: 1e-4, "x0 should be at lower bound 0")
+        XCTAssertEqual(result3.x[1], 5, accuracy: 1e-4, "x1 should be at upper bound 5")
+    }
+
     func testCurveFit() {
         // Fit y = a*exp(-b*x) to data
         let xdata = [0.0, 1.0, 2.0, 3.0, 4.0]
