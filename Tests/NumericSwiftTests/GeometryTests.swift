@@ -413,17 +413,22 @@ final class GeometryTests: XCTestCase {
     func testBsplineBasis() {
         let knots = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
         let degree = 2
+        let n = 3  // number of control points
 
         // At t=0, first basis should be 1
         XCTAssertEqual(bsplineBasis(i: 0, degree: degree, t: 0, knots: knots), 1.0, accuracy: 1e-10)
 
-        // Sum of basis functions should be 1 for any t in [0, 1)
-        let t = 0.5
-        var sum = 0.0
-        for i in 0..<3 {
-            sum += bsplineBasis(i: i, degree: degree, t: t, knots: knots)
+        // Sum of basis functions should be 1 for any t in [0, 1] (including endpoints)
+        for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
+            var sum = 0.0
+            for i in 0..<n {
+                sum += bsplineBasis(i: i, degree: degree, t: t, knots: knots)
+            }
+            XCTAssertEqual(sum, 1.0, accuracy: 1e-10, "Sum of basis functions at t=\(t) should be 1")
         }
-        XCTAssertEqual(sum, 1.0, accuracy: 1e-10)
+
+        // At t=1, last basis should be 1
+        XCTAssertEqual(bsplineBasis(i: n - 1, degree: degree, t: 1.0, knots: knots), 1.0, accuracy: 1e-10)
     }
 
     func testBsplineUniformKnots() {
