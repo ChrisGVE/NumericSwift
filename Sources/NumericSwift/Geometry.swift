@@ -987,6 +987,105 @@ public func bsplineDerivative(controlPoints: [Vec2], degree: Int, t: Double, kno
     return bsplineEvaluate(controlPoints: derivCP, degree: degree - 1, t: t, knots: Array(actualKnots.dropFirst().dropLast()))
 }
 
+/// Evaluate B-spline derivative at parameter t (3D version).
+public func bsplineDerivative3D(controlPoints: [Vec3], degree: Int, t: Double, knots: [Double]? = nil) -> Vec3 {
+    let n = controlPoints.count
+    guard degree >= 1, n >= 2 else { return Vec3.zero }
+
+    let actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+
+    // Compute derivative control points
+    var derivCP = [Vec3]()
+    for i in 0..<(n - 1) {
+        let denom = actualKnots[i + degree + 1] - actualKnots[i + 1]
+        if abs(denom) > 1e-10 {
+            let dp = (controlPoints[i + 1] - controlPoints[i]) * (Double(degree) / denom)
+            derivCP.append(dp)
+        } else {
+            derivCP.append(Vec3.zero)
+        }
+    }
+
+    // Evaluate derivative B-spline
+    return bsplineEvaluate3D(controlPoints: derivCP, degree: degree - 1, t: t, knots: Array(actualKnots.dropFirst().dropLast()))
+}
+
+/// Evaluate higher-order B-spline derivative at parameter t.
+///
+/// - Parameters:
+///   - controlPoints: Array of 2D control points.
+///   - degree: Degree of the B-spline.
+///   - t: Parameter value (typically 0 to 1).
+///   - knots: Optional knot vector. If nil, uniform clamped knots are generated.
+///   - order: Order of derivative (1 = first derivative, 2 = second, etc.).
+/// - Returns: The derivative vector at t.
+public func bsplineDerivativeOrder(controlPoints: [Vec2], degree: Int, t: Double, knots: [Double]? = nil, order: Int = 1) -> Vec2 {
+    let n = controlPoints.count
+    guard degree >= order, n >= 2, order >= 1 else { return Vec2.zero }
+
+    var actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+    var Q = controlPoints
+    var p = degree
+
+    // Iteratively compute derivative control points
+    for _ in 0..<order {
+        guard p >= 1 else { break }
+
+        var newQ = [Vec2]()
+        for i in 0..<(Q.count - 1) {
+            let denom = actualKnots[i + p + 1] - actualKnots[i + 1]
+            if abs(denom) > 1e-10 {
+                let dp = (Q[i + 1] - Q[i]) * (Double(p) / denom)
+                newQ.append(dp)
+            } else {
+                newQ.append(Vec2.zero)
+            }
+        }
+        Q = newQ
+        actualKnots = Array(actualKnots.dropFirst().dropLast())
+        p -= 1
+    }
+
+    guard !Q.isEmpty else { return Vec2.zero }
+
+    // Evaluate the derivative B-spline
+    return bsplineEvaluate(controlPoints: Q, degree: p, t: t, knots: actualKnots)
+}
+
+/// Evaluate higher-order B-spline derivative at parameter t (3D version).
+public func bsplineDerivativeOrder3D(controlPoints: [Vec3], degree: Int, t: Double, knots: [Double]? = nil, order: Int = 1) -> Vec3 {
+    let n = controlPoints.count
+    guard degree >= order, n >= 2, order >= 1 else { return Vec3.zero }
+
+    var actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+    var Q = controlPoints
+    var p = degree
+
+    // Iteratively compute derivative control points
+    for _ in 0..<order {
+        guard p >= 1 else { break }
+
+        var newQ = [Vec3]()
+        for i in 0..<(Q.count - 1) {
+            let denom = actualKnots[i + p + 1] - actualKnots[i + 1]
+            if abs(denom) > 1e-10 {
+                let dp = (Q[i + 1] - Q[i]) * (Double(p) / denom)
+                newQ.append(dp)
+            } else {
+                newQ.append(Vec3.zero)
+            }
+        }
+        Q = newQ
+        actualKnots = Array(actualKnots.dropFirst().dropLast())
+        p -= 1
+    }
+
+    guard !Q.isEmpty else { return Vec3.zero }
+
+    // Evaluate the derivative B-spline
+    return bsplineEvaluate3D(controlPoints: Q, degree: p, t: t, knots: actualKnots)
+}
+
 // MARK: - Ellipse Fitting
 
 /// Result of ellipse fitting.
