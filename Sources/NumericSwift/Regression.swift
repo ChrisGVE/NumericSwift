@@ -26,7 +26,7 @@ public struct OLSResult {
   /// 95% confidence intervals.
   public let confInt: [[Double]]
 
-  // Robust standard errors (HC0-HC3)
+  // Robust standard errors (HC0-HC5)
   /// HC0 robust standard errors.
   public let bseHC0: [Double]
   /// HC1 robust standard errors.
@@ -35,6 +35,10 @@ public struct OLSResult {
   public let bseHC2: [Double]
   /// HC3 robust standard errors.
   public let bseHC3: [Double]
+  /// HC4 robust standard errors (long-tail leverage correction).
+  public let bseHC4: [Double]
+  /// HC5 robust standard errors (bounded leverage correction).
+  public let bseHC5: [Double]
 
   // Per-observation metrics
   /// Residuals.
@@ -361,11 +365,13 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
     }
   }
 
-  // Robust standard errors (HC0-HC3)
+  // Robust standard errors (HC0-HC5)
   var bseHC0 = [Double](repeating: 0.0, count: k)
   var bseHC1 = [Double](repeating: 0.0, count: k)
   var bseHC2 = [Double](repeating: 0.0, count: k)
   var bseHC3 = [Double](repeating: 0.0, count: k)
+  var bseHC4 = [Double](repeating: 0.0, count: k)
+  var bseHC5 = [Double](repeating: 0.0, count: k)
 
   if infoInv == 0 && n > k {
     func computeHCStdErrors(omega: [Double]) -> [Double] {
@@ -429,6 +435,26 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
       omegaHC3[i] = residuals[i] * residuals[i] / (denom * denom)
     }
     bseHC3 = computeHCStdErrors(omega: omegaHC3)
+
+    // HC4: delta_i = min(4, n*h_i/k)
+    var omegaHC4 = [Double](repeating: 0.0, count: n)
+    for i in 0..<n {
+      let delta = min(4.0, Double(n) * hatDiag[i] / Double(k))
+      let denom = max(1e-15, Darwin.pow(1.0 - hatDiag[i], delta))
+      omegaHC4[i] = residuals[i] * residuals[i] / denom
+    }
+    bseHC4 = computeHCStdErrors(omega: omegaHC4)
+
+    // HC5: delta_i = min(max(4, 0.7*n*h_max/k), n*h_i/k)
+    let hMax = hatDiag.max() ?? 0.0
+    var omegaHC5 = [Double](repeating: 0.0, count: n)
+    for i in 0..<n {
+      let lowerBound = max(4.0, 0.7 * Double(n) * hMax / Double(k))
+      let delta = min(lowerBound, Double(n) * hatDiag[i] / Double(k))
+      let denom = max(1e-15, Darwin.pow(1.0 - hatDiag[i], delta))
+      omegaHC5[i] = residuals[i] * residuals[i] / denom
+    }
+    bseHC5 = computeHCStdErrors(omega: omegaHC5)
   }
 
   return OLSResult(
@@ -441,6 +467,8 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
     bseHC1: bseHC1,
     bseHC2: bseHC2,
     bseHC3: bseHC3,
+    bseHC4: bseHC4,
+    bseHC5: bseHC5,
     residuals: residuals,
     fittedValues: fittedValues,
     hatDiag: hatDiag,
@@ -1277,6 +1305,62 @@ public func arimaForecast(_ result: ARIMAResult, steps: Int) -> [Double] {
   }
 
   return forecasts
+}
+
+/// Result of ARIMA forecasting with confidence intervals.
+public struct ARIMAForecastResult {
+  /// Point forecast values.
+  public let forecast: [Double]
+  /// Lower confidence interval bounds.
+  public let lower: [Double]
+  /// Upper confidence interval bounds.
+  public let upper: [Double]
+  /// Confidence level used (e.g., 0.95).
+  public let confidenceLevel: Double
+}
+
+/// Forecast future values from an ARIMA model with confidence intervals.
+///
+/// The intervals assume Gaussian errors with variance estimated from
+/// the model residuals. Interval width grows with forecast horizon.
+///
+/// - Parameters:
+///   - result: Fitted ARIMA result
+///   - steps: Number of steps ahead to forecast
+///   - confidenceLevel: Confidence level for intervals (default 0.95)
+/// - Returns: Forecast result with point estimates and intervals
+public func arimaForecastWithIntervals(
+  _ result: ARIMAResult,
+  steps: Int,
+  confidenceLevel: Double = 0.95
+) -> ARIMAForecastResult {
+  let forecasts = arimaForecast(result, steps: steps)
+
+  guard steps > 0 else {
+    return ARIMAForecastResult(
+      forecast: [], lower: [], upper: [], confidenceLevel: confidenceLevel)
+  }
+
+  let sigma = Darwin.sqrt(result.sigma2)
+  let clampedLevel = max(0.0, min(1.0 - 1e-15, confidenceLevel))
+  let z = erfinv(clampedLevel) * Darwin.sqrt(2.0)
+
+  var lower = [Double](repeating: 0.0, count: steps)
+  var upper = [Double](repeating: 0.0, count: steps)
+
+  for h in 0..<steps {
+    let se = sigma * Darwin.sqrt(Double(h + 1))
+    let half = z * se
+    lower[h] = forecasts[h] - half
+    upper[h] = forecasts[h] + half
+  }
+
+  return ARIMAForecastResult(
+    forecast: forecasts,
+    lower: lower,
+    upper: upper,
+    confidenceLevel: confidenceLevel
+  )
 }
 
 // MARK: - ARIMA Helper Functions
