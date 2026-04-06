@@ -104,6 +104,28 @@ public struct NormalDistribution {
     (0..<n).map { _ in rvs() }
   }
 
+  /// Log of the probability density function.
+  ///
+  /// Uses the numerically stable formula `-0.5*z^2 - log(scale) - 0.5*log(2π)`
+  /// to avoid the exp/log round-trip of `log(pdf(x))`.
+  public func logpdf(_ x: Double) -> Double {
+    let z = (x - loc) / scale
+    return -0.5 * z * z - Darwin.log(scale) - 0.5 * Darwin.log(2.0 * .pi)
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  ///
+  /// Uses `erfc` for better precision in the tails.
+  public func sf(_ x: Double) -> Double {
+    let z = (x - loc) / scale
+    return 0.5 * erfc(z / Darwin.sqrt(2.0))
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
+  }
+
   /// Distribution mean.
   public var mean: Double { loc }
 
@@ -174,6 +196,25 @@ public struct UniformDistribution {
     (0..<n).map { _ in rvs() }
   }
 
+  /// Log of the probability density function.
+  public func logpdf(_ x: Double) -> Double {
+    let z = (x - loc) / scale
+    if z >= 0 && z <= 1 {
+      return -Darwin.log(scale)
+    }
+    return -.infinity
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    1.0 - cdf(x)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
+  }
+
   /// Distribution mean.
   public var mean: Double { loc + scale / 2.0 }
 
@@ -226,6 +267,28 @@ public struct ExponentialDistribution {
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
     (0..<n).map { _ in rvs() }
+  }
+
+  /// Log of the probability density function.
+  ///
+  /// Uses the numerically stable formula `-z/scale - log(scale)` to avoid the
+  /// exp/log round-trip of `log(pdf(x))`.
+  public func logpdf(_ x: Double) -> Double {
+    let z = x - loc
+    if z < 0 { return -.infinity }
+    return -z / scale - Darwin.log(scale)
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    let z = x - loc
+    if z < 0 { return 1.0 }
+    return Darwin.exp(-z / scale)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
   }
 
   /// Distribution mean.
@@ -316,6 +379,21 @@ public struct TDistribution {
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
     (0..<n).map { _ in rvs() }
+  }
+
+  /// Log of the probability density function.
+  public func logpdf(_ x: Double) -> Double {
+    Darwin.log(pdf(x))
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    1.0 - cdf(x)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
   }
 
   /// Distribution mean (undefined for df <= 1).
@@ -423,6 +501,21 @@ public struct ChiSquaredDistribution {
     (0..<n).map { _ in rvs() }
   }
 
+  /// Log of the probability density function.
+  public func logpdf(_ x: Double) -> Double {
+    Darwin.log(pdf(x))
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    1.0 - cdf(x)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
+  }
+
   /// Distribution mean.
   public var mean: Double { loc + scale * df }
 
@@ -513,6 +606,21 @@ public struct FDistribution {
     (0..<n).map { _ in rvs() }
   }
 
+  /// Log of the probability density function.
+  public func logpdf(_ x: Double) -> Double {
+    Darwin.log(pdf(x))
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    1.0 - cdf(x)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
+  }
+
   /// Distribution mean (defined for dfd > 2).
   public var mean: Double {
     dfd > 2 ? loc + scale * dfd / (dfd - 2) : .nan
@@ -599,6 +707,21 @@ public struct GammaDistribution {
     (0..<n).map { _ in rvs() }
   }
 
+  /// Log of the probability density function.
+  public func logpdf(_ x: Double) -> Double {
+    Darwin.log(pdf(x))
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    1.0 - cdf(x)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
+  }
+
   /// Distribution mean.
   public var mean: Double { loc + scale * shape }
 
@@ -676,6 +799,21 @@ public struct BetaDistribution {
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
     (0..<n).map { _ in rvs() }
+  }
+
+  /// Log of the probability density function.
+  public func logpdf(_ x: Double) -> Double {
+    Darwin.log(pdf(x))
+  }
+
+  /// Survival function (complementary CDF): `1 - cdf(x)`.
+  public func sf(_ x: Double) -> Double {
+    1.0 - cdf(x)
+  }
+
+  /// Inverse survival function: `ppf(1 - p)`.
+  public func isf(_ p: Double) -> Double {
+    ppf(1.0 - p)
   }
 
   /// Distribution mean.
