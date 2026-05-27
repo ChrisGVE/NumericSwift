@@ -101,7 +101,9 @@ private func regularizedIncompleteBeta(a: Double, b: Double, x: Double) -> Doubl
     if x == 0 || x == 1 {
         bt = 0
     } else {
-        bt = Darwin.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Darwin.log(x) + b * Darwin.log(1 - x))
+        let logBeta: Double = lgamma(a + b) - lgamma(a) - lgamma(b)
+        let logTerm: Double = a * Darwin.log(x) + b * Darwin.log(1.0 - x)
+        bt = Darwin.exp(logBeta + logTerm)
     }
 
     // Continued fraction using Lentz's method
