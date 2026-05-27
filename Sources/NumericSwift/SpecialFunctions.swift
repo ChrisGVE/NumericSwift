@@ -521,8 +521,11 @@ public func zeta(_ s: Double) -> Double {
         if s.truncatingRemainder(dividingBy: 2) == 0 {
             return 0
         }
-        let t = 1.0 - s
-        return Darwin.pow(2, s) * Darwin.pow(.pi, s - 1) * Darwin.sin(.pi * s / 2) * tgamma(t) * zeta(t)
+        let t: Double = 1.0 - s
+        let pow2s: Double = Darwin.pow(2.0, s)
+        let powPi: Double = Darwin.pow(Double.pi, s - 1.0)
+        let sinTerm: Double = Darwin.sin(Double.pi * s / 2.0)
+        return pow2s * powPi * sinTerm * tgamma(t) * zeta(t)
     }
 
     if s < 1 {
@@ -683,15 +686,18 @@ public func cgamma(_ z: Complex) -> Complex {
 
     // Reflection formula for Re(z) < 0.5
     if z.re < 0.5 {
-        // sin(π·z)
-        let sinZ = (Complex.i * .pi * z).exp - (-Complex.i * .pi * z).exp
-        let sinPiZ = sinZ / (2 * Complex.i)
+        // sin(π·z) via Euler formula
+        let piZ: Complex = Double.pi * z
+        let posExp: Complex = (Complex.i * piZ).exp
+        let negExp: Complex = (-Complex.i * piZ).exp
+        let sinPiZ: Complex = (posExp - negExp) / (2.0 * Complex.i)
 
         // Γ(1-z)
-        let g1z = cgammaPositive(Complex.one - z)
+        let g1z: Complex = cgammaPositive(Complex.one - z)
 
         // π / (sin(πz) · Γ(1-z))
-        return .pi / (sinPiZ * g1z)
+        let denom: Complex = sinPiZ * g1z
+        return Double.pi / denom
     }
 
     return cgammaPositive(z)
@@ -705,31 +711,38 @@ private func cgammaPositive(_ z: Complex) -> Complex {
     var sum = Complex(lanczosCoeffs[0])
 
     for i in 1..<lanczosCoeffs.count {
-        sum = sum + lanczosCoeffs[i] / (zShifted + Double(i))
+        let denom: Complex = zShifted + Double(i)
+        let term: Complex = Complex(lanczosCoeffs[i]) / denom
+        sum = sum + term
     }
 
     // t = z + g + 0.5
-    let t = zShifted + g + 0.5
+    let t: Complex = zShifted + (g + 0.5)
 
     // sqrt(2π) · t^(z+0.5) · e^(-t) · sum
-    let sqrt2pi = Darwin.sqrt(2 * .pi)
+    let sqrt2pi: Double = Darwin.sqrt(2.0 * Double.pi)
 
-    let power = t.pow(zShifted + 0.5)
-    let expNegT = (-t).exp
+    let exponent: Complex = zShifted + 0.5
+    let power: Complex = t.pow(exponent)
+    let expNegT: Complex = (-t).exp
 
-    return sqrt2pi * power * expNegT * sum
+    let partial: Complex = power * expNegT
+    return Complex(sqrt2pi) * partial * sum
 }
 
 /// Complex log-gamma function ln(Γ(z))
 public func clgamma(_ z: Complex) -> Complex {
     if z.re < 0.5 {
         // log(Γ(z)) = log(π) - log(sin(πz)) - log(Γ(1-z))
-        let sinPiZ = (Complex.i * Double.pi * z).exp - (-Complex.i * Double.pi * z).exp
-        let sinZ = sinPiZ / (2.0 * Complex.i)
+        let piZ: Complex = Double.pi * z
+        let posExp: Complex = (Complex.i * piZ).exp
+        let negExp: Complex = (-Complex.i * piZ).exp
+        let sinPiZ: Complex = (posExp - negExp) / (2.0 * Complex.i)
 
-        let lgZ = clgammaPositive(Complex.one - z)
+        let lgZ: Complex = clgammaPositive(Complex.one - z)
 
-        return Complex(Darwin.log(Double.pi)) - sinZ.log - lgZ
+        let logPi: Complex = Complex(Darwin.log(Double.pi))
+        return logPi - sinPiZ.log - lgZ
     }
 
     return clgammaPositive(z)
@@ -742,17 +755,21 @@ private func clgammaPositive(_ z: Complex) -> Complex {
     var sum = Complex(lanczosCoeffs[0])
 
     for i in 1..<lanczosCoeffs.count {
-        sum = sum + lanczosCoeffs[i] / (zShifted + Double(i))
+        let denom: Complex = zShifted + Double(i)
+        let lterm: Complex = Complex(lanczosCoeffs[i]) / denom
+        sum = sum + lterm
     }
 
-    let t = zShifted + g + 0.5
+    let t: Complex = zShifted + (g + 0.5)
 
-    let halfLog2pi = 0.5 * Darwin.log(2 * .pi)
+    let halfLog2pi: Double = 0.5 * Darwin.log(2.0 * Double.pi)
 
     // (z + 0.5) · log(t) - t + log(sum)
-    let term = (zShifted + 0.5) * t.log
+    let exponent: Complex = zShifted + 0.5
+    let term: Complex = exponent * t.log
 
-    return halfLog2pi + term - t + sum.log
+    let result: Complex = Complex(halfLog2pi) + term - t + sum.log
+    return result
 }
 
 // MARK: - Complex Zeta Function
@@ -780,20 +797,23 @@ public func czeta(_ s: Complex) -> Complex {
 private func czetaReflection(_ s: Complex) -> Complex {
     // ζ(s) = 2^s · π^(s-1) · sin(πs/2) · Γ(1-s) · ζ(1-s)
 
-    let twoS = Complex(2).pow(s)
-    let piS1 = Complex(.pi).pow(s - 1)
+    let twoS: Complex = Complex(2.0).pow(s)
+    let piS1: Complex = Complex(Double.pi).pow(s - 1.0)
 
     // sin(πs/2)
-    let halfPiS = (Double.pi / 2.0) * s
-    let sinHalfPiS = halfPiS.sin
+    let halfPiS: Complex = (Double.pi / 2.0) * s
+    let sinHalfPiS: Complex = halfPiS.sin
 
     // Γ(1-s)
-    let gamma1s = cgamma(Complex.one - s)
+    let gamma1s: Complex = cgamma(Complex.one - s)
 
     // ζ(1-s)
-    let zeta1s = czetaDirichlet(Complex.one - s)
+    let zeta1s: Complex = czetaDirichlet(Complex.one - s)
 
-    return twoS * piS1 * sinHalfPiS * gamma1s * zeta1s
+    let partial1: Complex = twoS * piS1
+    let partial2: Complex = partial1 * sinHalfPiS
+    let partial3: Complex = partial2 * gamma1s
+    return partial3 * zeta1s
 }
 
 private func czetaDirichlet(_ s: Complex) -> Complex {
@@ -801,7 +821,7 @@ private func czetaDirichlet(_ s: Complex) -> Complex {
     let eta = czetaEta(s)
 
     // 2^(1-s)
-    let twoFactor = Complex(2).pow(Complex.one - s)
+    let twoFactor: Complex = Complex(2.0).pow(Complex.one - s)
 
     // 1 - 2^(1-s)
     let denom = Complex.one - twoFactor
@@ -820,10 +840,11 @@ private func czetaEta(_ s: Complex) -> Complex {
     let maxTerms = 500
 
     for n in 1...maxTerms {
-        let nDouble = Double(n)
+        let nDouble: Double = Double(n)
 
         // n^(-s)
-        let term = sign * Complex(nDouble).pow(-s)
+        let nComplex: Complex = Complex(nDouble).pow(-s)
+        let term: Complex = Complex(sign) * nComplex
 
         sum = sum + term
 
