@@ -364,19 +364,62 @@ final class MathExprTests: XCTestCase {
   }
 
   // MARK: - LaTeX Parsing Tests
+  // These tests require the MathLex backend (NUMERICSWIFT_INCLUDE_MATHLEX=1).
 
-  func testParseLatexFraction() throws {
-    let result = try MathExpr.evaluate(try MathExpr.parseLatex(#"\frac{1}{2}"#))
-    XCTAssertEqual(result, 0.5, accuracy: 1e-10)
+  #if NUMERICSWIFT_MATHLEX
+    func testParseLatexFraction() throws {
+      let result = try MathExpr.evaluate(try MathExpr.parseLatex(#"\frac{1}{2}"#))
+      XCTAssertEqual(result, 0.5, accuracy: 1e-10)
+    }
+
+    func testParseLatexSqrt() throws {
+      let result = try MathExpr.evaluate(try MathExpr.parseLatex(#"\sqrt{16}"#))
+      XCTAssertEqual(result, 4, accuracy: 1e-10)
+    }
+
+    func testParseLatexTrig() throws {
+      let result = try MathExpr.evaluate(try MathExpr.parseLatex(#"\sin(0)"#))
+      XCTAssertEqual(result, 0, accuracy: 1e-10)
+    }
+  #endif
+
+  // MARK: - Fallback-parser specific tests
+  // These verify parse→eval parity for representative expressions in the
+  // default (no-MathLex) build. They also pass in MathLex mode.
+
+  func testFallbackParseIntegerLiteral() throws {
+    let ast = try MathExpr.parse("7")
+    switch ast {
+    case .integer(let n):
+      XCTAssertEqual(n, 7)
+    case .float(let v):
+      XCTAssertEqual(v!, 7, accuracy: 1e-10)
+    default:
+      XCTFail("Expected integer or float(7), got \(ast)")
+    }
   }
 
-  func testParseLatexSqrt() throws {
-    let result = try MathExpr.evaluate(try MathExpr.parseLatex(#"\sqrt{16}"#))
-    XCTAssertEqual(result, 4, accuracy: 1e-10)
+  func testFallbackEvalCompoundExpr() throws {
+    // (3 + 4) * 2 - 1 = 13
+    let result = try MathExpr.eval("(3 + 4) * 2 - 1")
+    XCTAssertEqual(result, 13, accuracy: 1e-10)
   }
 
-  func testParseLatexTrig() throws {
-    let result = try MathExpr.evaluate(try MathExpr.parseLatex(#"\sin(0)"#))
-    XCTAssertEqual(result, 0, accuracy: 1e-10)
+  func testFallbackEvalNestedFunctions() throws {
+    // sqrt(pow(3, 2) + pow(4, 2)) = 5
+    let result = try MathExpr.eval("sqrt(pow(3, 2) + pow(4, 2))")
+    XCTAssertEqual(result, 5, accuracy: 1e-10)
+  }
+
+  func testFallbackParseLatexThrowsWithoutBackend() {
+    #if !NUMERICSWIFT_MATHLEX
+      XCTAssertThrowsError(try MathExpr.parseLatex(#"\frac{1}{2}"#)) { error in
+        guard let me = error as? MathExprError, case .parseError(let msg) = me else {
+          XCTFail("Expected MathExprError.parseError, got \(error)")
+          return
+        }
+        XCTAssertTrue(msg.contains("MathLex"), "Error should mention MathLex: \(msg)")
+      }
+    #endif
   }
 }
