@@ -8,6 +8,10 @@ import PackageDescription
 let includeArraySwift =
   ProcessInfo.processInfo.environment["NUMERICSWIFT_INCLUDE_ARRAYSWIFT"] == "1"
 let includePlotSwift = ProcessInfo.processInfo.environment["NUMERICSWIFT_INCLUDE_PLOTSWIFT"] == "1"
+// MathLex Rust crate is opt-in (default OFF) so the package resolves without a local
+// ../mathlex checkout and is consumable as a remote SPM dependency.
+// Set NUMERICSWIFT_INCLUDE_MATHLEX=1 to activate the Rust-backed parser.
+let includeMathLex = ProcessInfo.processInfo.environment["NUMERICSWIFT_INCLUDE_MATHLEX"] == "1"
 
 let package = Package(
   name: "NumericSwift",
@@ -26,9 +30,11 @@ let package = Package(
   ],
   dependencies: {
     var deps: [Package.Dependency] = [
-      .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
-      .package(path: "../mathlex"),
+      .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0")
     ]
+    if includeMathLex {
+      deps.append(.package(path: "../mathlex"))
+    }
     if includeArraySwift {
       deps.append(.package(path: "../ArraySwift"))
     }
@@ -41,9 +47,10 @@ let package = Package(
     .target(
       name: "NumericSwift",
       dependencies: {
-        var deps: [Target.Dependency] = [
-          .product(name: "MathLex", package: "mathlex")
-        ]
+        var deps: [Target.Dependency] = []
+        if includeMathLex {
+          deps.append(.product(name: "MathLex", package: "mathlex"))
+        }
         if includeArraySwift {
           deps.append(.product(name: "ArraySwift", package: "ArraySwift"))
         }
@@ -55,6 +62,9 @@ let package = Package(
       path: "Sources/NumericSwift",
       swiftSettings: {
         var settings: [SwiftSetting] = []
+        if includeMathLex {
+          settings.append(.define("NUMERICSWIFT_MATHLEX"))
+        }
         if includeArraySwift {
           settings.append(.define("NUMERICSWIFT_ARRAYSWIFT"))
         }
@@ -63,9 +73,13 @@ let package = Package(
         }
         return settings
       }(),
-      linkerSettings: [
-        .unsafeFlags(["-L../mathlex/target/release"])
-      ]
+      linkerSettings: {
+        var settings: [LinkerSetting] = []
+        if includeMathLex {
+          settings.append(.unsafeFlags(["-L../mathlex/target/release"]))
+        }
+        return settings
+      }()
     ),
     .testTarget(
       name: "NumericSwiftTests",
@@ -81,6 +95,9 @@ let package = Package(
       }(),
       swiftSettings: {
         var settings: [SwiftSetting] = []
+        if includeMathLex {
+          settings.append(.define("NUMERICSWIFT_MATHLEX"))
+        }
         if includeArraySwift {
           settings.append(.define("NUMERICSWIFT_ARRAYSWIFT"))
         }
