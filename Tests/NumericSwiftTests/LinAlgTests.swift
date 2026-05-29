@@ -559,4 +559,52 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(arr[0], [1, 2])
         XCTAssertEqual(arr[1], [3, 4])
     }
+
+    // MARK: - Matrix instance inverse / pinv
+
+    func testMatrixInstanceInverse() {
+        let a = LinAlg.Matrix([[1, 2], [3, 4]])
+        guard let aInv = a.inverse() else {
+            XCTFail("inverse() should return non-nil for non-singular matrix")
+            return
+        }
+        // A * A^(-1) should be identity
+        let product = a * aInv
+        XCTAssertEqual(product[0, 0], 1, accuracy: 1e-10)
+        XCTAssertEqual(product[0, 1], 0, accuracy: 1e-10)
+        XCTAssertEqual(product[1, 0], 0, accuracy: 1e-10)
+        XCTAssertEqual(product[1, 1], 1, accuracy: 1e-10)
+    }
+
+    func testMatrixInstanceInverseSingular() {
+        let singular = LinAlg.Matrix([[1, 2], [2, 4]])
+        XCTAssertNil(singular.inverse(), "inverse() should return nil for singular matrix")
+    }
+
+    func testMatrixInstanceInverseMatchesStaticInv() {
+        let a = LinAlg.Matrix([[2, 1], [5, 3]])
+        let instanceResult = a.inverse()
+        let staticResult = LinAlg.inv(a)
+        XCTAssertEqual(instanceResult, staticResult)
+    }
+
+    func testMatrixInstancePinvMatchesStaticPinv() {
+        // For an invertible matrix, pinv should match inv
+        let a = LinAlg.Matrix([[1, 2], [3, 4]])
+        let instancePinv = a.pinv()
+        let staticPinv = LinAlg.pinv(a)
+        for i in 0..<2 {
+            for j in 0..<2 {
+                XCTAssertEqual(instancePinv[i, j], staticPinv[i, j], accuracy: 1e-10)
+            }
+        }
+    }
+
+    func testMatrixInstancePinvNonSquare() {
+        // pinv of a tall matrix: (3x2) -> (2x3)
+        let a = LinAlg.Matrix([[1, 0], [0, 1], [0, 0]])
+        let p = a.pinv()
+        XCTAssertEqual(p.rows, 2)
+        XCTAssertEqual(p.cols, 3)
+    }
 }

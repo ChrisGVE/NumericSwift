@@ -165,6 +165,24 @@ public enum LinAlg {
             }
             return true
         }
+
+        /// Compute the matrix inverse.
+        ///
+        /// - Returns: The inverse matrix, or `nil` if the matrix is singular.
+        public func inverse() -> Matrix? {
+            return LinAlg.inv(self)
+        }
+
+        /// Compute the Moore-Penrose pseudoinverse.
+        ///
+        /// For non-square or rank-deficient matrices, returns the least-squares solution.
+        /// For invertible square matrices, equals `inverse()`.
+        ///
+        /// - Parameter rcond: Cutoff for small singular values (default: 1e-15).
+        /// - Returns: The pseudoinverse matrix.
+        public func pinv(rcond: Double = 1e-15) -> Matrix {
+            return LinAlg.pinv(self, rcond: rcond)
+        }
     }
 
     // MARK: - Complex Matrix Structure
