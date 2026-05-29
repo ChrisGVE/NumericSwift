@@ -5,6 +5,19 @@ All notable changes to NumericSwift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — intended 0.2.1
+
+### Added
+
+- `LinAlg.Matrix.inverse() -> Matrix?`: convenience instance method wrapping `LinAlg.inv(self)`
+- `LinAlg.Matrix.pinv(rcond:) -> Matrix`: convenience instance method wrapping `LinAlg.pinv(self, rcond:)`
+
+### Fixed
+
+- `SpecialFunctions`: decompose compound `Complex`/`Double` expressions in `zeta`, `cgamma`,
+  `cgammaPositive`, `clgamma`, `clgammaPositive`, `czeta`, and `czetaEta` into explicitly-typed
+  locals to eliminate Swift type-checker overload-resolution timeouts (no algorithmic change)
+
 ## [0.1.3] - 2026-01-17
 
 ### Fixed
