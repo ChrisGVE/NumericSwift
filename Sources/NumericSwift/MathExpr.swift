@@ -4,13 +4,22 @@
 //
 //  Mathematical expression parser and evaluator.
 //
-//  Parsing is delegated to the mathlex crate via its Swift FFI. This module
-//  provides the evaluation layer that walks the decoded AST and computes
-//  numeric results (Double or Complex).
+//  Two parse backends are supported:
+//    • MathLex (Rust crate, opt-in via NUMERICSWIFT_INCLUDE_MATHLEX=1):
+//        full grammar including LaTeX; compile flag NUMERICSWIFT_MATHLEX
+//    • Pure-Swift fallback (default): hand-rolled tokenizer + shunting-yard
+//        in MathExprFallbackParser.swift; covers standard arithmetic/function
+//        grammar. LaTeX is NOT available in the fallback mode.
+//
+//  The evaluation layer (evaluate, evaluateComplex, etc.) is shared and
+//  independent of the parse backend.
 //
 
 import Foundation
-import MathLex
+
+#if NUMERICSWIFT_MATHLEX
+  import MathLex
+#endif
 
 // MARK: - Errors
 
@@ -56,33 +65,39 @@ public struct MathExpr {
 
   /// Parse a plain-text mathematical expression into an AST.
   ///
-  /// Uses the mathlex parser via JSON serialization to produce a decoded
-  /// `MathLexExpression` tree.
+  /// When compiled with `NUMERICSWIFT_INCLUDE_MATHLEX=1`, delegates to the
+  /// mathlex Rust crate for full grammar support. Otherwise uses the built-in
+  /// pure-Swift shunting-yard parser (standard arithmetic grammar, no LaTeX).
   ///
   /// - Parameter expression: The expression string to parse
   /// - Returns: The decoded AST
   /// - Throws: `MathExprError.parseError` if the input is invalid
   public static func parse(_ expression: String) throws -> MathLexExpression {
-    let mlExpr: MathExpression
-    do {
-      mlExpr = try MathExpression.parse(expression)
-    } catch {
-      throw MathExprError.parseError(error.localizedDescription)
-    }
-    let json: String
-    do {
-      json = try mlExpr.toJSON()
-    } catch {
-      throw MathExprError.parseError("JSON serialization failed: \(error.localizedDescription)")
-    }
-    guard let data = json.data(using: .utf8) else {
-      throw MathExprError.parseError("JSON encoding failed")
-    }
-    do {
-      return try JSONDecoder().decode(MathLexExpression.self, from: data)
-    } catch {
-      throw MathExprError.parseError("AST decode failed: \(error.localizedDescription)")
-    }
+    #if NUMERICSWIFT_MATHLEX
+      let mlExpr: MathExpression
+      do {
+        mlExpr = try MathExpression.parse(expression)
+      } catch {
+        throw MathExprError.parseError(error.localizedDescription)
+      }
+      let json: String
+      do {
+        json = try mlExpr.toJSON()
+      } catch {
+        throw MathExprError.parseError(
+          "JSON serialization failed: \(error.localizedDescription)")
+      }
+      guard let data = json.data(using: .utf8) else {
+        throw MathExprError.parseError("JSON encoding failed")
+      }
+      do {
+        return try JSONDecoder().decode(MathLexExpression.self, from: data)
+      } catch {
+        throw MathExprError.parseError("AST decode failed: \(error.localizedDescription)")
+      }
+    #else
+      return try MathExprFallbackParser.parseExpression(expression)
+    #endif
   }
 
   /// Parse a LaTeX mathematical expression into an AST.
@@ -90,27 +105,37 @@ public struct MathExpr {
   /// - Parameter latex: The LaTeX expression string to parse
   /// - Returns: The decoded AST
   /// - Throws: `MathExprError.parseError` if the input is invalid
+  /// - Note: LaTeX parsing requires the MathLex backend
+  ///   (`NUMERICSWIFT_INCLUDE_MATHLEX=1`). Without it this method always
+  ///   throws `.parseError("LaTeX parsing requires the MathLex backend")`.
   public static func parseLatex(_ latex: String) throws -> MathLexExpression {
-    let mlExpr: MathExpression
-    do {
-      mlExpr = try MathExpression.parseLatex(latex)
-    } catch {
-      throw MathExprError.parseError(error.localizedDescription)
-    }
-    let json: String
-    do {
-      json = try mlExpr.toJSON()
-    } catch {
-      throw MathExprError.parseError("JSON serialization failed: \(error.localizedDescription)")
-    }
-    guard let data = json.data(using: .utf8) else {
-      throw MathExprError.parseError("JSON encoding failed")
-    }
-    do {
-      return try JSONDecoder().decode(MathLexExpression.self, from: data)
-    } catch {
-      throw MathExprError.parseError("AST decode failed: \(error.localizedDescription)")
-    }
+    #if NUMERICSWIFT_MATHLEX
+      let mlExpr: MathExpression
+      do {
+        mlExpr = try MathExpression.parseLatex(latex)
+      } catch {
+        throw MathExprError.parseError(error.localizedDescription)
+      }
+      let json: String
+      do {
+        json = try mlExpr.toJSON()
+      } catch {
+        throw MathExprError.parseError(
+          "JSON serialization failed: \(error.localizedDescription)")
+      }
+      guard let data = json.data(using: .utf8) else {
+        throw MathExprError.parseError("JSON encoding failed")
+      }
+      do {
+        return try JSONDecoder().decode(MathLexExpression.self, from: data)
+      } catch {
+        throw MathExprError.parseError("AST decode failed: \(error.localizedDescription)")
+      }
+    #else
+      _ = latex
+      throw MathExprError.parseError(
+        "LaTeX parsing requires the MathLex backend (NUMERICSWIFT_INCLUDE_MATHLEX=1)")
+    #endif
   }
 
   // MARK: - Real Evaluation
@@ -415,19 +440,21 @@ public struct MathExpr {
 
   /// Find all variable names in a parsed expression string.
   ///
-  /// Delegates directly to mathlex's `variables` property.
-  ///
   /// - Parameter expression: The expression string to analyze
   /// - Returns: Set of variable names
   /// - Throws: `MathExprError.parseError` if parsing fails
   public static func findVariables(in expression: String) throws -> Set<String> {
-    let mlExpr: MathExpression
-    do {
-      mlExpr = try MathExpression.parse(expression)
-    } catch {
-      throw MathExprError.parseError(error.localizedDescription)
-    }
-    return mlExpr.variables
+    #if NUMERICSWIFT_MATHLEX
+      let mlExpr: MathExpression
+      do {
+        mlExpr = try MathExpression.parse(expression)
+      } catch {
+        throw MathExprError.parseError(error.localizedDescription)
+      }
+      return mlExpr.variables
+    #else
+      return try MathExprFallbackParser.findVariables(in: expression)
+    #endif
   }
 
   /// Find all variable names in an AST by walking the tree.
@@ -462,20 +489,90 @@ public struct MathExpr {
     }
   }
 
-  /// Convert an expression string to its plain-text representation via mathlex.
+  /// Convert an expression string to its normalized plain-text representation.
   ///
   /// - Parameter expression: The expression string
   /// - Returns: Normalized plain-text representation
   /// - Throws: `MathExprError.parseError` if parsing fails
   public static func toString(_ expression: String) throws -> String {
-    let mlExpr: MathExpression
-    do {
-      mlExpr = try MathExpression.parse(expression)
-    } catch {
-      throw MathExprError.parseError(error.localizedDescription)
-    }
-    return mlExpr.description
+    #if NUMERICSWIFT_MATHLEX
+      let mlExpr: MathExpression
+      do {
+        mlExpr = try MathExpression.parse(expression)
+      } catch {
+        throw MathExprError.parseError(error.localizedDescription)
+      }
+      return mlExpr.description
+    #else
+      // Round-trip via AST: parse then reconstruct a string from the AST.
+      let ast = try MathExprFallbackParser.parseExpression(expression)
+      return astToString(ast)
+    #endif
   }
+
+  // MARK: - AST → String (fallback mode only)
+
+  #if !NUMERICSWIFT_MATHLEX
+    /// Reconstruct a plain-text expression string from a MathLexExpression AST.
+    ///
+    /// Covers the arithmetic/function/variable/constant subset produced by the
+    /// fallback parser. Complex nodes and calculus nodes are represented as
+    /// `<NodeType>` placeholders.
+    static func astToString(_ expr: MathLexExpression) -> String {
+      switch expr {
+      case .integer(let n):
+        return String(n)
+      case .float(let v):
+        guard let v else { return "nan" }
+        if v.isNaN { return "nan" }
+        if v.isInfinite { return v > 0 ? "inf" : "-inf" }
+        if v == Foundation.floor(v) && !v.isInfinite { return String(Int64(v)) }
+        return String(v)
+      case .variable(let name):
+        return name
+      case .constant(let c):
+        switch c {
+        case .pi: return "pi"
+        case .e: return "e"
+        case .i: return "i"
+        case .j: return "j"
+        case .k: return "k"
+        case .infinity: return "inf"
+        case .negInfinity: return "-inf"
+        case .nan: return "nan"
+        }
+      case .binary(let op, let left, let right):
+        let opStr: String
+        switch op {
+        case .add: opStr = "+"
+        case .sub: opStr = "-"
+        case .mul: opStr = "*"
+        case .div: opStr = "/"
+        case .pow: opStr = "^"
+        case .mod: opStr = "%"
+        case .plusMinus: opStr = "±"
+        case .minusPlus: opStr = "∓"
+        }
+        return "(\(astToString(left)) \(opStr) \(astToString(right)))"
+      case .unary(let op, let operand):
+        switch op {
+        case .neg: return "-\(astToString(operand))"
+        case .pos: return astToString(operand)
+        case .factorial: return "\(astToString(operand))!"
+        case .transpose: return "\(astToString(operand))ᵀ"
+        }
+      case .function(let name, let args):
+        let argList = args.map { astToString($0) }.joined(separator: ", ")
+        return "\(name)(\(argList))"
+      case .rational(let num, let den):
+        return "(\(astToString(num)) / \(astToString(den)))"
+      case .complex(let re, let im):
+        return "(\(astToString(re)) + \(astToString(im))*i)"
+      default:
+        return "<\(nodeLabel(expr))>"
+      }
+    }
+  #endif
 
   /// Substitute variables in an AST with replacement expressions.
   ///
