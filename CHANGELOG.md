@@ -11,12 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `LinAlg.Matrix.inverse() -> Matrix?`: convenience instance method wrapping `LinAlg.inv(self)`
 - `LinAlg.Matrix.pinv(rcond:) -> Matrix`: convenience instance method wrapping `LinAlg.pinv(self, rcond:)`
+- Pure-Swift fallback expression parser (`MathExprFallbackParser`): hand-rolled tokenizer and
+  shunting-yard parser that produces the same `MathLexExpression` AST. Active by default. Covers
+  the full arithmetic/function/variable grammar exercised by `MathExprTests`. No external
+  dependencies required.
+
+### Changed
+
+- MathLex Rust crate is now **opt-in** (default OFF). Set `NUMERICSWIFT_INCLUDE_MATHLEX=1` to
+  activate the Rust-backed parser with full LaTeX support. Without it the package resolves and
+  builds as a standalone remote SPM dependency with no unsafe linker flags.
+- `MathExpr.parseLatex(_:)` requires the MathLex backend; without it the method throws
+  `MathExprError.parseError("LaTeX parsing requires the MathLex backend ...")`.
 
 ### Fixed
 
 - `SpecialFunctions`: decompose compound `Complex`/`Double` expressions in `zeta`, `cgamma`,
   `cgammaPositive`, `clgamma`, `clgammaPositive`, `czeta`, and `czetaEta` into explicitly-typed
   locals to eliminate Swift type-checker overload-resolution timeouts (no algorithmic change)
+- `Package.swift`: remove unconditional `../mathlex` path dependency and `.unsafeFlags` linker
+  setting that blocked remote SPM consumption since 0.2.0
 
 ## [0.1.3] - 2026-01-17
 
