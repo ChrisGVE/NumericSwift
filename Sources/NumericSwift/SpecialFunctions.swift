@@ -200,11 +200,18 @@ public func besseli(_ n: Int, _ x: Double) -> Double {
 
   let absX = abs(x)
 
+  let result: Double
   if absX <= 20.0 + Double(absN) {
-    return besseliSeries(absN, absX)
+    result = besseliSeries(absN, absX)
   } else {
-    return besseliAsymptotic(absN, absX)
+    result = besseliAsymptotic(absN, absX)
   }
+
+  // Iₙ is even in x for even n and odd in x for odd n: Iₙ(−x) = (−1)ⁿ Iₙ(x).
+  if x < 0 && absN % 2 != 0 {
+    return -result
+  }
+  return result
 }
 
 private func besseliSeries(_ n: Int, _ x: Double) -> Double {
@@ -213,7 +220,9 @@ private func besseliSeries(_ n: Int, _ x: Double) -> Double {
   let eps = 1.0e-15
   let maxIterations = 200
 
-  var term = Darwin.pow(halfX, Double(n)) / tgamma(Double(n) + 1.0)
+  // Initial term Γ(n+1) in log-space: pow(halfX, n)/tgamma(n+1) overflows to 0/Inf
+  // for n ≥ 171. exp(n·ln(halfX) − lgamma(n+1)) stays finite (halfX > 0 here).
+  var term = Foundation.exp(Double(n) * Foundation.log(halfX) - lgamma(Double(n) + 1.0))
   var sum = term
 
   for k in 1...maxIterations {
@@ -524,10 +533,17 @@ public func zeta(_ s: Double) -> Double {
       return 0
     }
     let t: Double = 1.0 - s
-    let pow2s: Double = Darwin.pow(2.0, s)
-    let powPi: Double = Darwin.pow(Double.pi, s - 1.0)
     let sinTerm: Double = Darwin.sin(Double.pi * s / 2.0)
-    return pow2s * powPi * sinTerm * tgamma(t) * zeta(t)
+    if sinTerm == 0 { return 0 }
+    let zt: Double = zeta(t)
+    // Functional equation in log-space: tgamma(t) overflows to Inf for t > 171
+    // (s < −170) while the product stays finite. Carry magnitude in logs, sign
+    // separately (zeta(t) > 0 for t > 1, so only sinTerm sets the sign).
+    let logMag: Double =
+      s * Foundation.log(2.0) + (s - 1.0) * Foundation.log(Double.pi)
+      + lgamma(t) + Foundation.log(abs(sinTerm)) + Foundation.log(zt)
+    let sign: Double = sinTerm < 0 ? -1.0 : 1.0
+    return sign * Foundation.exp(logMag)
   }
 
   if s < 1 {
