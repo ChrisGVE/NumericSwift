@@ -26,69 +26,95 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
 
       - name: Checkout ArraySwift
         uses: actions/checkout@v4
         with:
           repository: ChrisGVE/ArraySwift
-          path: ../ArraySwift
+          path: ArraySwift
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
       - name: Build with ArraySwift
-        run: NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1 swift build
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+        run: swift build
 
       - name: Run Tests with ArraySwift
-        run: NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1 swift test
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+        run: swift test
 
   test-plotswift:
     name: Test with PlotSwift
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
 
       - name: Checkout PlotSwift
         uses: actions/checkout@v4
         with:
           repository: ChrisGVE/PlotSwift
-          path: ../PlotSwift
+          path: PlotSwift
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
       - name: Build with PlotSwift
-        run: NUMERICSWIFT_INCLUDE_PLOTSWIFT=1 swift build
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift build
 
       - name: Run Tests with PlotSwift
-        run: NUMERICSWIFT_INCLUDE_PLOTSWIFT=1 swift test
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift test
 
   test-combined:
     name: Test with ArraySwift + PlotSwift
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
 
       - name: Checkout ArraySwift
         uses: actions/checkout@v4
         with:
           repository: ChrisGVE/ArraySwift
-          path: ../ArraySwift
+          path: ArraySwift
 
       - name: Checkout PlotSwift
         uses: actions/checkout@v4
         with:
           repository: ChrisGVE/PlotSwift
-          path: ../PlotSwift
+          path: PlotSwift
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
       - name: Build with Both Dependencies
-        run: NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1 NUMERICSWIFT_INCLUDE_PLOTSWIFT=1 swift build
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift build
 
       - name: Run Tests with Both Dependencies
-        run: NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1 NUMERICSWIFT_INCLUDE_PLOTSWIFT=1 swift test
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
+          NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
+        run: swift test
 
   release:
     name: Create Release
