@@ -25,7 +25,8 @@ public func isPrime(_ n: Int) -> Bool {
     if n == 3 { return true }
     if n % 3 == 0 { return false }
     var i = 5
-    while i * i <= n {
+    // `i <= n / i` avoids the Int overflow that `i * i <= n` suffers for n near Int.max.
+    while i <= n / i {
         if n % i == 0 || n % (i + 2) == 0 { return false }
         i += 6
     }
@@ -51,7 +52,8 @@ public func primeFactors(_ n: Int) -> [(prime: Int, exponent: Int)] {
 
     // Factor out odd primes
     var factor = 3
-    while factor * factor <= remaining {
+    // `factor <= remaining / factor` avoids Int overflow for remaining near Int.max.
+    while factor <= remaining / factor {
         count = 0
         while remaining % factor == 0 {
             count += 1
@@ -80,7 +82,7 @@ public func primesUpTo(_ n: Int) -> [Int] {
     sieve[1] = false
 
     var i = 2
-    while i * i <= n {
+    while i <= n / i {
         if sieve[i] {
             var j = i * i
             while j <= n {
@@ -330,17 +332,28 @@ public func modPow(_ base: Int, _ exp: Int, _ m: Int) -> Int {
 
     var result = 1
     var b = base % m
+    if b < 0 { b += m }
     var e = exp
 
     while e > 0 {
         if e % 2 == 1 {
-            result = (result * b) % m
+            result = mulMod(result, b, m)
         }
         e /= 2
-        b = (b * b) % m
+        b = mulMod(b, b, m)
     }
 
     return result
+}
+
+/// Modular multiply `(a · b) mod m` without intermediate overflow.
+///
+/// `a * b` overflows Int once `m` exceeds ~3×10⁹; the full-width product keeps
+/// every modulus up to `Int.max` correct. Requires `m > 0` and `0 <= a, b < m`.
+private func mulMod(_ a: Int, _ b: Int, _ m: Int) -> Int {
+    let (high, low) = a.multipliedFullWidth(by: b)
+    let (_, remainder) = m.dividingFullWidth((high: high, low: low))
+    return remainder
 }
 
 /// Extended Euclidean algorithm.
