@@ -1285,18 +1285,36 @@ public func arimaForecast(_ result: ARIMAResult, steps: Int) -> [Double] {
     residExt.append(0.0)
   }
 
-  // Integrate back if differenced
+  // Integrate back if differenced.
+  //
+  // Each un-differencing pass needs the last observed value of the matching
+  // difference order as its baseline, NOT original.last every time: going from
+  // order-m forecasts to order-(m−1) uses the last value of the (m−1)-th
+  // difference of the original series. Re-using original.last for every pass
+  // over-counts the level for d ≥ 2.
   if d > 0 {
-    var integrated = forecasts
-    let original = result.original
+    // lastDiffs[k] = last element of the k-th difference of the original series.
+    var diffLevel = result.original
+    var lastDiffs = [diffLevel.last ?? 0.0]
+    for _ in 1..<d {
+      var nextLevel = [Double]()
+      if diffLevel.count >= 2 {
+        nextLevel.reserveCapacity(diffLevel.count - 1)
+        for i in 1..<diffLevel.count {
+          nextLevel.append(diffLevel[i] - diffLevel[i - 1])
+        }
+      }
+      diffLevel = nextLevel
+      lastDiffs.append(diffLevel.last ?? 0.0)
+    }
 
-    for _ in 0..<d {
-      // Get the last value from original to integrate
-      let lastVal = original.last ?? 0.0
+    var integrated = forecasts
+    for m in stride(from: d, through: 1, by: -1) {
+      let baseline = lastDiffs[m - 1]
       var cumsum = [Double](repeating: 0.0, count: integrated.count)
-      var prev = lastVal
+      var prev = baseline
       for i in 0..<integrated.count {
-        prev = prev + integrated[i]
+        prev += integrated[i]
         cumsum[i] = prev
       }
       integrated = cumsum
