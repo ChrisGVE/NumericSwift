@@ -382,8 +382,18 @@ public struct TDistribution {
   }
 
   /// Log of the probability density function.
+  ///
+  /// Computed directly in log-space: `log(pdf(x))` returns −Inf once the density
+  /// underflows, whereas the closed form stays finite into the far tails.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    let logCoef =
+      Darwin.lgamma((df + 1) / 2.0) - Darwin.lgamma(df / 2.0) - 0.5 * Darwin.log(df * .pi)
+    // log(1 + z²/df) via softplus on a = 2·log|z| − log(df) so that z² never
+    // overflows to Inf for very large |x| (log(0) = −Inf softplus's to 0 for z = 0).
+    let a = 2.0 * Darwin.log(abs(z)) - Darwin.log(df)
+    let log1pZ2 = a > 0 ? a + Foundation.log1p(Foundation.exp(-a)) : Foundation.log1p(Foundation.exp(a))
+    return logCoef - (df + 1) / 2.0 * log1pZ2 - Darwin.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -455,8 +465,10 @@ public struct ChiSquaredDistribution {
       return 0.0  // df > 2
     }
 
-    return Darwin.pow(z, k2 - 1) * Darwin.exp(-z / 2.0) / (Darwin.pow(2.0, k2) * Darwin.tgamma(k2))
-      / scale
+    // Log-space: pow(2,k2)·tgamma(k2) overflows to Inf for df > 342, silently
+    // zeroing the density. lgamma keeps it finite.
+    let logPdf = (k2 - 1) * Foundation.log(z) - z / 2.0 - k2 * Foundation.log(2.0) - lgamma(k2)
+    return Foundation.exp(logPdf) / scale
   }
 
   /// Cumulative distribution function.
@@ -479,8 +491,8 @@ public struct ChiSquaredDistribution {
     let k2 = df / 2.0
     for _ in 0..<50 {
       let cdfVal = gammainc(k2, x / 2.0)
-      let pdfVal =
-        Darwin.pow(x, k2 - 1) * Darwin.exp(-x / 2.0) / (Darwin.pow(2.0, k2) * Darwin.tgamma(k2))
+      let pdfVal = Foundation.exp(
+        (k2 - 1) * Foundation.log(x) - x / 2.0 - k2 * Foundation.log(2.0) - lgamma(k2))
 
       let dx = (cdfVal - p) / pdfVal
       x -= dx
@@ -668,7 +680,10 @@ public struct GammaDistribution {
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
     if z <= 0 { return 0.0 }
-    return Darwin.pow(z, shape - 1) * Darwin.exp(-z) / Darwin.tgamma(shape) / scale
+    // Log-space: tgamma(shape) overflows to Inf for shape > 171, silently
+    // zeroing the density. lgamma keeps it finite.
+    let logPdf = (shape - 1) * Foundation.log(z) - z - lgamma(shape)
+    return Foundation.exp(logPdf) / scale
   }
 
   /// Cumulative distribution function.
@@ -685,7 +700,7 @@ public struct GammaDistribution {
 
     for _ in 0..<100 {
       let cdfVal = gammainc(shape, x)
-      let pdfVal = Darwin.pow(x, shape - 1) * Darwin.exp(-x) / Darwin.tgamma(shape)
+      let pdfVal = Foundation.exp((shape - 1) * Foundation.log(x) - x - lgamma(shape))
 
       if pdfVal < 1e-30 { break }
       let dx = (cdfVal - p) / pdfVal
