@@ -192,67 +192,75 @@ public func computeSplineCoeffs(x: [Double], y: [Double], bc: SplineBoundaryCond
     rhs[n - 1] = 3.0 * (fpn - (y[n - 1] - y[n - 2]) / h[n - 2])
 
   case .notAKnot:
-    // Not-a-knot requires n >= 4, fall back to natural otherwise
-    if n >= 4 {
-      // Build interior equations
-      for i in 1..<(n - 1) {
-        diag[i] = 2.0 * (h[i - 1] + h[i])
-        offDiag[i - 1] = h[i - 1]
-        if i < n - 1 {
-          offDiag[i] = h[i]
-        }
-        rhs[i] = 3.0 * ((y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1])
-      }
-
-      // Not-a-knot: third derivatives match at x[1] and x[n-2]
-      let alpha0 = h[0] / h[1]
-      diag[1] = h[0] * (1.0 + alpha0) + 2.0 * (h[0] + h[1])
-      offDiag[1] = h[1] - h[0] * alpha0
-
-      let alphan = h[n - 2] / h[n - 3]
-      diag[n - 2] = h[n - 2] * (1.0 + alphan) + 2.0 * (h[n - 3] + h[n - 2])
-      if n > 3 {
-        offDiag[n - 4] = h[n - 3] - h[n - 2] * alphan
-      }
-
-      // Build reduced system (rows 1 to n-2)
-      let reducedN = n - 2
-      var reducedDiag = [Double](repeating: 0, count: reducedN)
-      var reducedOff = [Double](repeating: 0, count: reducedN - 1)
-      var reducedRhs = [Double](repeating: 0, count: reducedN)
-
-      for i in 0..<reducedN {
-        reducedDiag[i] = diag[i + 1]
-        reducedRhs[i] = rhs[i + 1]
-        if i < reducedN - 1 {
-          reducedOff[i] = offDiag[i + 1]
-        }
-      }
-
-      // Solve reduced system
-      let cInner = solveTridiagonal(diag: reducedDiag, offDiag: reducedOff, rhs: reducedRhs)
-
-      // Back-substitute to get c[0] and c[n-1]
-      var c = [Double](repeating: 0, count: n)
-      for i in 0..<reducedN {
-        c[i + 1] = cInner[i]
-      }
-      c[0] = (1.0 + alpha0) * c[1] - alpha0 * c[2]
-      c[n - 1] = (1.0 + alphan) * c[n - 2] - alphan * c[n - 3]
-
-      // Compute a, b, d coefficients
-      var coeffs = [CubicCoeffs]()
-      for i in 0..<(n - 1) {
-        let a = y[i]
-        let b = (y[i + 1] - y[i]) / h[i] - h[i] * (2.0 * c[i] + c[i + 1]) / 3.0
-        let d = (c[i + 1] - c[i]) / (3.0 * h[i])
-        coeffs.append(CubicCoeffs(a: a, b: b, c: c[i], d: d))
-      }
-      return coeffs
-    } else {
-      // Fall back to natural for n < 4
+    // Not-a-knot requires n >= 4, fall back to natural otherwise.
+    guard n >= 4 else {
       return computeSplineCoeffs(x: x, y: y, bc: .natural)
     }
+
+    // Unknowns are the interior second-derivative coefficients c[1...n-2]; the
+    // not-a-knot condition (S''' continuous at x[1] and x[n-2]) eliminates c[0]
+    // and c[n-1] via c[0] = (1+α₀)c[1] − α₀c[2] and the mirror at the right end.
+    // Substituting those into the first/last interior equations makes the
+    // reduced tridiagonal system ASYMMETRIC at its two boundary rows, so it must
+    // be solved with a general Thomas sweep — the symmetric solveTridiagonal
+    // (single off-diagonal) cannot represent it and silently corrupts the
+    // neighbour rows.
+    let alpha0 = h[0] / h[1]
+    let alphaN = h[n - 2] / h[n - 3]
+
+    let r = n - 2  // number of reduced unknowns: c[1..n-2]
+    var lower = [Double](repeating: 0, count: r)  // sub-diagonal (lower[0] unused)
+    var dDiag = [Double](repeating: 0, count: r)
+    var upper = [Double](repeating: 0, count: r)  // super-diagonal (upper[r-1] unused)
+    var rRhs = [Double](repeating: 0, count: r)
+
+    for k in 0..<r {
+      let i = k + 1  // global row index
+      rRhs[k] = 3.0 * ((y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1])
+      if k == 0 {
+        // c[0] eliminated: row 1 becomes asymmetric.
+        dDiag[k] = h[0] * (1.0 + alpha0) + 2.0 * (h[0] + h[1])
+        upper[k] = h[1] - h[0] * alpha0
+      } else if k == r - 1 {
+        // c[n-1] eliminated: row n-2 becomes asymmetric.
+        lower[k] = h[n - 3] - h[n - 2] * alphaN
+        dDiag[k] = 2.0 * (h[n - 3] + h[n - 2]) + h[n - 2] * (1.0 + alphaN)
+      } else {
+        lower[k] = h[i - 1]
+        dDiag[k] = 2.0 * (h[i - 1] + h[i])
+        upper[k] = h[i]
+      }
+    }
+
+    // General (non-symmetric) Thomas algorithm.
+    var cp = [Double](repeating: 0, count: r)
+    var dp = [Double](repeating: 0, count: r)
+    cp[0] = upper[0] / dDiag[0]
+    dp[0] = rRhs[0] / dDiag[0]
+    for k in 1..<r {
+      let m = dDiag[k] - lower[k] * cp[k - 1]
+      cp[k] = (k < r - 1 ? upper[k] : 0) / m
+      dp[k] = (rRhs[k] - lower[k] * dp[k - 1]) / m
+    }
+    var cInner = [Double](repeating: 0, count: r)
+    cInner[r - 1] = dp[r - 1]
+    for k in stride(from: r - 2, through: 0, by: -1) {
+      cInner[k] = dp[k] - cp[k] * cInner[k + 1]
+    }
+
+    var c = [Double](repeating: 0, count: n)
+    for k in 0..<r { c[k + 1] = cInner[k] }
+    c[0] = (1.0 + alpha0) * c[1] - alpha0 * c[2]
+    c[n - 1] = (1.0 + alphaN) * c[n - 2] - alphaN * c[n - 3]
+
+    var coeffs = [CubicCoeffs]()
+    for i in 0..<(n - 1) {
+      let a = y[i]
+      let b = (y[i + 1] - y[i]) / h[i] - h[i] * (2.0 * c[i] + c[i + 1]) / 3.0
+      let d = (c[i + 1] - c[i]) / (3.0 * h[i])
+      coeffs.append(CubicCoeffs(a: a, b: b, c: c[i], d: d))
+    }
+    return coeffs
   }
 
   // Solve for c values (for natural and clamped)
