@@ -5,7 +5,7 @@
 //  Verify-then-fix tests for the two findings the 2026-06-10 audit flagged as
 //  UNVERIFIED: notAKnot spline coefficients (M18) and arimaForecast d ≥ 2 (M22).
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import XCTest
@@ -46,5 +46,42 @@ final class AuditVerifyTests: XCTestCase {
     XCTAssertEqual(fc[0], 26.0, accuracy: 1e-6)
     XCTAssertEqual(fc[1], 28.0, accuracy: 1e-6)
     XCTAssertEqual(fc[2], 30.0, accuracy: 1e-6)
+  }
+
+  // MARK: - M26: fallback tokenizer must support the `%` (modulo) operator
+
+  /// The pure-Swift fallback parser previously rejected `%`. MathLex supports it
+  /// (`BinaryOp.mod`); the fallback must match so expressions parse identically
+  /// whether or not the Rust backend is compiled in.
+  func testFallbackModuloOperator() throws {
+    XCTAssertEqual(try MathExpr.eval("7 % 3"), 1.0, accuracy: 1e-12)
+    XCTAssertEqual(try MathExpr.eval("10 % 4"), 2.0, accuracy: 1e-12)
+    // Same precedence as * and /: 2 + 7 % 3 == 2 + (7 % 3) == 3
+    XCTAssertEqual(try MathExpr.eval("2 + 7 % 3"), 3.0, accuracy: 1e-12)
+  }
+
+  // MARK: - M27: unary minus must emit `.unary(.neg, x)`, not `.binary(.sub, 0, x)`
+
+  /// The fallback parser must produce the same AST shape as the MathLex backend
+  /// for negation: a `.unary(.neg, …)` node rather than `0 - x`.
+  func testFallbackUnaryNegShape() throws {
+    let ast = try MathExpr.parse("-x")
+    guard case .unary(let op, let operand) = ast else {
+      return XCTFail("expected .unary node for `-x`, got \(ast)")
+    }
+    XCTAssertEqual(op, .neg)
+    guard case .variable(let name) = operand else {
+      return XCTFail("expected .variable operand, got \(operand)")
+    }
+    XCTAssertEqual(name, "x")
+  }
+
+  /// Unary minus binds below `^`, so `-x^2` is `-(x^2)`, not `(-x)^2`.
+  func testFallbackUnaryNegBindsBelowPow() throws {
+    XCTAssertEqual(try MathExpr.eval("-x^2", variables: ["x": 3.0]), -9.0, accuracy: 1e-12)
+    XCTAssertEqual(try MathExpr.eval("-3^2"), -9.0, accuracy: 1e-12)
+    // Nested negation and binary minus against a unary operand.
+    XCTAssertEqual(try MathExpr.eval("2 - -3"), 5.0, accuracy: 1e-12)
+    XCTAssertEqual(try MathExpr.eval("--5"), 5.0, accuracy: 1e-12)
   }
 }

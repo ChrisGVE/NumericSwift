@@ -9,8 +9,8 @@
 //    - Imaginary literals: 2i, 5.0i
 //    - Named constants: pi, e, inf, nan, i (imaginary unit when standalone)
 //    - Variables (any identifier not in constants/functions)
-//    - Binary operators: + - * / ^ with standard precedence; ^ right-associative
-//    - Unary minus/plus
+//    - Binary operators: + - * / % ^ with standard precedence; ^ right-associative
+//    - Unary minus (emits `.unary(.neg, x)`, MathLex shape) / unary plus (no-op)
 //    - Function calls: name(arg, ...) for all functions supported by evalFunction
 //    - Parentheses
 //
@@ -87,7 +87,7 @@ enum MathExprFallbackParser {
 
       // Operators and punctuation
       switch ch {
-      case "+", "-", "*", "/", "^":
+      case "+", "-", "*", "/", "^", "%":
         tokens.append(.op(String(ch)))
         idx = expression.index(after: idx)
         continue
@@ -225,10 +225,13 @@ enum MathExprFallbackParser {
 
   private static let precedence: [String: Int] = [
     "+": 1, "-": 1,
-    "*": 2, "/": 2,
+    "*": 2, "/": 2, "%": 2,
+    "u-": 2,  // unary minus: prefix, binds below `^` so `-x^2` == `-(x^2)`
     "^": 3,
   ]
-  private static let rightAssociative: Set<String> = ["^"]
+  // `^` is right-associative; `u-` is a right-associative prefix operator so a
+  // run of unary minuses (`--x`) nests outermost-last.
+  private static let rightAssociative: Set<String> = ["^", "u-"]
 
   // swiftlint:disable:next cyclomatic_complexity function_body_length
   fileprivate static func parse(_ tokens: [FBToken]) throws -> MathLexExpression {
@@ -268,10 +271,10 @@ enum MathExprFallbackParser {
           argCounts[argCounts.count - 1] += 1
         }
 
-      case .op(let opStr):
+      case .op(let opStrRaw):
         // Determine unary minus/plus
         var isUnary = false
-        if opStr == "-" || opStr == "+" {
+        if opStrRaw == "-" || opStrRaw == "+" {
           if prev == nil {
             isUnary = true
           } else if let p = prev {
@@ -282,16 +285,16 @@ enum MathExprFallbackParser {
           }
         }
 
+        var opStr = opStrRaw
         if isUnary {
-          if opStr == "-" {
-            // Push a zero so that 0 - x handles negation via binary
-            output.append(.integer(0))
-          }
-          // unary "+" is a no-op; push 0 for "-" only
-          if opStr == "+" {
+          if opStrRaw == "+" {
+            // unary "+" is a no-op
             prev = token
             continue
           }
+          // unary "-" → dedicated prefix operator emitting `.unary(.neg, x)`,
+          // matching the MathLex AST shape (not `.binary(.sub, 0, x)`).
+          opStr = "u-"
         }
 
         let p1 = precedence[opStr] ?? 0
@@ -303,7 +306,7 @@ enum MathExprFallbackParser {
           if !shouldPop { break }
           try popOp(&operators, &output)
         }
-        operators.append(token)
+        operators.append(.op(opStr))
 
       case .lparen:
         // If previous token was a variable, convert it to a function call
@@ -366,6 +369,16 @@ enum MathExprFallbackParser {
     guard let top = operators.popLast(), case .op(let opStr) = top else {
       throw MathExprError.parseError("internal parser error: expected operator")
     }
+
+    // Unary minus is a prefix operator: pop a single operand.
+    if opStr == "u-" {
+      guard let operand = output.popLast() else {
+        throw MathExprError.parseError("malformed expression near unary '-'")
+      }
+      output.append(.unary(op: .neg, operand: operand))
+      return
+    }
+
     guard output.count >= 2 else {
       throw MathExprError.parseError("malformed expression near '\(opStr)'")
     }
@@ -377,6 +390,7 @@ enum MathExprFallbackParser {
     case "-": bop = .sub
     case "*": bop = .mul
     case "/": bop = .div
+    case "%": bop = .mod
     case "^": bop = .pow
     default:
       throw MathExprError.parseError("unknown operator '\(opStr)'")
