@@ -5,7 +5,7 @@
 //  Integration with PlotSwift for data visualization support.
 //  This file is only compiled when NUMERICSWIFT_PLOTSWIFT is defined.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 #if NUMERICSWIFT_PLOTSWIFT

@@ -4,7 +4,7 @@
 //
 //  Extended math utilities with optional vDSP optimization when ArraySwift is available.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Foundation

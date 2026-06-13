@@ -4,7 +4,7 @@
 //
 //  Clustering algorithms following sklearn.cluster patterns.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Foundation

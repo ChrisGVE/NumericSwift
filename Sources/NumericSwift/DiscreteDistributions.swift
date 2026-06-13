@@ -6,7 +6,7 @@
 //  Each distribution provides pmf, cdf, ppf (quantile), rvs (random sampling),
 //  and moment functions (mean, variance).
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Darwin

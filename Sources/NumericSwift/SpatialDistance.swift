@@ -4,7 +4,7 @@
 //
 //  Distance metrics and batch distance functions following scipy.spatial.distance patterns.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Accelerate

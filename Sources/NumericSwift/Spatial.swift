@@ -5,7 +5,7 @@
 //  Spatial data structures: KDTree, Delaunay triangulation, Voronoi diagram, convex hull.
 //  Distance metrics and batch functions are in SpatialDistance.swift.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Accelerate

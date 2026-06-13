@@ -5,7 +5,7 @@
 //  Interpolation algorithms following scipy.interpolate patterns.
 //  Includes cubic splines, PCHIP, Akima, Lagrange, and barycentric interpolation.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Foundation

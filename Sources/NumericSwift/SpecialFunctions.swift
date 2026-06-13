@@ -6,7 +6,7 @@
 //  Includes error functions, Bessel functions, gamma functions,
 //  elliptic integrals, and more.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Foundation
