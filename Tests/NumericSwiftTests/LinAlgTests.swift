@@ -184,6 +184,23 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(LinAlg.norm(v, 1), 7)  // |3| + |4| = 7
     }
 
+    func testMatrixNorms() {
+        // Diagonal matrix: singular values are |diagonal entries|, so the
+        // spectral norm (p=2) is the largest, here 3. Frobenius is sqrt(1+9)=√10.
+        let d = LinAlg.Matrix([[1.0, 0.0], [0.0, -3.0]])
+        XCTAssertEqual(LinAlg.norm(d, 2), 3.0, accuracy: 1e-10)  // spectral, SciPy ord=2
+        XCTAssertEqual(LinAlg.frobeniusNorm(d), sqrt(10.0), accuracy: 1e-10)
+        XCTAssertEqual(LinAlg.norm(d, 1), 3.0, accuracy: 1e-10)  // max abs col sum
+        XCTAssertEqual(LinAlg.norm(d, .infinity), 3.0, accuracy: 1e-10)  // max abs row sum
+
+        // Spectral norm of [[1,2],[3,4]] = largest singular value ≈ 5.46499.
+        let a = LinAlg.Matrix([[1.0, 2.0], [3.0, 4.0]])
+        XCTAssertEqual(LinAlg.norm(a, 2), 5.464985704, accuracy: 1e-6)
+        XCTAssertEqual(LinAlg.norm(a, 1), 6.0, accuracy: 1e-10)  // col sums 4,6 → 6
+        XCTAssertEqual(LinAlg.norm(a, .infinity), 7.0, accuracy: 1e-10)  // row sums 3,7 → 7
+        XCTAssertEqual(LinAlg.frobeniusNorm(a), sqrt(30.0), accuracy: 1e-10)
+    }
+
     func testRank() {
         let a = LinAlg.Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])  // Rank 2
         XCTAssertEqual(LinAlg.rank(a), 2)

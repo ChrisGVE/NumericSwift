@@ -598,7 +598,20 @@ public enum LinAlg {
 
     // MARK: - Norms
 
-    /// Compute vector or matrix norm.
+    /// Compute a vector or matrix norm, following SciPy's `numpy.linalg.norm`
+    /// contract for the order `p`.
+    ///
+    /// For a column vector (`cols == 1`): `p = 1` (sum of magnitudes), `p = 2`
+    /// (Euclidean), `p = .infinity` (max magnitude), otherwise the general
+    /// `p`-norm `(Σ|xᵢ|^p)^(1/p)`.
+    ///
+    /// For a matrix: `p = 1` (max absolute column sum), `p = 2` (**spectral
+    /// norm** — the largest singular value, matching SciPy `ord=2`),
+    /// `p = .infinity` (max absolute row sum), any other `p` (Frobenius norm).
+    ///
+    /// - Note: As of the SciPy-parity fix, the default `p = 2` returns the
+    ///   spectral norm for matrices (not Frobenius). Use ``frobeniusNorm(_:)``
+    ///   or any `p ∉ {1, 2, ∞}` for the Frobenius norm.
     public static func norm(_ m: Matrix, _ p: Double = 2) -> Double {
         if m.cols == 1 {
             // Vector norm
@@ -633,6 +646,9 @@ public enum LinAlg {
                     maxSum = max(maxSum, colSum)
                 }
                 return maxSum
+            } else if p == 2 {
+                // Spectral norm = largest singular value (SciPy ord=2).
+                return svd(m).s.max() ?? 0
             } else if p == Double.infinity {
                 var maxSum = 0.0
                 for i in 0..<m.rows {
@@ -644,12 +660,20 @@ public enum LinAlg {
                 }
                 return maxSum
             } else {
-                // Frobenius norm (default)
+                // Frobenius norm
                 var result = 0.0
                 vDSP_dotprD(m.data, 1, m.data, 1, &result, vDSP_Length(m.size))
                 return sqrt(result)
             }
         }
+    }
+
+    /// Frobenius norm: `sqrt(Σ |aᵢⱼ|²)` over all entries. Equivalent to the
+    /// Euclidean norm of the flattened matrix and to SciPy `ord='fro'`.
+    public static func frobeniusNorm(_ m: Matrix) -> Double {
+        var result = 0.0
+        vDSP_dotprD(m.data, 1, m.data, 1, &result, vDSP_Length(m.size))
+        return sqrt(result)
     }
 
     // MARK: - Decompositions
