@@ -102,15 +102,44 @@ final class GeometryTests: XCTestCase {
     }
 
     func testVec3Spherical() {
-        let v = Vec3(0, 0, 1)
-        let sph = v.spherical
-        XCTAssertEqual(sph.r, 1, accuracy: 1e-10)
-        XCTAssertEqual(sph.phi, 0, accuracy: 1e-10)  // phi=0 is z-axis
+        // Physics / ISO 80000-2 convention: theta = polar angle from +z,
+        // phi = azimuthal angle in xy-plane from +x. Must match
+        // sphericalToCart / cartToSpherical.
 
-        let fromSph = Vec3.fromSpherical(r: 1, theta: 0, phi: .pi / 2)
+        // +z axis: polar angle theta = 0.
+        let zAxis = Vec3(0, 0, 1).spherical
+        XCTAssertEqual(zAxis.r, 1, accuracy: 1e-10)
+        XCTAssertEqual(zAxis.theta, 0, accuracy: 1e-10)
+
+        // +x axis: theta = pi/2 (in the equatorial plane), phi = 0.
+        let xAxis = Vec3(1, 0, 0).spherical
+        XCTAssertEqual(xAxis.theta, .pi / 2, accuracy: 1e-10)
+        XCTAssertEqual(xAxis.phi, 0, accuracy: 1e-10)
+
+        // +y axis: theta = pi/2, phi = pi/2.
+        let yAxis = Vec3(0, 1, 0).spherical
+        XCTAssertEqual(yAxis.theta, .pi / 2, accuracy: 1e-10)
+        XCTAssertEqual(yAxis.phi, .pi / 2, accuracy: 1e-10)
+
+        // fromSpherical(theta = pi/2, phi = 0) is the +x axis.
+        let fromSph = Vec3.fromSpherical(r: 1, theta: .pi / 2, phi: 0)
         XCTAssertEqual(fromSph.x, 1, accuracy: 1e-10)
         XCTAssertEqual(fromSph.y, 0, accuracy: 1e-10)
         XCTAssertEqual(fromSph.z, 0, accuracy: 1e-10)
+
+        // Round-trip an off-axis point through spherical and back.
+        let p = Vec3(2, -3, 5)
+        let s = p.spherical
+        let rt = Vec3.fromSpherical(r: s.r, theta: s.theta, phi: s.phi)
+        XCTAssertEqual(rt.x, p.x, accuracy: 1e-10)
+        XCTAssertEqual(rt.y, p.y, accuracy: 1e-10)
+        XCTAssertEqual(rt.z, p.z, accuracy: 1e-10)
+
+        // Vec3.spherical must agree with the free cartToSpherical function.
+        let free = cartToSpherical(x: p.x, y: p.y, z: p.z)
+        XCTAssertEqual(s.r, free.r, accuracy: 1e-10)
+        XCTAssertEqual(s.theta, free.theta, accuracy: 1e-10)
+        XCTAssertEqual(s.phi, free.phi, accuracy: 1e-10)
     }
 
     func testVec3Cylindrical() {

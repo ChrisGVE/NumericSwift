@@ -99,19 +99,24 @@ extension Vec3 {
     }
 
     /// Convert to spherical coordinates (r, theta, phi).
-    /// theta: azimuthal angle (xy plane), phi: polar angle (from z-axis)
+    ///
+    /// Physics / ISO 80000-2 convention (matches `sphericalToCart` /
+    /// `cartToSpherical`):
+    /// - theta: polar angle measured from the +z axis, in `[0, π]`
+    /// - phi: azimuthal angle in the xy-plane measured from +x, in `(-π, π]`
     public var spherical: (r: Double, theta: Double, phi: Double) {
         let r = simd_length(self)
         guard r > 0 else { return (0, 0, 0) }
-        let theta = atan2(y, x)
-        let phi = acos(z / r)
+        let theta = acos(z / r)
+        let phi = atan2(y, x)
         return (r, theta, phi)
     }
 
-    /// Create from spherical coordinates.
+    /// Create from spherical coordinates (physics / ISO 80000-2 convention).
+    /// - theta: polar angle from the +z axis; phi: azimuthal angle from +x.
     public static func fromSpherical(r: Double, theta: Double, phi: Double) -> Vec3 {
-        let sinPhi = sin(phi)
-        return Vec3(r * sinPhi * cos(theta), r * sinPhi * sin(theta), r * cos(phi))
+        let sinTheta = sin(theta)
+        return Vec3(r * sinTheta * cos(phi), r * sinTheta * sin(phi), r * cos(theta))
     }
 
     /// Convert to cylindrical coordinates (r, theta, z).
