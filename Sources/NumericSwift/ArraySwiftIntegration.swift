@@ -71,7 +71,7 @@ extension NDArray {
     /// ```swift
     /// let arr = NDArray.arange(start: 0, stop: 6).reshape([2, 3])
     /// if let matrix = arr.toMatrix() {
-    ///     let result = LinAlg.solve(matrix, b)
+    ///     let result = try LinAlg.solve(matrix, b)
     /// }
     /// ```
     public func toMatrix() -> LinAlg.Matrix? {
@@ -87,7 +87,7 @@ extension NDArray {
     public func solve(_ b: NDArray) -> NDArray? {
         guard let A = self.toMatrix(),
               let bMat = b.toMatrix(),
-              let x = LinAlg.solve(A, bMat) else {
+              let x = try? LinAlg.solve(A, bMat) else {
             return nil
         }
         return x.toNDArray()
@@ -100,7 +100,7 @@ extension NDArray {
     /// Requires this array to be 2D and square.
     public func inv() -> NDArray? {
         guard let matrix = self.toMatrix(),
-              let invMat = LinAlg.inv(matrix) else {
+              let invMat = try? LinAlg.inv(matrix) else {
             return nil
         }
         return invMat.toNDArray()
@@ -113,7 +113,7 @@ extension NDArray {
     /// Requires this array to be 2D and square.
     public func det() -> Double? {
         guard let matrix = self.toMatrix() else { return nil }
-        return LinAlg.det(matrix)
+        return try? LinAlg.det(matrix)
     }
 
     /// Compute the matrix rank.
@@ -129,7 +129,7 @@ extension NDArray {
     /// - Returns: The trace, or nil if not a 2D array
     public func trace() -> Double? {
         guard let matrix = self.toMatrix() else { return nil }
-        return LinAlg.trace(matrix)
+        return try? LinAlg.trace(matrix)
     }
 
     /// Compute the Frobenius norm.
@@ -156,10 +156,10 @@ extension NDArray {
     ///
     /// - Returns: Tuple of (P, L, U) matrices, or nil if not a square 2D array
     public func lu() -> (P: NDArray, L: NDArray, U: NDArray)? {
-        guard let matrix = self.toMatrix(), matrix.rows == matrix.cols else {
+        guard let matrix = self.toMatrix(), matrix.rows == matrix.cols,
+              let result = try? LinAlg.lu(matrix) else {
             return nil
         }
-        let result = LinAlg.lu(matrix)
         return (result.P.toNDArray(), result.L.toNDArray(), result.U.toNDArray())
     }
 
@@ -192,10 +192,10 @@ extension NDArray {
     ///
     /// Note: For general matrices, eigenvalues may be complex. Use `imagParts` to check.
     public func eig() -> (values: NDArray, imagParts: NDArray, vectors: NDArray)? {
-        guard let matrix = self.toMatrix(), matrix.rows == matrix.cols else {
+        guard let matrix = self.toMatrix(), matrix.rows == matrix.cols,
+              let result = try? LinAlg.eig(matrix) else {
             return nil
         }
-        let result = LinAlg.eig(matrix)
         return (NDArray(result.values), NDArray(result.imagParts), result.vectors.toNDArray())
     }
 
@@ -204,7 +204,7 @@ extension NDArray {
     /// - Returns: Lower triangular matrix L where A = L * L^T, or nil if not positive definite
     public func cholesky() -> NDArray? {
         guard let matrix = self.toMatrix(),
-              let L = LinAlg.cholesky(matrix) else {
+              let L = try? LinAlg.cholesky(matrix) else {
             return nil
         }
         return L.toNDArray()

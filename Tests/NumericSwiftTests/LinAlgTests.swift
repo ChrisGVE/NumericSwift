@@ -12,7 +12,7 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Matrix Creation Tests
 
-    func testMatrixCreation() {
+    func testMatrixCreation() throws  {
         let m = LinAlg.Matrix([[1, 2], [3, 4]])
         XCTAssertEqual(m.rows, 2)
         XCTAssertEqual(m.cols, 2)
@@ -20,14 +20,14 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(m[1, 1], 4)
     }
 
-    func testVectorCreation() {
+    func testVectorCreation() throws  {
         let v = LinAlg.Matrix([1, 2, 3])
         XCTAssertEqual(v.rows, 3)
         XCTAssertEqual(v.cols, 1)
         XCTAssertTrue(v.isVector)
     }
 
-    func testZerosAndOnes() {
+    func testZerosAndOnes() throws  {
         let z = LinAlg.zeros(3, 2)
         XCTAssertEqual(z.rows, 3)
         XCTAssertEqual(z.cols, 2)
@@ -39,7 +39,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(o[0, 2], 1)
     }
 
-    func testEye() {
+    func testEye() throws  {
         let I = LinAlg.eye(3)
         XCTAssertEqual(I[0, 0], 1)
         XCTAssertEqual(I[1, 1], 1)
@@ -47,7 +47,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(I[0, 1], 0)
     }
 
-    func testDiag() {
+    func testDiag() throws  {
         let d = LinAlg.diag([1, 2, 3])
         XCTAssertEqual(d[0, 0], 1)
         XCTAssertEqual(d[1, 1], 2)
@@ -55,21 +55,21 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(d[0, 1], 0)
     }
 
-    func testDiagExtract() {
+    func testDiagExtract() throws  {
         let m = LinAlg.Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         let d = LinAlg.diag(m)
         XCTAssertEqual(d, [1, 5, 9])
     }
 
-    func testArange() {
-        let v = LinAlg.arange(0, 5, 1)
+    func testArange() throws  {
+        let v = try LinAlg.arange(0, 5, 1)
         XCTAssertEqual(v.rows, 5)
         XCTAssertEqual(v[0], 0)
         XCTAssertEqual(v[4], 4)
     }
 
-    func testLinspace() {
-        let v = LinAlg.linspace(0, 1, 5)
+    func testLinspace() throws  {
+        let v = try LinAlg.linspace(0, 1, 5)
         XCTAssertEqual(v.rows, 5)
         XCTAssertEqual(v[0], 0, accuracy: 1e-10)
         XCTAssertEqual(v[2], 0.5, accuracy: 1e-10)
@@ -78,7 +78,7 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Arithmetic Tests
 
-    func testMatrixAddSub() {
+    func testMatrixAddSub() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
         let b = LinAlg.Matrix([[5, 6], [7, 8]])
 
@@ -91,14 +91,14 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(diff[1, 1], 4)
     }
 
-    func testScalarMultiply() {
+    func testScalarMultiply() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
         let scaled = 2.0 * a
         XCTAssertEqual(scaled[0, 0], 2)
         XCTAssertEqual(scaled[1, 1], 8)
     }
 
-    func testMatrixMultiply() {
+    func testMatrixMultiply() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
         let b = LinAlg.Matrix([[5, 6], [7, 8]])
         let c = a * b  // [[19, 22], [43, 50]]
@@ -108,14 +108,14 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(c[1, 1], 50)
     }
 
-    func testDotProduct() {
+    func testDotProduct() throws  {
         let u = LinAlg.Matrix([1, 2, 3])
         let v = LinAlg.Matrix([4, 5, 6])
         let d = LinAlg.dot(u, v)  // 1*4 + 2*5 + 3*6 = 32
         XCTAssertEqual(d[0], 32)
     }
 
-    func testHadamard() {
+    func testHadamard() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
         let b = LinAlg.Matrix([[5, 6], [7, 8]])
         let h = LinAlg.hadamard(a, b)
@@ -125,14 +125,14 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(h[1, 1], 32)
     }
 
-    func testNegation() {
+    func testNegation() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
         let neg = -a
         XCTAssertEqual(neg[0, 0], -1)
         XCTAssertEqual(neg[1, 1], -4)
     }
 
-    func testDivide() {
+    func testDivide() throws  {
         let a = LinAlg.Matrix([[2, 4], [6, 8]])
         let div = a / 2.0
         XCTAssertEqual(div[0, 0], 1)
@@ -141,7 +141,7 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Matrix Properties
 
-    func testTranspose() {
+    func testTranspose() throws  {
         let a = LinAlg.Matrix([[1, 2, 3], [4, 5, 6]])
         let t = a.T
         XCTAssertEqual(t.rows, 3)
@@ -150,22 +150,22 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(t[2, 0], 3)
     }
 
-    func testTrace() {
+    func testTrace() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
-        XCTAssertEqual(LinAlg.trace(a), 5)
+        XCTAssertEqual(try LinAlg.trace(a), 5)
     }
 
-    func testDeterminant() {
+    func testDeterminant() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
-        XCTAssertEqual(LinAlg.det(a), -2, accuracy: 1e-10)
+        XCTAssertEqual(try LinAlg.det(a), -2, accuracy: 1e-10)
 
         let b = LinAlg.Matrix([[6, 1, 1], [4, -2, 5], [2, 8, 7]])
-        XCTAssertEqual(LinAlg.det(b), -306, accuracy: 1e-10)
+        XCTAssertEqual(try LinAlg.det(b), -306, accuracy: 1e-10)
     }
 
-    func testInverse() {
+    func testInverse() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
-        guard let aInv = LinAlg.inv(a) else {
+        guard let aInv = try LinAlg.inv(a) else {
             XCTFail("Inverse should exist")
             return
         }
@@ -178,13 +178,13 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(product[1, 1], 1, accuracy: 1e-10)
     }
 
-    func testNorm() {
+    func testNorm() throws  {
         let v = LinAlg.Matrix([3, 4])
         XCTAssertEqual(LinAlg.norm(v, 2), 5)  // sqrt(9 + 16) = 5
         XCTAssertEqual(LinAlg.norm(v, 1), 7)  // |3| + |4| = 7
     }
 
-    func testMatrixNorms() {
+    func testMatrixNorms() throws  {
         // Diagonal matrix: singular values are |diagonal entries|, so the
         // spectral norm (p=2) is the largest, here 3. Frobenius is sqrt(1+9)=√10.
         let d = LinAlg.Matrix([[1.0, 0.0], [0.0, -3.0]])
@@ -201,7 +201,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(LinAlg.frobeniusNorm(a), sqrt(30.0), accuracy: 1e-10)
     }
 
-    func testRank() {
+    func testRank() throws  {
         let a = LinAlg.Matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])  // Rank 2
         XCTAssertEqual(LinAlg.rank(a), 2)
 
@@ -209,16 +209,16 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(LinAlg.rank(b), 3)
     }
 
-    func testCond() {
+    func testCond() throws  {
         let I = LinAlg.eye(3)
         XCTAssertEqual(LinAlg.cond(I), 1, accuracy: 1e-10)
     }
 
     // MARK: - Decompositions
 
-    func testLU() {
+    func testLU() throws  {
         let a = LinAlg.Matrix([[2, 1], [1, 3]])
-        let (L, U, P) = LinAlg.lu(a)
+        let (L, U, P) = try LinAlg.lu(a)
 
         // P @ L @ U should equal A
         let reconstructed = P * L * U
@@ -226,7 +226,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(reconstructed[1, 1], a[1, 1], accuracy: 1e-10)
     }
 
-    func testQR() {
+    func testQR() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4], [5, 6]])
         let (Q, R) = LinAlg.qr(a)
 
@@ -239,7 +239,7 @@ final class LinAlgTests: XCTestCase {
         }
     }
 
-    func testSVD() {
+    func testSVD() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4], [5, 6]])
         let (s, U, Vt) = LinAlg.svd(a)
 
@@ -247,10 +247,10 @@ final class LinAlgTests: XCTestCase {
         XCTAssertTrue(s[0] >= s[1])  // Singular values in descending order
     }
 
-    func testEigenvalues() {
+    func testEigenvalues() throws  {
         // Symmetric matrix has real eigenvalues
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (real, imag) = LinAlg.eigvals(a)
+        let (real, imag) = try LinAlg.eigvals(a)
 
         // Eigenvalues should be 3 and 1
         XCTAssertTrue(imag.allSatisfy { abs($0) < 1e-10 })  // All real
@@ -259,19 +259,19 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sorted[1], 3, accuracy: 1e-10)
     }
 
-    func testEig() {
+    func testEig() throws  {
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (values, imag, vectors) = LinAlg.eig(a)
+        let (values, imag, vectors) = try LinAlg.eig(a)
 
         XCTAssertEqual(values.count, 2)
         XCTAssertEqual(vectors.rows, 2)
         XCTAssertEqual(vectors.cols, 2)
     }
 
-    func testCholesky() {
+    func testCholesky() throws  {
         // Symmetric positive definite matrix
         let a = LinAlg.Matrix([[4, 2], [2, 5]])
-        guard let L = LinAlg.cholesky(a) else {
+        guard let L = try LinAlg.cholesky(a) else {
             XCTFail("Cholesky should succeed")
             return
         }
@@ -284,12 +284,12 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Linear System Solvers
 
-    func testSolve() {
+    func testSolve() throws  {
         // Solve [[2, 1], [1, 3]] * x = [1, 2]
         let A = LinAlg.Matrix([[2, 1], [1, 3]])
         let b = LinAlg.Matrix([1, 2])
 
-        guard let x = LinAlg.solve(A, b) else {
+        guard let x = try LinAlg.solve(A, b) else {
             XCTFail("Solve should succeed")
             return
         }
@@ -300,12 +300,12 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(result[1], b[1], accuracy: 1e-10)
     }
 
-    func testLstSq() {
+    func testLstSq() throws  {
         // Overdetermined system: fit y = ax + b to points
         let A = LinAlg.Matrix([[1, 1], [2, 1], [3, 1]])  // [x, 1]
         let b = LinAlg.Matrix([2, 3, 4])  // y values for y = x + 1
 
-        guard let x = LinAlg.lstsq(A, b) else {
+        guard let x = try LinAlg.lstsq(A, b) else {
             XCTFail("Lstsq should succeed")
             return
         }
@@ -314,12 +314,12 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(x[1], 1, accuracy: 1e-10)  // intercept = 1
     }
 
-    func testSolveTriangular() {
+    func testSolveTriangular() throws  {
         // Lower triangular system
         let L = LinAlg.Matrix([[2, 0], [1, 3]])
         let b = LinAlg.Matrix([4, 7])
 
-        guard let x = LinAlg.solveTriangular(L, b, lower: true, trans: false) else {
+        guard let x = try LinAlg.solveTriangular(L, b, lower: true, trans: false) else {
             XCTFail("Solve triangular should succeed")
             return
         }
@@ -330,17 +330,17 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(result[1], b[1], accuracy: 1e-10)
     }
 
-    func testChoSolve() {
+    func testChoSolve() throws  {
         // Solve using Cholesky factor
         let A = LinAlg.Matrix([[4, 2], [2, 5]])
         let b = LinAlg.Matrix([1, 2])
 
-        guard let L = LinAlg.cholesky(A) else {
+        guard let L = try LinAlg.cholesky(A) else {
             XCTFail("Cholesky should succeed")
             return
         }
 
-        guard let x = LinAlg.choSolve(L, b) else {
+        guard let x = try LinAlg.choSolve(L, b) else {
             XCTFail("choSolve should succeed")
             return
         }
@@ -351,12 +351,12 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(result[1], b[1], accuracy: 1e-10)
     }
 
-    func testLuSolve() {
+    func testLuSolve() throws  {
         let A = LinAlg.Matrix([[2, 1], [1, 3]])
         let b = LinAlg.Matrix([1, 2])
 
-        let (L, U, P) = LinAlg.lu(A)
-        let x = LinAlg.luSolve(L, U, P, b)
+        let (L, U, P) = try LinAlg.lu(A)
+        let x = try LinAlg.luSolve(L, U, P, b)
 
         // A @ x should equal b
         let result = A * x
@@ -366,25 +366,25 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Matrix Functions
 
-    func testExpm() {
+    func testExpm() throws  {
         // exp(0) = I
         let Z = LinAlg.zeros(2, 2)
-        let expZ = LinAlg.expm(Z)
+        let expZ = try LinAlg.expm(Z)
         XCTAssertEqual(expZ[0, 0], 1, accuracy: 1e-10)
         XCTAssertEqual(expZ[1, 1], 1, accuracy: 1e-10)
         XCTAssertEqual(expZ[0, 1], 0, accuracy: 1e-10)
 
         // exp(diag(a, b)) = diag(exp(a), exp(b))
         let D = LinAlg.Matrix([[1, 0], [0, 2]])
-        let expD = LinAlg.expm(D)
+        let expD = try LinAlg.expm(D)
         XCTAssertEqual(expD[0, 0], exp(1.0), accuracy: 1e-5)
         XCTAssertEqual(expD[1, 1], exp(2.0), accuracy: 1e-5)
     }
 
-    func testLogm() {
+    func testLogm() throws  {
         // log(I) = 0
         let I = LinAlg.eye(2)
-        guard let logI = LinAlg.logm(I) else {
+        guard let logI = try LinAlg.logm(I) else {
             XCTFail("logm should succeed for identity")
             return
         }
@@ -393,8 +393,8 @@ final class LinAlgTests: XCTestCase {
 
         // log(exp(A)) ≈ A for diagonal matrices
         let D = LinAlg.Matrix([[2, 0], [0, 3]])
-        let expD = LinAlg.expm(D)
-        guard let logExpD = LinAlg.logm(expD) else {
+        let expD = try LinAlg.expm(D)
+        guard let logExpD = try LinAlg.logm(expD) else {
             XCTFail("logm should succeed")
             return
         }
@@ -402,10 +402,10 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(logExpD[1, 1], 3, accuracy: 1e-4)
     }
 
-    func testSqrtm() {
+    func testSqrtm() throws  {
         // sqrt(I) = I
         let I = LinAlg.eye(2)
-        guard let sqrtI = LinAlg.sqrtm(I) else {
+        guard let sqrtI = try LinAlg.sqrtm(I) else {
             XCTFail("sqrtm should succeed for identity")
             return
         }
@@ -414,7 +414,7 @@ final class LinAlgTests: XCTestCase {
 
         // sqrt(diag(4, 9)) = diag(2, 3)
         let D = LinAlg.Matrix([[4, 0], [0, 9]])
-        guard let sqrtD = LinAlg.sqrtm(D) else {
+        guard let sqrtD = try LinAlg.sqrtm(D) else {
             XCTFail("sqrtm should succeed")
             return
         }
@@ -422,17 +422,17 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtD[1, 1], 3, accuracy: 1e-10)
     }
 
-    func testFunm() {
+    func testFunm() throws  {
         // sin(0) = 0
         let Z = LinAlg.zeros(2, 2)
-        guard let sinZ = LinAlg.funm(Z, .sin) else {
+        guard let sinZ = try LinAlg.funm(Z, .sin) else {
             XCTFail("funm should succeed")
             return
         }
         XCTAssertEqual(sinZ[0, 0], 0, accuracy: 1e-10)
 
         // cos(0) = I
-        guard let cosZ = LinAlg.funm(Z, .cos) else {
+        guard let cosZ = try LinAlg.funm(Z, .cos) else {
             XCTFail("funm should succeed")
             return
         }
@@ -442,7 +442,7 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Complex Matrix Tests
 
-    func testComplexMatrixCreation() {
+    func testComplexMatrixCreation() throws  {
         let cm = LinAlg.ComplexMatrix(
             rows: 2, cols: 2,
             real: [1, 2, 3, 4],
@@ -454,14 +454,14 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(cm[0, 0].im, 0.1)
     }
 
-    func testComplexFromReal() {
+    func testComplexFromReal() throws  {
         let m = LinAlg.Matrix([[1, 2], [3, 4]])
         let cm = LinAlg.ComplexMatrix(m)
         XCTAssertEqual(cm[0, 0].re, 1)
         XCTAssertEqual(cm[0, 0].im, 0)
     }
 
-    func testCSolve() {
+    func testCSolve() throws  {
         // Identity system: I * x = b => x = b
         let I = LinAlg.ComplexMatrix(LinAlg.eye(2))
         let b = LinAlg.ComplexMatrix(
@@ -470,7 +470,7 @@ final class LinAlgTests: XCTestCase {
             imag: [0.5, 1.5]
         )
 
-        guard let x = LinAlg.csolve(I, b) else {
+        guard let x = try LinAlg.csolve(I, b) else {
             XCTFail("csolve should succeed")
             return
         }
@@ -484,10 +484,10 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(x.imag[1], 1.5, accuracy: 1e-10)
     }
 
-    func testCDet() {
+    func testCDet() throws  {
         // Determinant of identity should be 1
         let I = LinAlg.ComplexMatrix(LinAlg.eye(2))
-        guard let det = LinAlg.cdet(I) else {
+        guard let det = try LinAlg.cdet(I) else {
             XCTFail("cdet should succeed")
             return
         }
@@ -495,10 +495,10 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(det.im, 0, accuracy: 1e-10)
     }
 
-    func testCInv() {
+    func testCInv() throws  {
         // Inverse of identity should be identity
         let I = LinAlg.ComplexMatrix(LinAlg.eye(2))
-        guard let invI = LinAlg.cinv(I) else {
+        guard let invI = try LinAlg.cinv(I) else {
             XCTFail("cinv should succeed")
             return
         }
@@ -506,9 +506,9 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(invI[0, 0].im, 0, accuracy: 1e-10)
     }
 
-    func testCEigvals() {
+    func testCEigvals() throws  {
         let m = LinAlg.ComplexMatrix(LinAlg.eye(2))
-        guard let eigvals = LinAlg.ceigvals(m) else {
+        guard let eigvals = try LinAlg.ceigvals(m) else {
             XCTFail("ceigvals should succeed")
             return
         }
@@ -518,7 +518,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(eigvals.real[1], 1, accuracy: 1e-10)
     }
 
-    func testCSVD() {
+    func testCSVD() throws  {
         let m = LinAlg.ComplexMatrix(LinAlg.Matrix([[1, 0], [0, 2]]))
         guard let (s, U, Vt) = LinAlg.csvd(m) else {
             XCTFail("csvd should succeed")
@@ -533,11 +533,11 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Pinv Tests
 
-    func testPinv() {
+    func testPinv() throws  {
         // For invertible matrix, pinv = inv
         let A = LinAlg.Matrix([[1, 2], [3, 4]])
         let pA = LinAlg.pinv(A)
-        guard let invA = LinAlg.inv(A) else {
+        guard let invA = try LinAlg.inv(A) else {
             XCTFail("inv should succeed")
             return
         }
@@ -551,7 +551,7 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Matrix Row/Col Access
 
-    func testRowAccess() {
+    func testRowAccess() throws  {
         let m = LinAlg.Matrix([[1, 2, 3], [4, 5, 6]])
         let r = m.row(1)
         XCTAssertEqual(r.rows, 1)
@@ -560,7 +560,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(r[0, 2], 6)
     }
 
-    func testColAccess() {
+    func testColAccess() throws  {
         let m = LinAlg.Matrix([[1, 2, 3], [4, 5, 6]])
         let c = m.col(1)
         XCTAssertEqual(c.rows, 2)
@@ -569,7 +569,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(c[1], 5)
     }
 
-    func testToArray() {
+    func testToArray() throws  {
         let m = LinAlg.Matrix([[1, 2], [3, 4]])
         let arr = m.toArray()
         XCTAssertEqual(arr.count, 2)
@@ -579,9 +579,9 @@ final class LinAlgTests: XCTestCase {
 
     // MARK: - Matrix instance inverse / pinv
 
-    func testMatrixInstanceInverse() {
+    func testMatrixInstanceInverse() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
-        guard let aInv = a.inverse() else {
+        guard let aInv = try a.inverse() else {
             XCTFail("inverse() should return non-nil for non-singular matrix")
             return
         }
@@ -593,19 +593,19 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(product[1, 1], 1, accuracy: 1e-10)
     }
 
-    func testMatrixInstanceInverseSingular() {
+    func testMatrixInstanceInverseSingular() throws  {
         let singular = LinAlg.Matrix([[1, 2], [2, 4]])
-        XCTAssertNil(singular.inverse(), "inverse() should return nil for singular matrix")
+        XCTAssertNil(try singular.inverse(), "inverse() should return nil for singular matrix")
     }
 
-    func testMatrixInstanceInverseMatchesStaticInv() {
+    func testMatrixInstanceInverseMatchesStaticInv() throws  {
         let a = LinAlg.Matrix([[2, 1], [5, 3]])
-        let instanceResult = a.inverse()
-        let staticResult = LinAlg.inv(a)
+        let instanceResult = try a.inverse()
+        let staticResult = try LinAlg.inv(a)
         XCTAssertEqual(instanceResult, staticResult)
     }
 
-    func testMatrixInstancePinvMatchesStaticPinv() {
+    func testMatrixInstancePinvMatchesStaticPinv() throws  {
         // For an invertible matrix, pinv should match inv
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
         let instancePinv = a.pinv()
@@ -617,7 +617,7 @@ final class LinAlgTests: XCTestCase {
         }
     }
 
-    func testMatrixInstancePinvNonSquare() {
+    func testMatrixInstancePinvNonSquare() throws  {
         // pinv of a tall matrix: (3x2) -> (2x3)
         let a = LinAlg.Matrix([[1, 0], [0, 1], [0, 0]])
         let p = a.pinv()

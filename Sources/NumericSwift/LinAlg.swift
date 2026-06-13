@@ -26,6 +26,32 @@ import Accelerate
 /// ```
 public enum LinAlg {
 
+    // MARK: - Errors
+
+    /// Recoverable error conditions raised by fallible linear-algebra operations.
+    ///
+    /// These model *runtime* conditions a caller can sensibly catch and recover
+    /// from — a shape supplied at runtime that an operation cannot accept. They
+    /// are distinct from programmer errors (out-of-range subscripts, mismatched
+    /// operator shapes, malformed literal `Matrix` construction), which remain
+    /// `precondition` failures that trap, matching the Swift standard library's
+    /// treatment of `Array` and `SIMD`.
+    ///
+    /// Numerical failure of an otherwise well-shaped problem (a singular system,
+    /// a non-positive-definite matrix) is *not* reported here: those operations
+    /// continue to return `nil`, because `Optional` already models "well-formed
+    /// input, no answer."
+    public enum LinAlgError: Error, Equatable {
+        /// An operation requiring a square matrix received a non-square one.
+        case notSquare(rows: Int, cols: Int)
+        /// Two operands have shapes that cannot be combined; the message names
+        /// the specific dimension constraint that failed.
+        case dimensionMismatch(String)
+        /// A scalar parameter was outside its valid domain (e.g. a zero `step`
+        /// or a `count` below the minimum); the message names the parameter.
+        case invalidParameter(String)
+    }
+
     // MARK: - Matrix Structure
 
     /// A matrix stored in row-major order.
@@ -169,8 +195,9 @@ public enum LinAlg {
         /// Compute the matrix inverse.
         ///
         /// - Returns: The inverse matrix, or `nil` if the matrix is singular.
-        public func inverse() -> Matrix? {
-            return LinAlg.inv(self)
+        /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when the matrix is not square.
+        public func inverse() throws -> Matrix? {
+            return try LinAlg.inv(self)
         }
 
         /// Compute the Moore-Penrose pseudoinverse.
@@ -316,8 +343,9 @@ public enum LinAlg {
     }
 
     /// Create a range vector.
-    public static func arange(_ start: Double, _ stop: Double, _ step: Double = 1.0) -> Matrix {
-        precondition(step != 0, "Step cannot be zero")
+    /// - Throws: ``LinAlgError/invalidParameter(_:)`` when `step` is zero.
+    public static func arange(_ start: Double, _ stop: Double, _ step: Double = 1.0) throws -> Matrix {
+        guard step != 0 else { throw LinAlgError.invalidParameter("step must be non-zero") }
         var data = [Double]()
         var current = start
         if step > 0 {
@@ -335,8 +363,9 @@ public enum LinAlg {
     }
 
     /// Create a vector of evenly spaced values.
-    public static func linspace(_ start: Double, _ stop: Double, _ count: Int) -> Matrix {
-        precondition(count >= 2, "Count must be at least 2")
+    /// - Throws: ``LinAlgError/invalidParameter(_:)`` when `count` is less than 2.
+    public static func linspace(_ start: Double, _ stop: Double, _ count: Int) throws -> Matrix {
+        guard count >= 2 else { throw LinAlgError.invalidParameter("count must be at least 2") }
         var data = [Double]()
         data.reserveCapacity(count)
         let step = (stop - start) / Double(count - 1)
@@ -448,8 +477,9 @@ public enum LinAlg {
     // MARK: - Matrix Properties
 
     /// Compute the trace of a square matrix.
-    public static func trace(_ m: Matrix) -> Double {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func trace(_ m: Matrix) throws -> Double {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         var sum = 0.0
         for i in 0..<m.rows {
             sum += m.data[i * m.cols + i]
@@ -458,8 +488,9 @@ public enum LinAlg {
     }
 
     /// Compute the determinant of a square matrix.
-    public static func det(_ m: Matrix) -> Double {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func det(_ m: Matrix) throws -> Double {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = m.data
@@ -486,8 +517,10 @@ public enum LinAlg {
     }
 
     /// Compute the matrix inverse.
-    public static func inv(_ m: Matrix) -> Matrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    ///   Returns `nil` (does not throw) when `m` is square but singular.
+    public static func inv(_ m: Matrix) throws -> Matrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = m.data
@@ -682,8 +715,9 @@ public enum LinAlg {
     ///
     /// - Parameter m: Square matrix
     /// - Returns: (L, U, P) where P @ L @ U = m
-    public static func lu(_ m: Matrix) -> (L: Matrix, U: Matrix, P: Matrix) {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func lu(_ m: Matrix) throws -> (L: Matrix, U: Matrix, P: Matrix) {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         // Convert to column-major for LAPACK
@@ -859,8 +893,9 @@ public enum LinAlg {
     ///
     /// - Parameter m: Square matrix
     /// - Returns: (eigenvalues, imagParts, eigenvectors)
-    public static func eig(_ m: Matrix) -> (values: [Double], imagParts: [Double], vectors: Matrix) {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func eig(_ m: Matrix) throws -> (values: [Double], imagParts: [Double], vectors: Matrix) {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = toColumnMajor(m)
@@ -902,8 +937,9 @@ public enum LinAlg {
     }
 
     /// Eigenvalues only (more efficient than full decomposition).
-    public static func eigvals(_ m: Matrix) -> (real: [Double], imag: [Double]) {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func eigvals(_ m: Matrix) throws -> (real: [Double], imag: [Double]) {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = toColumnMajor(m)
@@ -940,8 +976,10 @@ public enum LinAlg {
     ///
     /// - Parameter m: Symmetric positive definite matrix
     /// - Returns: Lower triangular L where L @ L^T = m, or nil if not positive definite
-    public static func cholesky(_ m: Matrix) -> Matrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    ///   Returns `nil` (does not throw) when `m` is square but not positive definite.
+    public static func cholesky(_ m: Matrix) throws -> Matrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = toColumnMajor(m)
@@ -974,9 +1012,14 @@ public enum LinAlg {
     ///   - A: Square coefficient matrix
     ///   - b: Right-hand side (vector or matrix)
     /// - Returns: Solution x, or nil if singular
-    public static func solve(_ A: Matrix, _ b: Matrix) -> Matrix? {
-        precondition(A.rows == A.cols, "A must be square")
-        precondition(A.rows == b.rows, "Dimensions must match")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `A` is not square, or
+    ///   ``LinAlgError/dimensionMismatch(_:)`` when `A` and `b` row counts differ.
+    ///   Returns `nil` (does not throw) when `A` is square but singular.
+    public static func solve(_ A: Matrix, _ b: Matrix) throws -> Matrix? {
+        guard A.rows == A.cols else { throw LinAlgError.notSquare(rows: A.rows, cols: A.cols) }
+        guard A.rows == b.rows else {
+            throw LinAlgError.dimensionMismatch("A.rows (\(A.rows)) must equal b.rows (\(b.rows))")
+        }
 
         var a = toColumnMajor(A)
         var bCol = toColumnMajor(b)
@@ -996,8 +1039,12 @@ public enum LinAlg {
     }
 
     /// Solve least squares problem min ||Ax - b||.
-    public static func lstsq(_ A: Matrix, _ b: Matrix) -> Matrix? {
-        precondition(A.rows == b.rows, "Dimensions must match")
+    /// - Throws: ``LinAlgError/dimensionMismatch(_:)`` when `A` and `b` row counts differ.
+    ///   Returns `nil` (does not throw) when the factorization fails.
+    public static func lstsq(_ A: Matrix, _ b: Matrix) throws -> Matrix? {
+        guard A.rows == b.rows else {
+            throw LinAlgError.dimensionMismatch("A.rows (\(A.rows)) must equal b.rows (\(b.rows))")
+        }
 
         let maxDim = max(A.rows, A.cols)
 
@@ -1062,10 +1109,14 @@ public enum LinAlg {
     ///   - lower: If true, A is lower triangular; if false, upper triangular
     ///   - trans: If true, solve A^T * x = b instead
     /// - Returns: Solution x, or nil if singular
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `A` is not square, or
+    ///   ``LinAlgError/dimensionMismatch(_:)`` when `A` and `b` row counts differ.
     public static func solveTriangular(_ A: Matrix, _ b: Matrix,
-                                       lower: Bool = true, trans: Bool = false) -> Matrix? {
-        precondition(A.rows == A.cols, "A must be square")
-        precondition(A.rows == b.rows, "Dimensions must match")
+                                       lower: Bool = true, trans: Bool = false) throws -> Matrix? {
+        guard A.rows == A.cols else { throw LinAlgError.notSquare(rows: A.rows, cols: A.cols) }
+        guard A.rows == b.rows else {
+            throw LinAlgError.dimensionMismatch("A.rows (\(A.rows)) must equal b.rows (\(b.rows))")
+        }
 
         let n = A.rows
 
@@ -1095,9 +1146,14 @@ public enum LinAlg {
     ///   - L: Lower triangular Cholesky factor
     ///   - b: Right-hand side
     /// - Returns: Solution x, or nil if computation fails
-    public static func choSolve(_ L: Matrix, _ b: Matrix) -> Matrix? {
-        precondition(L.rows == L.cols, "L must be square")
-        precondition(L.rows == b.rows, "Dimensions must match")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `L` is not square, or
+    ///   ``LinAlgError/dimensionMismatch(_:)`` when `L` and `b` row counts differ.
+    ///   Returns `nil` (does not throw) when the solve fails.
+    public static func choSolve(_ L: Matrix, _ b: Matrix) throws -> Matrix? {
+        guard L.rows == L.cols else { throw LinAlgError.notSquare(rows: L.rows, cols: L.cols) }
+        guard L.rows == b.rows else {
+            throw LinAlgError.dimensionMismatch("L.rows (\(L.rows)) must equal b.rows (\(b.rows))")
+        }
 
         let n = L.rows
 
@@ -1126,10 +1182,15 @@ public enum LinAlg {
     ///   - P: Permutation matrix from lu()
     ///   - b: Right-hand side
     /// - Returns: Solution x
-    public static func luSolve(_ L: Matrix, _ U: Matrix, _ P: Matrix, _ b: Matrix) -> Matrix {
-        precondition(L.rows == L.cols && U.rows == U.cols && P.rows == P.cols)
-        precondition(L.rows == U.rows && L.rows == P.rows)
-        precondition(L.rows == b.rows)
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `L`, `U`, or `P` is not square, or
+    ///   ``LinAlgError/dimensionMismatch(_:)`` when the factors and `b` leading dimensions differ.
+    public static func luSolve(_ L: Matrix, _ U: Matrix, _ P: Matrix, _ b: Matrix) throws -> Matrix {
+        guard L.rows == L.cols && U.rows == U.cols && P.rows == P.cols else {
+            throw LinAlgError.notSquare(rows: L.rows, cols: L.cols)
+        }
+        guard L.rows == U.rows && L.rows == P.rows && L.rows == b.rows else {
+            throw LinAlgError.dimensionMismatch("L, U, P, and b must share the same leading dimension")
+        }
 
         let n = L.rows
 
@@ -1175,8 +1236,9 @@ public enum LinAlg {
     // MARK: - Matrix Functions
 
     /// Matrix exponential using Padé approximation with scaling and squaring.
-    public static func expm(_ m: Matrix) -> Matrix {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func expm(_ m: Matrix) throws -> Matrix {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         let normA = cblas_dnrm2(Int32(n * n), m.data, 1)
@@ -1237,8 +1299,10 @@ public enum LinAlg {
     /// log(A) = V * diag(log(λ)) * V^(-1) for diagonalizable matrices.
     /// - Parameter m: Square matrix with positive eigenvalues
     /// - Returns: Matrix logarithm, or nil if eigenvalues are non-positive
-    public static func logm(_ m: Matrix) -> Matrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    ///   Returns `nil` (does not throw) when eigenvalues are non-positive.
+    public static func logm(_ m: Matrix) throws -> Matrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         guard let (eigenvalues, eigenvectors) = computeRealEigendecomposition(m.data, n) else {
@@ -1264,8 +1328,10 @@ public enum LinAlg {
     /// sqrt(A) = V * diag(sqrt(λ)) * V^(-1) for diagonalizable matrices.
     /// - Parameter m: Square matrix with non-negative eigenvalues
     /// - Returns: Matrix square root, or nil if eigenvalues are negative
-    public static func sqrtm(_ m: Matrix) -> Matrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    ///   Returns `nil` (does not throw) when eigenvalues are negative.
+    public static func sqrtm(_ m: Matrix) throws -> Matrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         guard let (eigenvalues, eigenvectors) = computeRealEigendecomposition(m.data, n) else {
@@ -1298,8 +1364,10 @@ public enum LinAlg {
     ///   - m: Square matrix
     ///   - function: Function to apply (sin, cos, exp, log, sqrt, sinh, cosh, tanh, abs)
     /// - Returns: f(A), or nil if computation fails
-    public static func funm(_ m: Matrix, _ function: MatrixFunction) -> Matrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    ///   Returns `nil` (does not throw) when the function is undefined on the eigenvalues.
+    public static func funm(_ m: Matrix, _ function: MatrixFunction) throws -> Matrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         guard let (eigenvalues, eigenvectors) = computeRealEigendecomposition(m.data, n) else {
@@ -1349,9 +1417,14 @@ public enum LinAlg {
     ///   - A: Square complex coefficient matrix
     ///   - b: Right-hand side complex matrix
     /// - Returns: Solution z, or nil if singular
-    public static func csolve(_ A: ComplexMatrix, _ b: ComplexMatrix) -> ComplexMatrix? {
-        precondition(A.rows == A.cols, "A must be square")
-        precondition(A.rows == b.rows, "Dimensions must match")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `A` is not square, or
+    ///   ``LinAlgError/dimensionMismatch(_:)`` when `A` and `b` row counts differ.
+    ///   Returns `nil` (does not throw) when `A` is square but singular.
+    public static func csolve(_ A: ComplexMatrix, _ b: ComplexMatrix) throws -> ComplexMatrix? {
+        guard A.rows == A.cols else { throw LinAlgError.notSquare(rows: A.rows, cols: A.cols) }
+        guard A.rows == b.rows else {
+            throw LinAlgError.dimensionMismatch("A.rows (\(A.rows)) must equal b.rows (\(b.rows))")
+        }
 
         let n = A.rows
 
@@ -1488,8 +1561,9 @@ public enum LinAlg {
     ///
     /// - Parameter m: Square complex matrix
     /// - Returns: (eigenvalues, eigenvectors) both complex
-    public static func ceig(_ m: ComplexMatrix) -> (values: ComplexMatrix, vectors: ComplexMatrix)? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func ceig(_ m: ComplexMatrix) throws -> (values: ComplexMatrix, vectors: ComplexMatrix)? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         // Convert to column-major
@@ -1564,8 +1638,9 @@ public enum LinAlg {
     }
 
     /// Complex eigenvalues only.
-    public static func ceigvals(_ m: ComplexMatrix) -> ComplexMatrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func ceigvals(_ m: ComplexMatrix) throws -> ComplexMatrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0, i: 0), count: n * n)
@@ -1625,8 +1700,9 @@ public enum LinAlg {
     }
 
     /// Complex determinant.
-    public static func cdet(_ m: ComplexMatrix) -> (re: Double, im: Double)? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    public static func cdet(_ m: ComplexMatrix) throws -> (re: Double, im: Double)? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0, i: 0), count: n * n)
@@ -1672,8 +1748,10 @@ public enum LinAlg {
     }
 
     /// Complex inverse.
-    public static func cinv(_ m: ComplexMatrix) -> ComplexMatrix? {
-        precondition(m.rows == m.cols, "Matrix must be square")
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
+    ///   Returns `nil` (does not throw) when `m` is square but singular.
+    public static func cinv(_ m: ComplexMatrix) throws -> ComplexMatrix? {
+        guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
         var a = [__CLPK_doublecomplex](repeating: __CLPK_doublecomplex(r: 0, i: 0), count: n * n)

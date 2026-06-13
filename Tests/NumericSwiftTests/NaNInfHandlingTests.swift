@@ -18,19 +18,19 @@ final class NaNInfHandlingTests: XCTestCase {
 
   // MARK: - Statistics: NaN inputs
 
-  func testMeanWithNaN() {
+  func testMeanWithNaN() throws  {
     // NaN propagates through arithmetic sum
     let result = mean([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "mean with NaN element should propagate NaN")
   }
 
-  func testMeanWithInf() {
+  func testMeanWithInf() throws  {
     // Inf propagates through arithmetic sum
     let result = mean([1.0, .infinity, 3.0])
     XCTAssertTrue(result.isInfinite, "mean with Inf element should propagate Inf")
   }
 
-  func testMedianWithNaN() {
+  func testMedianWithNaN() throws  {
     // Swift's sort is not stable for NaN (NaN < x and x < NaN are both false).
     // In practice NaN ends up in a position that makes the median NaN.
     // Document actual behavior: NaN propagates through the sorted result.
@@ -38,39 +38,39 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertTrue(result.isNaN, "median with NaN element propagates NaN via sort ordering")
   }
 
-  func testMedianWithInf() {
+  func testMedianWithInf() throws  {
     let result = median([1.0, .infinity, 3.0])
     // Sorted: [1, 3, Inf]; median → 3.0
     XCTAssertFalse(result.isNaN)
     XCTAssertEqual(result, 3.0, accuracy: 1e-12)
   }
 
-  func testVarianceWithNaN() {
+  func testVarianceWithNaN() throws  {
     // mean becomes NaN → squared diffs become NaN → variance is NaN
     let result = variance([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "variance with NaN element should propagate NaN")
   }
 
-  func testVarianceWithInf() {
+  func testVarianceWithInf() throws  {
     let result = variance([1.0, .infinity, 3.0])
     XCTAssertTrue(
       result.isNaN || result.isInfinite,
       "variance with Inf element should produce NaN or Inf")
   }
 
-  func testStddevWithNaN() {
+  func testStddevWithNaN() throws  {
     let result = stddev([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "stddev with NaN element should propagate NaN")
   }
 
-  func testStddevWithInf() {
+  func testStddevWithInf() throws  {
     let result = stddev([1.0, .infinity, 3.0])
     XCTAssertTrue(
       result.isNaN || result.isInfinite,
       "stddev with Inf element should produce NaN or Inf")
   }
 
-  func testPercentileWithNaN() {
+  func testPercentileWithNaN() throws  {
     // NaN sort position is undefined; the NaN propagates into the interpolated result.
     // Document actual behavior: no crash, but result is NaN.
     let result = percentile([1.0, .nan, 3.0], 50)
@@ -78,32 +78,32 @@ final class NaNInfHandlingTests: XCTestCase {
       result.isNaN, "percentile with NaN element propagates NaN via sort ordering")
   }
 
-  func testPercentileWithInf() {
+  func testPercentileWithInf() throws  {
     let result = percentile([1.0, .infinity, 3.0], 100)
     XCTAssertTrue(result.isInfinite, "100th percentile with Inf element should return Inf")
   }
 
-  func testGmeanWithNaN() {
+  func testGmeanWithNaN() throws  {
     // gmean checks v <= 0 but NaN > 0 is false, so NaN passes the guard
     // and log(NaN) = NaN propagates
     let result = gmean([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "gmean with NaN element should propagate NaN")
   }
 
-  func testGmeanWithInf() {
+  func testGmeanWithInf() throws  {
     // Inf passes the positivity check; log(Inf) = Inf; exp(Inf) = Inf
     let result = gmean([1.0, .infinity, 3.0])
     XCTAssertTrue(result.isInfinite, "gmean with Inf element should produce Inf")
   }
 
-  func testHmeanWithNaN() {
+  func testHmeanWithNaN() throws  {
     // NaN fails the v <= 0 guard (NaN <= 0 is false) so it passes through;
     // 1/NaN = NaN propagates into the reciprocal sum
     let result = hmean([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "hmean with NaN element should propagate NaN")
   }
 
-  func testHmeanWithInf() {
+  func testHmeanWithInf() throws  {
     // 1/Inf = 0; harmonic mean of [1, Inf, 3] = 3 / (1 + 0 + 1/3) = 3/(4/3) = 2.25
     let result = hmean([1.0, .infinity, 3.0])
     XCTAssertFalse(result.isNaN)
@@ -113,37 +113,37 @@ final class NaNInfHandlingTests: XCTestCase {
 
   // MARK: - Statistics: all-NaN array
 
-  func testMeanAllNaN() {
+  func testMeanAllNaN() throws  {
     let result = mean([Double.nan, Double.nan])
     XCTAssertTrue(result.isNaN)
   }
 
-  func testVarianceAllNaN() {
+  func testVarianceAllNaN() throws  {
     let result = variance([Double.nan, Double.nan])
     XCTAssertTrue(result.isNaN)
   }
 
   // MARK: - Distributions: NaN/Inf inputs
 
-  func testNormalPdfNaN() {
+  func testNormalPdfNaN() throws  {
     let dist = NormalDistribution()
     let result = dist.pdf(.nan)
     XCTAssertTrue(result.isNaN, "Normal PDF at NaN should return NaN")
   }
 
-  func testNormalCdfNaN() {
+  func testNormalCdfNaN() throws  {
     let dist = NormalDistribution()
     let result = dist.cdf(.nan)
     XCTAssertTrue(result.isNaN, "Normal CDF at NaN should return NaN")
   }
 
-  func testNormalPpfNaN() {
+  func testNormalPpfNaN() throws  {
     let dist = NormalDistribution()
     let result = dist.ppf(.nan)
     XCTAssertTrue(result.isNaN, "Normal PPF at NaN should return NaN")
   }
 
-  func testNormalPdfInf() {
+  func testNormalPdfInf() throws  {
     let dist = NormalDistribution()
     // exp(-∞) → 0
     let resultPos = dist.pdf(.infinity)
@@ -152,30 +152,30 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertEqual(resultNeg, 0.0, accuracy: 1e-15)
   }
 
-  func testNormalCdfInf() {
+  func testNormalCdfInf() throws  {
     let dist = NormalDistribution()
     XCTAssertEqual(dist.cdf(.infinity), 1.0, accuracy: 1e-10)
     XCTAssertEqual(dist.cdf(-.infinity), 0.0, accuracy: 1e-10)
   }
 
-  func testNormalPpfInfProbability() {
+  func testNormalPpfInfProbability() throws  {
     let dist = NormalDistribution()
     // ppf(1) → +∞, ppf(0) → -∞
     XCTAssertTrue(dist.ppf(1.0).isInfinite)
     XCTAssertTrue(dist.ppf(0.0).isInfinite)
   }
 
-  func testExponentialPdfNaN() {
+  func testExponentialPdfNaN() throws  {
     let dist = ExponentialDistribution()
     XCTAssertTrue(dist.pdf(.nan).isNaN, "Exponential PDF at NaN should return NaN")
   }
 
-  func testExponentialCdfNaN() {
+  func testExponentialCdfNaN() throws  {
     let dist = ExponentialDistribution()
     XCTAssertTrue(dist.cdf(.nan).isNaN, "Exponential CDF at NaN should return NaN")
   }
 
-  func testExponentialCdfInf() {
+  func testExponentialCdfInf() throws  {
     let dist = ExponentialDistribution()
     // 1 - exp(-∞) = 1
     XCTAssertEqual(dist.cdf(.infinity), 1.0, accuracy: 1e-15)
@@ -183,14 +183,14 @@ final class NaNInfHandlingTests: XCTestCase {
 
   // MARK: - Integration: NaN-returning function
 
-  func testQuadWithNaNFunction() {
+  func testQuadWithNaNFunction() throws  {
     // A function that always returns NaN; quad should not crash.
     let result = quad({ _ in Double.nan }, 0.0, 1.0)
     // NaN propagates into the quadrature sum
     XCTAssertTrue(result.value.isNaN, "quad with NaN-returning function should produce NaN value")
   }
 
-  func testQuadWithInfLimits() {
+  func testQuadWithInfLimits() throws  {
     // Integrate standard normal density over (-∞, +∞) → should be ~1
     let result = quad(
       { x in Darwin.exp(-0.5 * x * x) / Darwin.sqrt(2 * .pi) },
@@ -200,7 +200,7 @@ final class NaNInfHandlingTests: XCTestCase {
       "Integral of standard normal over R should be 1")
   }
 
-  func testQuadWithPosInfLimit() {
+  func testQuadWithPosInfLimit() throws  {
     // Integral of exp(-x) from 0 to +∞ = 1
     let result = quad({ x in Darwin.exp(-x) }, 0.0, .infinity)
     XCTAssertEqual(
@@ -208,7 +208,7 @@ final class NaNInfHandlingTests: XCTestCase {
       "Integral of exp(-x) from 0 to +inf should equal 1")
   }
 
-  func testQuadWithNegInfLimit() {
+  func testQuadWithNegInfLimit() throws  {
     // Integral of exp(x) from -∞ to 0 = 1
     let result = quad({ x in Darwin.exp(x) }, -.infinity, 0.0)
     XCTAssertEqual(
@@ -218,7 +218,7 @@ final class NaNInfHandlingTests: XCTestCase {
 
   // MARK: - Interpolation: NaN in data arrays
 
-  func testComputeSplineCoeffsWithNaNY() {
+  func testComputeSplineCoeffsWithNaNY() throws  {
     // NaN in y data propagates into coefficient arithmetic; no crash expected.
     let x = [0.0, 1.0, 2.0, 3.0]
     let y = [0.0, .nan, 4.0, 9.0]
@@ -227,7 +227,7 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertFalse(coeffs.isEmpty, "computeSplineCoeffs should return coefficients even with NaN y")
   }
 
-  func testEvalCubicSplineWithNaNCoeffs() {
+  func testEvalCubicSplineWithNaNCoeffs() throws  {
     // Verify evalCubicSpline doesn't crash when coefficients contain NaN
     let x = [0.0, 1.0, 2.0, 3.0]
     let y = [0.0, .nan, 4.0, 9.0]
@@ -238,7 +238,7 @@ final class NaNInfHandlingTests: XCTestCase {
     _ = result
   }
 
-  func testInterp1dWithNaNY() {
+  func testInterp1dWithNaNY() throws  {
     // Linear interpolation with NaN in y; no crash, NaN propagation expected
     let x = [0.0, 1.0, 2.0]
     let y = [0.0, .nan, 4.0]
@@ -246,7 +246,7 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertTrue(result.isNaN, "interp1d with NaN y values should propagate NaN")
   }
 
-  func testComputePchipWithNaNY() {
+  func testComputePchipWithNaNY() throws  {
     // PCHIP derivative computation with NaN in y; no crash expected
     let x = [0.0, 1.0, 2.0, 3.0]
     let y = [0.0, .nan, 4.0, 9.0]
@@ -256,7 +256,7 @@ final class NaNInfHandlingTests: XCTestCase {
 
   // MARK: - LinAlg: NaN elements
 
-  func testMatrixDotWithNaN() {
+  func testMatrixDotWithNaN() throws  {
     // Dot product with NaN element; NaN should propagate
     let a = LinAlg.Matrix([[1.0, .nan], [3.0, 4.0]])
     let b = LinAlg.Matrix([[1.0, 0.0], [0.0, 1.0]])
@@ -267,34 +267,34 @@ final class NaNInfHandlingTests: XCTestCase {
       "Matrix dot with NaN element should propagate NaN")
   }
 
-  func testMatrixAddWithNaN() {
+  func testMatrixAddWithNaN() throws  {
     let a = LinAlg.Matrix([[1.0, .nan], [3.0, 4.0]])
     let b = LinAlg.Matrix([[1.0, 2.0], [3.0, 4.0]])
     let result = LinAlg.add(a, b)
     XCTAssertTrue(result.data[1].isNaN, "Matrix add with NaN should propagate NaN in that element")
   }
 
-  func testMatrixTraceWithNaN() {
+  func testMatrixTraceWithNaN() throws  {
     let m = LinAlg.Matrix([[.nan, 2.0], [3.0, 4.0]])
-    let result = LinAlg.trace(m)
+    let result = try LinAlg.trace(m)
     XCTAssertTrue(result.isNaN, "Matrix trace with NaN on diagonal should return NaN")
   }
 
-  func testMatrixDetWithNaN() {
+  func testMatrixDetWithNaN() throws  {
     let m = LinAlg.Matrix([[.nan, 2.0], [3.0, 4.0]])
-    let result = LinAlg.det(m)
+    let result = try LinAlg.det(m)
     XCTAssertTrue(
       result.isNaN || result == 0 || result.isInfinite,
       "Matrix determinant with NaN should not crash")
   }
 
-  func testMatrixNormWithNaN() {
+  func testMatrixNormWithNaN() throws  {
     let m = LinAlg.Matrix([[1.0, .nan], [3.0, 4.0]])
     let result = LinAlg.norm(m)
     XCTAssertTrue(result.isNaN, "Matrix norm with NaN element should return NaN")
   }
 
-  func testMatrixWithInfElement() {
+  func testMatrixWithInfElement() throws  {
     let a = LinAlg.Matrix([[1.0, .infinity], [3.0, 4.0]])
     let b = LinAlg.Matrix([[1.0, 0.0], [0.0, 1.0]])
     let result = LinAlg.dot(a, b)
@@ -305,7 +305,7 @@ final class NaNInfHandlingTests: XCTestCase {
 
   // MARK: - Optimization: NaN-returning functions
 
-  func testBisectWithNaNFunction() {
+  func testBisectWithNaNFunction() throws  {
     // Function returns NaN; bisect should not crash or loop infinitely.
     // fa*fb > 0 is false for NaN, so the sign-change guard passes.
     // fa*fc < 0 is also always false, so the else branch always fires:
@@ -320,14 +320,14 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertFalse(result.root.isNaN, "bisect root is the narrowed midpoint, not NaN")
   }
 
-  func testBisectWithInfBounds() {
+  func testBisectWithInfBounds() throws  {
     // Finite function evaluated at boundaries; normal case with wide bracket
     let result = bisect({ x in x * x - 4.0 }, a: 0.0, b: 1e10)
     XCTAssertTrue(result.converged)
     XCTAssertEqual(result.root, 2.0, accuracy: 1e-6)
   }
 
-  func testNewtonWithNaNFunction() {
+  func testNewtonWithNaNFunction() throws  {
     // Function returns NaN; newton should not crash.
     let result = newton({ _ in Double.nan }, x0: 1.0)
     // fp will be NaN/NaN difference → NaN; abs(NaN) < 1e-14 is false,
@@ -335,13 +335,13 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertFalse(result.converged, "newton with NaN function should not converge")
   }
 
-  func testNewtonWithInfStartingPoint() {
+  func testNewtonWithInfStartingPoint() throws  {
     // Starting at Inf; function returns Inf; derivative step is NaN
     let result = newton({ x in x - 2.0 }, x0: .infinity)
     XCTAssertFalse(result.converged, "newton starting at Inf should not converge normally")
   }
 
-  func testNewtonWithNaNDerivative() {
+  func testNewtonWithNaNDerivative() throws  {
     // Function is valid but derivative always returns NaN
     let result = newton(
       { x in x - 2.0 },

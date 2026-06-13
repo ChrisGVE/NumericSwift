@@ -17,7 +17,7 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - NDArray to Matrix to Visualization
 
-    func testNDArrayHeatmapVisualization() {
+    func testNDArrayHeatmapVisualization() throws  {
         // Create NDArray data
         let array = NDArray.arange(start: 0, stop: 9).reshape([3, 3])
 
@@ -31,7 +31,7 @@ final class CombinedIntegrationTests: XCTestCase {
         XCTAssertGreaterThan(ctx.commandCount, 0)
     }
 
-    func testNDArrayStatisticsVisualization() {
+    func testNDArrayStatisticsVisualization() throws  {
         // Generate random data using ArraySwift
         let data = NDArray.randn([100])
 
@@ -69,13 +69,13 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - Matrix Operations with Visualization
 
-    func testMatrixDecompositionVisualization() {
+    func testMatrixDecompositionVisualization() throws  {
         // Create matrix from NDArray
         let array = NDArray([[4, 12, -16], [12, 37, -43], [-16, -43, 98]])
         let matrix = LinAlg.Matrix(ndarray: array)!
 
         // Perform Cholesky decomposition
-        guard let chol = LinAlg.cholesky(matrix) else {
+        guard let chol = try LinAlg.cholesky(matrix) else {
             XCTFail("Cholesky decomposition failed")
             return
         }
@@ -94,7 +94,7 @@ final class CombinedIntegrationTests: XCTestCase {
         XCTAssertGreaterThan(ctx.commandCount, 0)
     }
 
-    func testEigenvectorVisualization() {
+    func testEigenvectorVisualization() throws  {
         // 2D rotation matrix (unused - just demonstrating complex eigenvalues)
         let theta = Double.pi / 4  // 45 degrees
         let _ = NDArray([[Foundation.cos(theta), -Foundation.sin(theta)], [Foundation.sin(theta), Foundation.cos(theta)]])
@@ -104,7 +104,7 @@ final class CombinedIntegrationTests: XCTestCase {
         let symMatrix = LinAlg.Matrix(ndarray: symmetric)!
 
         // eig returns (values: [Double], imagParts: [Double], vectors: Matrix)
-        let (eigenvalues, _, eigenvectors) = LinAlg.eig(symMatrix)
+        let (eigenvalues, _, eigenvectors) = try LinAlg.eig(symMatrix)
 
         // Visualize eigenvectors
         let ctx = DrawingContext()
@@ -135,7 +135,7 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - Statistical Analysis Pipeline
 
-    func testCorrelationHeatmap() {
+    func testCorrelationHeatmap() throws  {
         // Generate correlated data using ArraySwift
         let n = 50
         let x1 = NDArray.randn([n])
@@ -190,7 +190,7 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - Cumulative Statistics Visualization
 
-    func testCumulativeOperationsVisualization() {
+    func testCumulativeOperationsVisualization() throws  {
         // Time series data
         let n = 100
         let noise = NDArray.randn([n]) * 0.1
@@ -219,7 +219,7 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - Linear Algebra Visualization
 
-    func testSVDVisualization() {
+    func testSVDVisualization() throws  {
         // Create a matrix
         let array = NDArray([[3, 2, 2], [2, 3, -2]])
         let matrix = LinAlg.Matrix(ndarray: array)!
@@ -261,7 +261,7 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - Scatter Plot with Statistics
 
-    func testScatterPlotWithRegression() {
+    func testScatterPlotWithRegression() throws  {
         // Generate data with linear relationship
         let n = 30
         let xArr = NDArray.linspace(start: 0, stop: 10, num: n)
@@ -308,7 +308,7 @@ final class CombinedIntegrationTests: XCTestCase {
 
     // MARK: - Color Mapping with NDArray
 
-    func testColorMappingWithNDArray() {
+    func testColorMappingWithNDArray() throws  {
         // Create 2D function values
         let size = 20
         var values: [[Double]] = []

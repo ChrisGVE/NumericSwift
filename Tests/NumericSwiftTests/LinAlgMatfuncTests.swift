@@ -37,17 +37,17 @@ final class LinAlgMatfuncTests: XCTestCase {
 
   // MARK: - Known Value Tests: expm
 
-  func testExpmZeroMatrix() {
+  func testExpmZeroMatrix() throws  {
     // expm(0) = I
     let zero = LinAlg.zeros(3, 3)
-    let result = LinAlg.expm(zero)
+    let result = try LinAlg.expm(zero)
     assertMatrixEqual(result, LinAlg.eye(3))
   }
 
-  func testExpmIdentity() {
+  func testExpmIdentity() throws  {
     // expm(I) = e * I; Padé approximation accuracy ~1e-6 for this input
     let identity = LinAlg.eye(3)
-    let result = LinAlg.expm(identity)
+    let result = try LinAlg.expm(identity)
     let eVal = exp(1.0)
     for i in 0..<3 {
       XCTAssertEqual(result[i, i], eVal, accuracy: 1e-5)
@@ -57,19 +57,19 @@ final class LinAlgMatfuncTests: XCTestCase {
 
   // MARK: - Known Value Tests: sqrtm
 
-  func testSqrtmScaledIdentity() {
+  func testSqrtmScaledIdentity() throws  {
     // sqrtm(4*I) = 2*I
     let fourIdentity = 4.0 * LinAlg.eye(3)
-    let result = LinAlg.sqrtm(fourIdentity)
+    let result = try LinAlg.sqrtm(fourIdentity)
     XCTAssertNotNil(result)
     assertMatrixEqual(result!, 2.0 * LinAlg.eye(3))
   }
 
   // MARK: - Known Value Tests: logm
 
-  func testLogmIdentity() {
+  func testLogmIdentity() throws  {
     // logm(I) = 0
-    let result = LinAlg.logm(LinAlg.eye(3))
+    let result = try LinAlg.logm(LinAlg.eye(3))
     XCTAssertNotNil(result)
     assertMatrixEqual(result!, LinAlg.zeros(3, 3))
   }
@@ -85,20 +85,20 @@ final class LinAlgMatfuncTests: XCTestCase {
     ])
   }
 
-  func testExpmLogmRoundTrip() {
+  func testExpmLogmRoundTrip() throws  {
     // expm(logm(A)) ≈ A for SPD A
     let A = spdMatrix
-    let logA = LinAlg.logm(A)
+    let logA = try LinAlg.logm(A)
     XCTAssertNotNil(logA)
-    let recovered = LinAlg.expm(logA!)
+    let recovered = try LinAlg.expm(logA!)
     // expm uses Padé; logm uses eigendecomposition — combined error ~1e-5
     assertMatrixEqual(recovered, A, tolerance: 1e-4)
   }
 
-  func testSqrtmSquaredRoundTrip() {
+  func testSqrtmSquaredRoundTrip() throws  {
     // sqrtm(A) * sqrtm(A) ≈ A for SPD A
     let A = spdMatrix
-    let sqA = LinAlg.sqrtm(A)
+    let sqA = try LinAlg.sqrtm(A)
     XCTAssertNotNil(sqA)
     let product = sqA! * sqA!
     assertMatrixEqual(product, A, tolerance: 1e-8)
@@ -106,50 +106,50 @@ final class LinAlgMatfuncTests: XCTestCase {
 
   // MARK: - 1x1 Edge Cases
 
-  func testExpm1x1() {
+  func testExpm1x1() throws  {
     // Padé approximation accuracy for expm([[2]]) is ~1e-4
     let m = LinAlg.Matrix([[2.0]])
-    let result = LinAlg.expm(m)
+    let result = try LinAlg.expm(m)
     XCTAssertEqual(result[0, 0], exp(2.0), accuracy: 1e-3)
   }
 
-  func testLogm1x1() {
+  func testLogm1x1() throws  {
     let m = LinAlg.Matrix([[exp(3.0)]])
-    let result = LinAlg.logm(m)
+    let result = try LinAlg.logm(m)
     XCTAssertNotNil(result)
     XCTAssertEqual(result![0, 0], 3.0, accuracy: 1e-10)
   }
 
-  func testSqrtm1x1() {
+  func testSqrtm1x1() throws  {
     let m = LinAlg.Matrix([[9.0]])
-    let result = LinAlg.sqrtm(m)
+    let result = try LinAlg.sqrtm(m)
     XCTAssertNotNil(result)
     XCTAssertEqual(result![0, 0], 3.0, accuracy: 1e-10)
   }
 
-  func testFunm1x1Exp() {
+  func testFunm1x1Exp() throws  {
     let m = LinAlg.Matrix([[2.0]])
-    let result = LinAlg.funm(m, .exp)
+    let result = try LinAlg.funm(m, .exp)
     XCTAssertNotNil(result)
     XCTAssertEqual(result![0, 0], exp(2.0), accuracy: 1e-10)
   }
 
   // MARK: - Diagonal Matrix Tests
 
-  func testExpmDiagonal() {
+  func testExpmDiagonal() throws  {
     // expm(diag(a,b,c)) = diag(exp(a), exp(b), exp(c)); Padé accuracy ~1e-4 for these values
     let d = LinAlg.diag([1.0, 2.0, 3.0])
-    let result = LinAlg.expm(d)
+    let result = try LinAlg.expm(d)
     XCTAssertEqual(result[0, 0], exp(1.0), accuracy: 1e-3)
     XCTAssertEqual(result[1, 1], exp(2.0), accuracy: 1e-3)
     XCTAssertEqual(result[2, 2], exp(3.0), accuracy: 1e-3)
     XCTAssertEqual(result[0, 1], 0.0, accuracy: 1e-10)
   }
 
-  func testLogmDiagonal() {
+  func testLogmDiagonal() throws  {
     // logm(diag(a,b,c)) = diag(log(a), log(b), log(c)) for a,b,c > 0
     let d = LinAlg.diag([exp(1.0), exp(2.0), exp(3.0)])
-    let result = LinAlg.logm(d)
+    let result = try LinAlg.logm(d)
     XCTAssertNotNil(result)
     XCTAssertEqual(result![0, 0], 1.0, accuracy: 1e-10)
     XCTAssertEqual(result![1, 1], 2.0, accuracy: 1e-10)
@@ -157,10 +157,10 @@ final class LinAlgMatfuncTests: XCTestCase {
     XCTAssertEqual(result![0, 1], 0.0, accuracy: 1e-10)
   }
 
-  func testSqrtmDiagonal() {
+  func testSqrtmDiagonal() throws  {
     // sqrtm(diag(a,b,c)) = diag(sqrt(a), sqrt(b), sqrt(c))
     let d = LinAlg.diag([4.0, 9.0, 16.0])
-    let result = LinAlg.sqrtm(d)
+    let result = try LinAlg.sqrtm(d)
     XCTAssertNotNil(result)
     XCTAssertEqual(result![0, 0], 2.0, accuracy: 1e-10)
     XCTAssertEqual(result![1, 1], 3.0, accuracy: 1e-10)
@@ -169,53 +169,53 @@ final class LinAlgMatfuncTests: XCTestCase {
 
   // MARK: - Negative Eigenvalue Edge Cases
 
-  func testLogmNegativeEigenvalueReturnsNil() {
+  func testLogmNegativeEigenvalueReturnsNil() throws  {
     // Matrix with a negative eigenvalue: diag(-1, 2, 3)
     let d = LinAlg.diag([-1.0, 2.0, 3.0])
-    XCTAssertNil(LinAlg.logm(d))
+    XCTAssertNil(try LinAlg.logm(d))
   }
 
-  func testSqrtmNegativeEigenvalueReturnsNil() {
+  func testSqrtmNegativeEigenvalueReturnsNil() throws  {
     // Matrix with a negative eigenvalue: diag(-4, 1, 1)
     let d = LinAlg.diag([-4.0, 1.0, 1.0])
-    XCTAssertNil(LinAlg.sqrtm(d))
+    XCTAssertNil(try LinAlg.sqrtm(d))
   }
 
-  func testFunmLogNegativeEigenvalueReturnsNil() {
+  func testFunmLogNegativeEigenvalueReturnsNil() throws  {
     let d = LinAlg.diag([-1.0, 2.0, 3.0])
-    XCTAssertNil(LinAlg.funm(d, .log))
+    XCTAssertNil(try LinAlg.funm(d, .log))
   }
 
-  func testFunmSqrtNegativeEigenvalueReturnsNil() {
+  func testFunmSqrtNegativeEigenvalueReturnsNil() throws  {
     let d = LinAlg.diag([-4.0, 1.0, 1.0])
-    XCTAssertNil(LinAlg.funm(d, .sqrt))
+    XCTAssertNil(try LinAlg.funm(d, .sqrt))
   }
 
   // MARK: - funm Tests
 
-  func testFunmExpMatchesExpm() {
+  func testFunmExpMatchesExpm() throws  {
     // funm(A, .exp) should agree with expm(A) for a diagonalizable A
     let A = spdMatrix
-    let funmResult = LinAlg.funm(A, .exp)
+    let funmResult = try LinAlg.funm(A, .exp)
     XCTAssertNotNil(funmResult)
-    let expmResult = LinAlg.expm(A)
+    let expmResult = try LinAlg.expm(A)
     // funm uses eigendecomposition; expm uses Padé — algorithmic difference ~5e-4
     assertMatrixEqual(funmResult!, expmResult, tolerance: 1e-3)
   }
 
-  func testFunmLogMatchesLogm() {
+  func testFunmLogMatchesLogm() throws  {
     let A = spdMatrix
-    let funmResult = LinAlg.funm(A, .log)
-    let logmResult = LinAlg.logm(A)
+    let funmResult = try LinAlg.funm(A, .log)
+    let logmResult = try LinAlg.logm(A)
     XCTAssertNotNil(funmResult)
     XCTAssertNotNil(logmResult)
     assertMatrixEqual(funmResult!, logmResult!, tolerance: 1e-10)
   }
 
-  func testFunmSqrtMatchesSqrtm() {
+  func testFunmSqrtMatchesSqrtm() throws  {
     let A = spdMatrix
-    let funmResult = LinAlg.funm(A, .sqrt)
-    let sqrtmResult = LinAlg.sqrtm(A)
+    let funmResult = try LinAlg.funm(A, .sqrt)
+    let sqrtmResult = try LinAlg.sqrtm(A)
     XCTAssertNotNil(funmResult)
     XCTAssertNotNil(sqrtmResult)
     assertMatrixEqual(funmResult!, sqrtmResult!, tolerance: 1e-10)
