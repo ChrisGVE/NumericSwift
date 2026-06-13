@@ -5,7 +5,7 @@
 //  Tests verifying NaN/Inf behavior across all modules.
 //  Goal: document current behavior and ensure no crashes.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import XCTest

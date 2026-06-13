@@ -5,7 +5,7 @@
 //  Tests for logpdf, sf (survival function), and isf (inverse survival function)
 //  methods on all continuous distributions.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import XCTest

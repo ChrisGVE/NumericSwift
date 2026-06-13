@@ -6,7 +6,7 @@
 //  All reference values computed from known mathematical identities
 //  or high-precision tables (DLMF, Wolfram Alpha, mpmath).
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import Darwin

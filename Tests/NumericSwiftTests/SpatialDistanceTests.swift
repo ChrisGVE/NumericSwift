@@ -4,7 +4,7 @@
 //
 //  Tests for Mahalanobis, Jaccard, Hamming, Canberra, and Bray-Curtis distance metrics.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import XCTest

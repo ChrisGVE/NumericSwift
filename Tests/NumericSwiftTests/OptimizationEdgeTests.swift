@@ -4,7 +4,7 @@
 //
 //  Edge case and pathological input tests for optimization and root-finding functions.
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import XCTest

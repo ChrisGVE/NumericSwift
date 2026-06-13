@@ -6,7 +6,7 @@
 //  (code_audit_2026-06-10.md): besseli sign (C1), the tgamma→lgamma overflow
 //  sweep (M1, M3, M4, M5), and the NumberTheory Int-overflow fixes (M8, M9).
 //
-//  Licensed under the MIT License.
+//  Licensed under the Apache License, Version 2.0.
 //
 
 import XCTest
