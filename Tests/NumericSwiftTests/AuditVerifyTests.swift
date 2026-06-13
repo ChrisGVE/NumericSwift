@@ -84,4 +84,22 @@ final class AuditVerifyTests: XCTestCase {
     XCTAssertEqual(try MathExpr.eval("2 - -3"), 5.0, accuracy: 1e-12)
     XCTAssertEqual(try MathExpr.eval("--5"), 5.0, accuracy: 1e-12)
   }
+
+  // MARK: - M16: curveFit rank-deficient covariance
+
+  /// Two perfectly collinear parameters make J^T J singular, so the covariance
+  /// is unestimable. `curveFit` must signal this the SciPy way — a pcov filled
+  /// with infinity — not return garbage finite numbers.
+  func testCurveFitRankDeficientCovarianceIsInfinite() {
+    // f(a, b, x) = (a + b) * x  →  ∂f/∂a == ∂f/∂b == x  →  rank-deficient J.
+    let model: ([Double], Double) -> Double = { p, x in (p[0] + p[1]) * x }
+    let xdata = [0.0, 1.0, 2.0, 3.0, 4.0]
+    let ydata = xdata.map { 2.0 * $0 }   // true (a + b) = 2
+    let (_, pcov, _) = curveFit(model, xdata: xdata, ydata: ydata, p0: [0.5, 0.5])
+    for row in pcov {
+      for v in row {
+        XCTAssertTrue(v.isInfinite, "rank-deficient pcov entry must be infinite, got \(v)")
+      }
+    }
+  }
 }

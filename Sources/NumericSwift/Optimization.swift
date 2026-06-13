@@ -1247,7 +1247,10 @@ public func curveFit(
         pcov[i][i] = 1.0
     }
 
-    // Forward elimination with full pivot
+    // Forward elimination with full pivot. A pivot at or below the
+    // rank-deficiency threshold means J^T J is singular and the covariance
+    // cannot be estimated.
+    var singular = false
     for col in 0..<n {
         var maxRow = col
         for row in (col+1)..<n {
@@ -1259,19 +1262,29 @@ public func curveFit(
         pcov.swapAt(col, maxRow)
 
         let pivot = A[col][col]
-        if abs(pivot) > 1e-14 {
+        guard abs(pivot) > 1e-14 else {
+            singular = true
+            break
+        }
+        for j in 0..<n {
+            A[col][j] /= pivot
+            pcov[col][j] /= pivot
+        }
+        for row in 0..<n where row != col {
+            let factor = A[row][col]
             for j in 0..<n {
-                A[col][j] /= pivot
-                pcov[col][j] /= pivot
-            }
-            for row in 0..<n where row != col {
-                let factor = A[row][col]
-                for j in 0..<n {
-                    A[row][j] -= factor * A[col][j]
-                    pcov[row][j] -= factor * pcov[col][j]
-                }
+                A[row][j] -= factor * A[col][j]
+                pcov[row][j] -= factor * pcov[col][j]
             }
         }
+    }
+
+    // Rank-deficient Jacobian: return a covariance matrix filled with
+    // infinity, matching `scipy.optimize.curve_fit`, which signals an
+    // unestimable covariance that way rather than returning garbage.
+    if singular {
+        let infCov = [[Double]](repeating: [Double](repeating: .infinity, count: n), count: n)
+        return (result.x, infCov, result)
     }
 
     // Scale by variance estimate
