@@ -182,21 +182,31 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
   let sumW = w.reduce(0.0, +)
   let yMean: Double = zip(w, y).reduce(0.0) { $0 + $1.0 * $1.1 } / sumW
 
+  // statsmodels parity: an intercept makes R²/F use the *centered* total sum
+  // of squares (Σw(y−ȳ)²) and is excluded from the model degrees of freedom;
+  // a model with no constant column uses the *uncentered* TSS (Σw·y²) and
+  // counts every column in dfModel.
+  let kConstant = hasConstantColumn(X) ? 1 : 0
+
   var ssr = 0.0
-  var ess = 0.0
-  var tss = 0.0
+  var centeredTSS = 0.0
+  var uncenteredTSS = 0.0
 
   for i in 0..<n {
     ssr += w[i] * residuals[i] * residuals[i]
-    ess += w[i] * (fittedValues[i] - yMean) * (fittedValues[i] - yMean)
-    tss += w[i] * (y[i] - yMean) * (y[i] - yMean)
+    centeredTSS += w[i] * (y[i] - yMean) * (y[i] - yMean)
+    uncenteredTSS += w[i] * y[i] * y[i]
   }
 
-  let dfModel = k - 1
+  let tss = kConstant == 1 ? centeredTSS : uncenteredTSS
+  let ess = tss - ssr
+
+  let dfModel = k - kConstant
   let dfResid = n - k
 
   let rsquared = tss > 0 ? 1.0 - ssr / tss : 0.0
-  let rsquaredAdj = dfResid > 0 ? 1.0 - (1.0 - rsquared) * Double(n - 1) / Double(dfResid) : 0.0
+  let rsquaredAdj =
+    dfResid > 0 ? 1.0 - (1.0 - rsquared) * Double(n - kConstant) / Double(dfResid) : 0.0
 
   let mse = dfResid > 0 ? ssr / Double(dfResid) : 0.0
 
@@ -714,7 +724,8 @@ public func glm(
   // Log-likelihood
   let llf = glmLogLikelihood(y: y, mu: mu, family: family)
 
-  let dfModel = k - 1
+  // statsmodels parity: df_model = rank − 1 only when a constant is present.
+  let dfModel = k - (hasConstantColumn(X) ? 1 : 0)
   let dfResid = n - k
   let aic = -2.0 * llf + 2.0 * Double(k)
   let bic = -2.0 * llf + Double(k) * Darwin.log(Double(n))
@@ -742,6 +753,20 @@ public func glm(
 }
 
 // MARK: - Helper Functions
+
+/// Detect whether a design matrix contains a constant (intercept) column,
+/// following statsmodels' `k_constant` rule: a column whose entries are all
+/// identical and nonzero. A leading column of ones added by `addConstant`
+/// matches; an all-zero column does not.
+internal func hasConstantColumn(_ X: [[Double]]) -> Bool {
+  guard let k = X.first?.count, k > 0 else { return false }
+  for j in 0..<k {
+    let first = X[0][j]
+    if first == 0 { continue }
+    if X.allSatisfy({ $0[j] == first }) { return true }
+  }
+  return false
+}
 
 /// Solve weighted least squares.
 private func solveWLS(X: [[Double]], y: [Double], weights: [Double]) -> [Double]? {

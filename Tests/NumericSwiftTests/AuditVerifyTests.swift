@@ -102,4 +102,46 @@ final class AuditVerifyTests: XCTestCase {
       }
     }
   }
+
+  // MARK: - M20: no-intercept dfModel + uncentered R²
+
+  /// statsmodels constant-column detection: a constant nonzero column is the
+  /// intercept; an ordinary or all-zero column is not.
+  func testHasConstantColumnDetection() {
+    XCTAssertTrue(hasConstantColumn([[1.0, 5.0], [1.0, 6.0], [1.0, 7.0]]))  // col 0 constant
+    XCTAssertFalse(hasConstantColumn([[1.0], [2.0], [3.0]]))                // no constant
+    XCTAssertFalse(hasConstantColumn([[0.0, 1.0], [0.0, 2.0]]))             // all-zero ≠ intercept
+  }
+
+  /// A through-origin design (no constant column) must count every column in
+  /// dfModel and report R² against the UNCENTERED total sum of squares (Σy²),
+  /// matching statsmodels OLS without a constant.
+  func testOlsNoInterceptDfAndUncenteredR2() {
+    let X = [[1.0], [2.0], [3.0]]
+    let y = [1.0, 2.0, 4.0]
+    guard let r = ols(y, X) else { return XCTFail("ols returned nil") }
+    XCTAssertEqual(r.dfModel, 1)   // k = 1, kConstant = 0
+    XCTAssertEqual(r.dfResid, 2)
+    // slope = 17/14; ssr = 0.3571429; Σy² = 21 ⇒ R² = 1 − ssr/Σy².
+    XCTAssertEqual(r.rsquared, 0.9829932, accuracy: 1e-5)
+  }
+
+  /// With an explicit constant column the intercept is excluded from dfModel.
+  func testOlsWithInterceptDf() {
+    let X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
+    let y = [2.0, 4.0, 6.0, 8.0]
+    guard let r = ols(y, X) else { return XCTFail("ols returned nil") }
+    XCTAssertEqual(r.dfModel, 1)   // k = 2, kConstant = 1
+    XCTAssertEqual(r.dfResid, 2)
+  }
+
+  /// GLM df_model = rank − 1 only when a constant is present (statsmodels rule);
+  /// a no-constant design counts every column.
+  func testGlmNoInterceptDfModel() {
+    let X = [[1.0], [2.0], [3.0], [4.0]]
+    let y = [1.0, 2.0, 3.0, 4.0]
+    guard let r = glm(y, X, family: .gaussian) else { return XCTFail("glm returned nil") }
+    XCTAssertEqual(r.dfModel, 1)   // k = 1, no constant ⇒ k − 0
+    XCTAssertEqual(r.dfResid, 3)
+  }
 }
