@@ -11,6 +11,34 @@
 
 import Foundation
 
+// MARK: - PPF Domain Guard
+
+/// Shared p-domain handling for every continuous `ppf` (inverse CDF), matching
+/// `scipy.stats`:
+/// - `p` strictly outside `[0, 1]` (or `NaN`) → `NaN`;
+/// - `p == 0` → the lower bound of the support;
+/// - `p == 1` → the upper bound of the support.
+///
+/// Returns a value to short-circuit on, or `nil` to proceed with the
+/// distribution's closed-form / iterative solve. The bounds are autoclosures so
+/// a distribution only evaluates the one it needs.
+///
+/// - Parameters:
+///   - p: Requested probability.
+///   - lower: Lower support endpoint (e.g. `-.infinity`, or `loc`).
+///   - upper: Upper support endpoint (e.g. `.infinity`, or `loc + scale`).
+@inline(__always)
+internal func ppfDomainGuard(
+  _ p: Double,
+  lower: @autoclosure () -> Double,
+  upper: @autoclosure () -> Double
+) -> Double? {
+  if p.isNaN || p < 0 || p > 1 { return .nan }
+  if p == 0 { return lower() }
+  if p == 1 { return upper() }
+  return nil
+}
+
 // MARK: - Random Number Generators
 
 /// Box-Muller transform for standard normal random variates.
@@ -91,7 +119,8 @@ public struct NormalDistribution {
 
   /// Percent point function (quantile function, inverse CDF).
   public func ppf(_ p: Double) -> Double {
-    loc + scale * Darwin.sqrt(2.0) * erfinv(2.0 * p - 1.0)
+    if let g = ppfDomainGuard(p, lower: -.infinity, upper: .infinity) { return g }
+    return loc + scale * Darwin.sqrt(2.0) * erfinv(2.0 * p - 1.0)
   }
 
   /// Random variate sampling.
@@ -183,7 +212,8 @@ public struct UniformDistribution {
 
   /// Percent point function (quantile function, inverse CDF).
   public func ppf(_ p: Double) -> Double {
-    loc + scale * p
+    if let g = ppfDomainGuard(p, lower: loc, upper: loc + scale) { return g }
+    return loc + scale * p
   }
 
   /// Random variate sampling.
@@ -256,7 +286,8 @@ public struct ExponentialDistribution {
 
   /// Percent point function (quantile function, inverse CDF).
   public func ppf(_ p: Double) -> Double {
-    loc - scale * Darwin.log(1.0 - p)
+    if let g = ppfDomainGuard(p, lower: loc, upper: .infinity) { return g }
+    return loc - scale * Darwin.log(1.0 - p)
   }
 
   /// Random variate sampling.
@@ -344,8 +375,7 @@ public struct TDistribution {
 
   /// Percent point function using Newton-Raphson iteration.
   public func ppf(_ p: Double) -> Double {
-    if p <= 0 { return -.infinity }
-    if p >= 1 { return .infinity }
+    if let g = ppfDomainGuard(p, lower: -.infinity, upper: .infinity) { return g }
     if p == 0.5 { return loc }
 
     // Initial approximation: normal quantile (erfinv now fixed for full precision)
@@ -480,6 +510,7 @@ public struct ChiSquaredDistribution {
 
   /// Percent point function using Newton-Raphson.
   public func ppf(_ p: Double) -> Double {
+    if let g = ppfDomainGuard(p, lower: loc, upper: .infinity) { return g }
     // Wilson-Hilferty approximation as starting point
     var x =
       df
@@ -584,6 +615,7 @@ public struct FDistribution {
 
   /// Percent point function using Newton-Raphson.
   public func ppf(_ p: Double) -> Double {
+    if let g = ppfDomainGuard(p, lower: loc, upper: .infinity) { return g }
     // Starting point: use median approximation
     var x = dfd / (dfd - 2) * (dfn > 2 ? (dfn - 2) / dfn : 1.0)
     if x < 0.01 { x = 0.01 }
@@ -695,6 +727,7 @@ public struct GammaDistribution {
 
   /// Percent point function using Newton-Raphson.
   public func ppf(_ p: Double) -> Double {
+    if let g = ppfDomainGuard(p, lower: loc, upper: .infinity) { return g }
     var x = shape  // Mean as starting point
     if x < 0.1 { x = 0.1 }
 
@@ -787,6 +820,7 @@ public struct BetaDistribution {
 
   /// Percent point function using Newton-Raphson.
   public func ppf(_ p: Double) -> Double {
+    if let g = ppfDomainGuard(p, lower: loc, upper: loc + scale) { return g }
     var x = a / (a + b)  // Use mean as starting point
 
     for _ in 0..<100 {
