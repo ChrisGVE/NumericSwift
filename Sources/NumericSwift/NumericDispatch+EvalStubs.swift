@@ -583,13 +583,11 @@ extension NumericDispatch {
         cm: LinAlg.ComplexMatrix, divisor: Complex
     ) throws -> NumericValue {
         try LinAlg.checkSoftCap(rows: cm.rows, cols: cm.cols)
-        let denom = divisor.re * divisor.re + divisor.im * divisor.im
         let size = cm.size
         var outReal = [Double](repeating: 0, count: size)
         var outImag = [Double](repeating: 0, count: size)
         for i in 0..<size {
             let (re, im) = divideComplex(re: cm.real[i], im: cm.imag[i], by: divisor)
-            _ = denom  // suppress unused warning; denom used inside divideComplex
             outReal[i] = re
             outImag[i] = im
         }
