@@ -63,16 +63,32 @@ public enum NumericDispatch {
 
     /// Route a binary operator over two `NumericValue` operands.
     ///
-    /// Dispatches according to the §15 truth table. Group-A operators pre-validate
-    /// operand shapes/divisors and throw before invoking `LinAlg`; Group-B named
-    /// functions propagate `LinAlgError.notSquare` directly.
+    /// Dispatches according to the §15 truth table. The error model follows the
+    /// **two-mechanism Group-A / Group-B split** (§4.5/AC2.2):
+    ///
+    /// - **Group-A operators** (`+`, `-`, `*`, `/`, `hadamard`, `elementDiv`, `dotProduct`)
+    ///   use `precondition` internally in `LinAlg`. The dispatcher **pre-validates** operand
+    ///   shapes and divisors, throwing `MathExprError.shapeMismatch` or `.divisionByZero`
+    ///   **before** any `LinAlg` precondition can fire, so a shape mismatch is always a
+    ///   recoverable error, never a process trap.
+    /// - **Group-B named functions** (`inv`, `det`, `trace`, `expm`, `logm`, `sqrtm`,
+    ///   `cdet`, `cinv`) already throw `LinAlgError.notSquare` themselves; the dispatcher
+    ///   calls them with `try` and propagates that error directly.
+    ///
+    /// **1×1 coercion (§4.3a):** a `matrix*matrix` or `dotProduct` result that is 1×1
+    /// (i.e. vec·vec) is automatically collapsed to `.scalar`. This does *not* apply to
+    /// user-constructed 1×1 matrices that are never passed through a matmul path.
     ///
     /// - Parameters:
     ///   - op:  The binary operator.
     ///   - lhs: Left-hand operand.
     ///   - rhs: Right-hand operand.
     /// - Returns: The result as a `NumericValue`.
-    /// - Throws: `MathExprError` or `LinAlgError` for invalid combinations.
+    /// - Throws: `MathExprError.shapeMismatch` for Group-A shape mismatches;
+    ///           `MathExprError.divisionByZero` for scalar or matrix ÷ 0;
+    ///           `MathExprError.invalidArguments` for undefined kind combinations;
+    ///           `LinAlgError.invalidParameter` when the result shape exceeds the soft cap;
+    ///           `LinAlgError.notSquare` propagated from Group-B named functions.
     public static func applyBinary(
         _ op: BinaryOp,
         lhs: NumericValue,
