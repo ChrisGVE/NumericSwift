@@ -93,6 +93,10 @@ let package = Package(
         }
         return deps
       }(),
+      // Frozen parity fixtures are read by #file-relative filesystem path
+      // (see ParityCorpusTests), not as SPM bundle resources, so they are
+      // excluded from the target to avoid the unhandled-files build warning.
+      exclude: ["Fixtures"],
       swiftSettings: {
         var settings: [SwiftSetting] = []
         if includeMathLex {
