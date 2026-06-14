@@ -266,7 +266,7 @@ enum UnifiedEvaluatorCore {
         case .dotProduct(let left, let right):
             let l = try eval(left, values: values)
             let r = try eval(right, values: values)
-            return try NumericDispatch.applyFunction("dot", args: [l, r])
+            return try NumericDispatch.applyFunction("dotProduct", args: [l, r])
 
         case .determinant(let matrix):
             let m = try eval(matrix, values: values)

@@ -1,130 +1,157 @@
 # Mathematical Expressions
 
-Mathematical expression parsing and evaluation.
+Mathematical expression parsing and evaluation, including the unified numeric pipeline.
 
 ## Overview
 
-The MathExpr module provides a parser and evaluator for mathematical expressions given as strings. This allows runtime evaluation of formulas.
+The `MathExpr` module provides parsing and evaluation for mathematical expressions
+given as strings. Two evaluation paths are available:
 
-## Basic Usage
+- **Legacy scalar/complex path** — `evaluate(_:variables:)` and `evaluateComplex(_:variables:complexVariables:)`
+  for expressions that produce a single `Double` or `Complex` value.
+- **Unified pipeline path** — `evaluateUnified(_:values:)` (Phase 3), the single front
+  door that traverses the full AST and produces a `NumericValue`, supporting scalars,
+  complex numbers, real matrices, and complex matrices in one call.
 
-```swift
-let expr = MathExpr("2 + 3 * 4")
-let result = try expr.evaluate([:])  // 14
+## Unified Evaluator (Phase 3)
 
-// With variables
-let expr2 = MathExpr("x^2 + y")
-let result2 = try expr2.evaluate(["x": 3, "y": 1])  // 10
-
-// Using functions
-let expr3 = MathExpr("sin(pi/2)")
-let result3 = try expr3.evaluate([:])  // 1.0
-```
-
-## Expression Parser
-
-For repeated evaluation with different variable values:
+The unified evaluator accepts a `[String: NumericValue]` variable binding dictionary,
+so matrix and complex values can be supplied directly alongside scalars.
 
 ```swift
-let expr = MathExpr("x^2 + 2*x + 1")
+// Matrix multiplication via variable binding
+let A = LinAlg.Matrix(rows: 2, cols: 2, data: [1, 2, 3, 4])
+let B = LinAlg.Matrix(rows: 2, cols: 2, data: [5, 6, 7, 8])
+let ast = try MathExpr.parse("A * B")
+// * = matmul (SciPy/scipy.linalg convention)
+let result = try MathExpr.evaluateUnified(ast, values: ["A": .matrix(A), "B": .matrix(B)])
+// result == .matrix([[19,22],[43,50]])
 
-// Evaluate with different x values
-let y1 = try expr.evaluate(["x": 0])   // 1
-let y2 = try expr.evaluate(["x": 1])   // 4
-let y3 = try expr.evaluate(["x": 2])   // 9
+// Mixed scalar and matrix
+let ast2 = try MathExpr.parse("2 * A")
+let r2 = try MathExpr.evaluateUnified(ast2, values: ["A": .matrix(A)])
+// r2 == .matrix([[2,4],[6,8]])
+
+// Complex variables
+let z = Complex(re: 1, im: 2)
+let ast3 = try MathExpr.parse("z * z")
+let r3 = try MathExpr.evaluateUnified(ast3, values: ["z": .complex(z)])
+// r3 == .complex(-3 + 4i)
 ```
 
-## Supported Operations
+## Supported AST Node Kinds
 
-### Arithmetic Operators
+The unified evaluator handles:
 
-- `+` Addition
-- `-` Subtraction
-- `*` Multiplication
-- `/` Division
-- `^` Exponentiation
+| Node kind | Produces |
+|-----------|----------|
+| `.integer`, `.float` | `.scalar` |
+| `.constant` (pi, e, inf, nan) | `.scalar` |
+| `.constant(.i)` | `.complex(0+1i)` |
+| `.variable(name)` | The bound `NumericValue` |
+| `.rational(n, d)` | Result of n / d |
+| `.complex(re, im)` | `.complex` |
+| `.binary(op, l, r)` | Via `NumericDispatch.applyBinary` |
+| `.unary(op, operand)` | Via `NumericDispatch.applyUnary` |
+| `.function(name, args)` | Via `NumericDispatch.applyFunction` |
+| `.vector([...])` | `.matrix` column vector (mathlex build) |
+| `.matrix([[...]])` | `.matrix` (mathlex build) |
+| `.dotProduct(l, r)` | `.scalar` after 1×1 coercion (§4.3a) |
+| `.determinant(m)` | `.scalar` |
+| `.matrixInverse(m)` | `.matrix` |
+| `.trace(m)` | `.scalar` |
+| `.conjugateTranspose(m)` | `.matrix` or `.complexMatrix` |
+| `.rank(m)` | `.scalar` (numerical rank via SVD) |
 
-### Built-in Functions
+Calculus, logic, set-theory, tensor, and quaternion nodes throw `.unsupportedNode`.
+
+## Operator Semantics
+
+`*` between two matrices is **matrix multiplication** (matmul), not element-wise.
+This matches `LinAlg.Matrix * Matrix` (`LinAlg.swift:2022`) and scipy.linalg conventions.
+Element-wise multiplication uses the `hadamard` named function.
+
+`dot(u, v)` on two column vectors returns a `.scalar` after the automatic 1×1 → scalar
+coercion (§4.3a).
+
+## Parser Backends
 
 ```swift
-// Trigonometric
-MathExpr("sin(x)")
-MathExpr("cos(x)")
-MathExpr("tan(x)")
-MathExpr("asin(x)")
-MathExpr("acos(x)")
-MathExpr("atan(x)")
+// Default build (pure-Swift shunting-yard parser):
+let ast = try MathExpr.parse("sin(x) + cos(x)")
 
-// Hyperbolic
-MathExpr("sinh(x)")
-MathExpr("cosh(x)")
-MathExpr("tanh(x)")
-
-// Exponential/Logarithmic
-MathExpr("exp(x)")
-MathExpr("log(x)")      // Natural log
-MathExpr("log10(x)")
-MathExpr("log2(x)")
-
-// Power/Root
-MathExpr("sqrt(x)")
-MathExpr("cbrt(x)")
-MathExpr("pow(x, y)")
-
-// Other
-MathExpr("abs(x)")
-MathExpr("floor(x)")
-MathExpr("ceil(x)")
-MathExpr("round(x)")
-MathExpr("min(x, y)")
-MathExpr("max(x, y)")
-MathExpr("clamp(x, lo, hi)")
-MathExpr("lerp(a, b, t)")
+// With MathLex Rust backend (NUMERICSWIFT_INCLUDE_MATHLEX=1):
+// Full grammar including LaTeX and matrix literal syntax [1, 2; 3, 4]
+let ast2 = try MathExpr.parseLatex(#"\frac{x^2}{2}"#)
 ```
 
-### Built-in Constants
+On the default build the fallback parser has no bracket tokenizer, so `.vector` and
+`.matrix` literal AST nodes are never emitted. Matrix values are supplied via the
+`values:` dictionary instead and the evaluator handles them identically.
 
-```swift
-MathExpr("pi")      // 3.14159...
-MathExpr("e")       // 2.71828...
-MathExpr("tau")     // 2*pi
-```
-
-## Expression Utilities
-
-```swift
-let expr = MathExpr("x^2 + y")
-
-// Find variables in expression
-let vars = expr.findVariables()  // ["x", "y"]
-
-// Substitute values
-let substituted = expr.substitute(["x": 3])  // "9 + y"
-
-// Convert back to string
-let str = expr.toString()  // "x^2 + y"
-```
-
-## Error Handling
+## Error Surface
 
 ```swift
 do {
-    let expr = MathExpr("1/0")
-    let result = try expr.evaluate([:])
-} catch MathExprError.divisionByZero {
-    print("Cannot divide by zero")
+    let result = try MathExpr.evaluateUnified(ast, values: ["x": .scalar(3.0)])
 } catch MathExprError.undefinedVariable(let name) {
-    print("Variable '\(name)' not defined")
-} catch MathExprError.invalidSyntax(let message) {
-    print("Syntax error: \(message)")
+    print("Variable '\(name)' not bound")
+} catch MathExprError.unknownFunction(let name) {
+    print("No function named '\(name)'")
+} catch MathExprError.divisionByZero {
+    print("Division by zero")
+} catch MathExprError.invalidArguments(let msg) {
+    print("Argument error: \(msg)")
+} catch MathExprError.unsupportedNode(let kind) {
+    print("AST node '\(kind)' not evaluable")
+} catch MathExprError.nonFiniteFloat {
+    print("NaN sentinel in AST (float(nil))")
+} catch MathExprError.shapeMismatch(let msg) {
+    print("Matrix shape error: \(msg)")
+} catch let laErr as LinAlg.LinAlgError {
+    // Group-B functions propagate their own notSquare error
+    print("Linear algebra error: \(laErr)")
 }
+```
+
+## Legacy Scalar Evaluation
+
+The legacy scalar and complex paths are unchanged and remain the primary API for
+expressions that return `Double` or `Complex`:
+
+```swift
+// Scalar evaluation
+let result: Double = try MathExpr.eval("sin(x) + 2", variables: ["x": 0.5])
+
+// Complex evaluation
+let z: Complex = try MathExpr.evaluateComplex(
+    try MathExpr.parse("(1 + i) * (1 - i)"))
 ```
 
 ## Topics
 
-### Expression Type
+### Parsing
 
-- ``MathExprToken``
+- ``MathExpr/parse(_:)``
+- ``MathExpr/parseLatex(_:)``
+- ``MathLexExpression``
+
+### Unified Evaluation (Phase 3)
+
+- ``MathExpr/evaluateUnified(_:values:)``
+
+### Legacy Scalar/Complex Evaluation
+
+- ``MathExpr/evaluate(_:variables:)``
+- ``MathExpr/eval(_:variables:)``
+- ``MathExpr/evaluateComplex(_:variables:complexVariables:)``
+
+### Utilities
+
+- ``MathExpr/findVariables(in:)-4c5q0``
+- ``MathExpr/findVariables(in:)-6fkpu``
+- ``MathExpr/substitute(_:with:)``
+- ``MathExpr/toString(_:)``
 
 ### Errors
 
