@@ -238,7 +238,7 @@ final class NumericDispatchTests: XCTestCase {
             try NumericDispatch.applyBinary(
                 .mul, lhs: self.makeCM(2, 2), rhs: self.makeCM(2, 2))
         }
-        assertStub(result, taskTag: "Task 11")
+        assertStub(result, taskTag: "Task 15")
     }
 
     // MARK: - applyBinary: div
@@ -802,7 +802,7 @@ final class NumericDispatchTests: XCTestCase {
             try NumericDispatch.applyFunction(
                 "dotProduct", args: [self.makeCM(2, 2), self.makeCM(2, 2)])
         }
-        assertStub(result, taskTag: "Task 11")
+        assertStub(result, taskTag: "Task 15")
     }
 
     // MARK: - applyFunction: hadamard

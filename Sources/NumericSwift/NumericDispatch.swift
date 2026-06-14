@@ -4,8 +4,12 @@
 //
 //  Central dispatch surface for the unified numeric pipeline.
 //
-//  This file contains the three public entry points and the §4.3a 1×1-matrix
-//  coercion helper. Operator sub-dispatchers live in:
+//  This file contains the three public entry points. Operator sub-dispatchers
+//  and lattice helpers live in:
+//    • NumericDispatch+CoercionLattice.swift  (§15 coercion lattice: coerce1x1,
+//                                              coerce1x1Complex, promoteToComplexMatrix,
+//                                              promoteScalarToComplex — single documented
+//                                              §4.3a collapse sites and promotion helpers)
 //    • NumericDispatch+BinaryOps.swift   (applyAddSub / applyMul / applyDiv /
 //                                         applyPow / applyMod)
 //    • NumericDispatch+UnaryFunctions.swift (applyNeg / applyFactorial /
@@ -76,8 +80,11 @@ public enum NumericDispatch {
     ///   calls them with `try` and propagates that error directly.
     ///
     /// **1×1 coercion (§4.3a):** a `matrix*matrix` or `dotProduct` result that is 1×1
-    /// (i.e. vec·vec) is automatically collapsed to `.scalar`. This does *not* apply to
-    /// user-constructed 1×1 matrices that are never passed through a matmul path.
+    /// (i.e. vec·vec) is automatically collapsed to `.scalar`. The complex analogue
+    /// collapses a 1×1 `complexMatrix` result from `CM*CM` or `dotProduct(CM,CM)` to
+    /// `.complex`. This does *not* apply to user-constructed 1×1 matrices, nor to 1×1
+    /// results of any other operation (add, hadamard, transpose, inv, …).
+    /// See `NumericDispatch+CoercionLattice.swift` for the full lattice specification.
     ///
     /// - Parameters:
     ///   - op:  The binary operator.
@@ -185,19 +192,4 @@ public enum NumericDispatch {
         }
     }
 
-    // MARK: - §4.3a coercion helper
-
-    /// Collapse a 1×1 `.matrix` result to `.scalar`.
-    ///
-    /// Applied only at the `dot`/vec·vec result site per §4.3a. A user-constructed
-    /// 1×1 matrix is never coerced implicitly; coercion is local to this call.
-    ///
-    /// A 1×1 `.complexMatrix` is NOT coerced here (complex vec·vec uses a
-    /// separate path in ``evalComplexMatrixDotProduct``).
-    static func coerce1x1(_ value: NumericValue) -> NumericValue {
-        if case .matrix(let m) = value, m.rows == 1, m.cols == 1 {
-            return .scalar(m[0, 0])
-        }
-        return value
-    }
 }

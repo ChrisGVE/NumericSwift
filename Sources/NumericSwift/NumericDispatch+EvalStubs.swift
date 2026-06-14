@@ -114,12 +114,16 @@ extension NumericDispatch {
             "not yet implemented: matrix*complexMatrix (Task 11)")
     }
 
-    /// SEAM: Task 11 — complexMatrix * complexMatrix complex matmul (§4.8).
+    /// SEAM: Task 15 — complexMatrix * complexMatrix complex matmul (§4.8).
+    ///
+    /// **§4.3a coercion contract:** after computing the complex matmul result,
+    /// call `coerce1x1Complex(result)` before returning so that a 1×1 result
+    /// (vec·vec) is collapsed to `.complex` per §15 truth table.
     static func evalComplexMatrixMulComplexMatrix(
         lhs: NumericValue, rhs: NumericValue
     ) throws -> NumericValue {
         throw MathExprError.unsupportedNode(
-            "not yet implemented: complexMatrix*complexMatrix (Task 11)")
+            "not yet implemented: complexMatrix*complexMatrix (Task 15)")
     }
 
     // MARK: - Div EVAL stubs (Task 11)
@@ -259,15 +263,19 @@ extension NumericDispatch {
             "not yet implemented: trace(complexMatrix) (Task 11)")
     }
 
-    /// SEAM: Task 11 — dotProduct(CM, CM): bilinear complex dot (DOM-06).
+    /// SEAM: Task 15 — dotProduct(CM, CM): bilinear complex dot (DOM-06).
     ///
     /// Uses the bilinear (no-conjugation) form: Σ aᵢ·bᵢ in the complex sense.
     /// The conjugate form (vdot) is deferred to v-next (§14).
+    ///
+    /// **§4.3a coercion contract:** after computing the complex dot result,
+    /// call `coerce1x1Complex(result)` before returning so that a vec·vec
+    /// result is collapsed to `.complex` per §15 truth table (PRD §4.3a).
     static func evalComplexMatrixDotProduct(
         lhs: LinAlg.ComplexMatrix, rhs: LinAlg.ComplexMatrix
     ) throws -> NumericValue {
         throw MathExprError.unsupportedNode(
-            "not yet implemented: dotProduct(complexMatrix, complexMatrix) (Task 11)")
+            "not yet implemented: dotProduct(complexMatrix, complexMatrix) (Task 15)")
     }
 
     /// SEAM: Task 11 — hadamard(CM, CM): element-wise complex product.
