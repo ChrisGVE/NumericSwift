@@ -126,7 +126,7 @@ public final class BenchRunner {
       print("NOTE: Non-zero exit — one or more gates FAILED or ERRORed.")
     }
     if pending > 0 {
-      print("NOTE: \(pending) gate(s) PENDING — unified evaluator not yet implemented (Phase 0).")
+      print("NOTE: \(pending) gate(s) PENDING — unified evaluator not yet implemented.")
     }
     print(String(repeating: "─", count: 70))
   }

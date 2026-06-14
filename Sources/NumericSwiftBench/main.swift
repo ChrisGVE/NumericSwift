@@ -25,12 +25,13 @@
 //             Not a failure; signals future work.
 //   ERROR   — unexpected exception; treated as failure.
 //
-// Phase 0 note:
-//   Gates 1–4 are PENDING because the unified NumericValue evaluator does
-//   not exist yet. The sanity gate runs both legs with the legacy evaluator
-//   and must PASS (ratio ≈ 1.0). When Phases 2/3 ship the unified path,
-//   the placeholder numerator closures in each gate file are replaced with
-//   real unified-evaluator calls — no other changes needed.
+// Phase 3 note:
+//   All five gates are ACTIVE. Gates 1–4 measure real unified-evaluator ratios;
+//   the sanity gate validates the timing infrastructure (ratio ≈ 1.0).
+//   Gate 1: unified scalar evaluator vs legacy (≤1.15).
+//   Gate 2: expr-driven matmul via evaluateUnified vs LinAlg.dot (≤1.10).
+//   Gate 3: complex-matmul via evaluateUnified vs 4× LinAlg.dot (≤1.10).
+//   Gate 4: exp(M) via evaluateUnified vs LinAlg.expm direct (≤1.10).
 
 import Foundation
 import NumericSwift
@@ -54,19 +55,19 @@ let runner = BenchRunner(config: config)
 runner.register(makeSanityGate(snapshot: snapshot))
 
 // Gate 1: unified-evaluator vs legacy scalar evaluator (≤ 1.15).
-// PENDING — unified NumericValue evaluator not yet implemented.
+// ACTIVE — both legs wired (Task 18 numerator + Task 3 legacy denominator).
 runner.register(makeGate1(snapshot: snapshot))
 
 // Gate 2: expression matmul vs direct LinAlg.dot (≤ 1.10).
-// PENDING — unified NumericValue pipeline matmul not yet implemented.
+// ACTIVE — numerator wired in Task 21 (evaluateUnified "A * B" with matrix values).
 runner.register(makeGate2(config: config))
 
 // Gate 3: complex matmul (unified) vs real-block decomposition direct (≤ 1.10).
-// PENDING — unified NumericValue pipeline complex matmul not yet implemented.
+// ACTIVE — numerator wired in Task 21 (evaluateUnified "A * B" with complexMatrix values).
 runner.register(makeGate3(config: config))
 
 // Gate 4: expm via expression vs LinAlg.expm direct (≤ 1.10).
-// PENDING — unified NumericValue pipeline expm not yet implemented.
+// ACTIVE — numerator wired in Task 21 (evaluateUnified "exp(M)" with matrix value).
 runner.register(makeGate4(config: config))
 
 // MARK: - Run and exit
