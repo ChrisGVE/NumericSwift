@@ -892,8 +892,12 @@ final class NumericDispatchTests: XCTestCase {
     // MARK: - applyFunction: crossProduct
 
     func testCrossProduct_throws_unsupportedNode() {
+        // crossProduct requires 2 args (matches its arityMin/arityMax); call with 2 to
+        // reach the handler which throws .unsupportedNode (deferred §14).
         let result = run {
-            try NumericDispatch.applyFunction("crossProduct", args: [self.makeMatrix(3, 1)])
+            try NumericDispatch.applyFunction(
+                "crossProduct",
+                args: [self.makeMatrix(3, 1), self.makeMatrix(3, 1)])
         }
         guard case .failure(let err) = result else { return XCTFail("Expected failure") }
         if case MathExprError.unsupportedNode = err { return }

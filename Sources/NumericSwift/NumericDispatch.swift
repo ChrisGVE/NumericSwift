@@ -147,11 +147,16 @@ public enum NumericDispatch {
 
     /// Route a named function call over one or more `NumericValue` arguments.
     ///
-    /// Name validation follows AC2.3a (three distinct error cases):
+    /// Dispatch uses the unified ``functionRegistry`` (see
+    /// `NumericDispatch+FunctionRegistry.swift`). Three distinct error paths follow
+    /// AC2.3a:
     ///   1. Unknown name → `MathExprError.unknownFunction(name)`
     ///   2. Known name, wrong arity → `MathExprError.invalidArguments("… expects N arg(s)")`
-    ///   3. Known name, right arity, unsupported kind →
+    ///   3. Known name, right arity, unsupported operand kind →
     ///      `MathExprError.invalidArguments("…")`
+    ///
+    /// Group-B functions (trace/det/inv/expm/logm/sqrtm/cdet/cinv) propagate
+    /// `LinAlgError.notSquare` unmodified when the input matrix is non-square.
     ///
     /// - Parameters:
     ///   - name: The function name (case-sensitive).
@@ -162,36 +167,23 @@ public enum NumericDispatch {
         _ name: String,
         args: [NumericValue]
     ) throws -> NumericValue {
-        let trigNames: Set<String> = [
-            "sin", "cos", "tan",
-            "asin", "acos", "atan",
-            "sinh", "cosh", "tanh",
-            "asinh", "acosh", "atanh",
-        ]
-        if trigNames.contains(name) {
-            return try applyTrigFunction(name, args: args)
-        }
-        switch name {
-        case "exp", "log", "sqrt":
-            return try applyExpLogSqrt(name, args: args)
-        case "abs", "inv", "det", "trace":
-            return try applyAbsInvDetTrace(name, args: args)
-        case "cdet", "cinv":
-            return try applyCdetCinv(name, args: args)
-        case "transpose":
-            return try applyTransposeFunction(args: args)
-        case "dotProduct", "hadamard", "elementDiv":
-            return try applyMultiArgFunction(name, args: args)
-        case "crossProduct":
-            throw MathExprError.unsupportedNode(
-                "crossProduct not yet implemented (deferred §14)")
-        case "min":
-            return try applyMinMax(name: "min", args: args)
-        case "max":
-            return try applyMinMax(name: "max", args: args)
-        default:
+        // Step 1: Name lookup — AC2.3a error 1.
+        guard let descriptor = functionRegistry[name] else {
             throw MathExprError.unknownFunction(name)
         }
+
+        // Step 2: Arity check — AC2.3a error 2.
+        guard args.count >= descriptor.arityMin && args.count <= descriptor.arityMax else {
+            let arityDesc = descriptor.arityMin == descriptor.arityMax
+                ? "\(descriptor.arityMin)"
+                : "\(descriptor.arityMin)–\(descriptor.arityMax)"
+            throw MathExprError.invalidArguments(
+                "\(name) requires \(arityDesc) argument(s), got \(args.count)")
+        }
+
+        // Step 3: Invoke handler — kind validation and Group-B error propagation
+        // are performed inside the handler (AC2.3a error 3 + Group-B contract).
+        return try descriptor.handler(name, args)
     }
 
 }

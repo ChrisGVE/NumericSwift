@@ -223,16 +223,11 @@ final class NumericDispatchScalarComplexTests: XCTestCase {
         assertScalarBitExact(r, bitPattern: 4643211215818981376, "pow(2,8)=256")
     }
 
-    func testScalar_pow_namedFunction_unknownFunction() {
-        // "pow" is not registered in applyFunction; must throw unknownFunction.
-        // This mirrors the applyFunction boundary — "pow" comes via BinaryOp.pow, not a name.
-        XCTAssertThrowsError(
-            try NumericDispatch.applyFunction("pow", args: [.scalar(2), .scalar(8)])
-        ) { err in
-            guard case MathExprError.unknownFunction = err else {
-                XCTFail("Expected unknownFunction for 'pow'; got \(err)"); return
-            }
-        }
+    func testScalar_pow_namedFunction() throws {
+        // "pow" is registered in applyFunction (legacy MathExpr evalFunction parity).
+        // pow(2, 8) = 256.
+        let r = try NumericDispatch.applyFunction("pow", args: [.scalar(2), .scalar(8)])
+        assertScalarBitExact(r, bitPattern: 4643211215818981376, "pow(2,8)=256")
     }
 
     func testScalar_pow2_8_direct() throws {
