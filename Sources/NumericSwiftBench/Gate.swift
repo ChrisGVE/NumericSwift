@@ -70,7 +70,7 @@ public struct BenchConfig {
   public let matrixSize: Int
 
   public init(
-    warmupIterations: Int = 5,
+    warmupIterations: Int = 10,
     timedSamples: Int = 31,
     matrixSize: Int = 64
   ) {
@@ -227,26 +227,17 @@ public func runGate(_ gate: GateDefinition, config: BenchConfig) -> GateResult {
     )
   }
 
-  // Both legs are real: time them.
-  let denomNs = medianNanoseconds(
+  // Both legs are real: time them with interleaved paired sampling so the two
+  // legs share the same thermal/turbo/allocator window. The decision uses the
+  // median of per-sample ratios, which is robust to between-leg drift (the
+  // naive time-A-fully-then-B-fully approach spiked to ~1.5 on the expm gate
+  // despite near-zero true overhead).
+  let (denomNs, numerNs, ratio) = medianRatioInterleaved(
     warmup: config.warmupIterations,
     samples: config.timedSamples,
-    body: gate.denominator
+    denominator: gate.denominator,
+    numerator: gate.numerator!
   )
-  let numerNs = medianNanoseconds(
-    warmup: config.warmupIterations,
-    samples: config.timedSamples,
-    body: gate.numerator!
-  )
-
-  // Protect against zero denominator (degenerate / very fast paths).
-  let ratio: Double
-  if denomNs == 0 {
-    // Treat as infinite overhead — gate fails.
-    ratio = Double.infinity
-  } else {
-    ratio = Double(numerNs) / Double(denomNs)
-  }
 
   let state: GateState = ratio <= gate.threshold ? .pass(ratio: ratio) : .fail(ratio: ratio)
   return GateResult(

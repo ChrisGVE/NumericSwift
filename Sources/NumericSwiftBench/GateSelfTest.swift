@@ -27,6 +27,7 @@
 //   runGateSelfTests()
 
 import Foundation
+import NumericSwift
 
 // MARK: - Gate self-test suite
 
@@ -57,30 +58,32 @@ func runGateSelfTests() {
 /// If the gate produces `.pass` or `.pending` instead of `.fail`, the test
 /// aborts with an error message and exits with code 3.
 private func testNegativeCase() {
-  // Denominator: trivial scalar work — fast reference.
+  // Use REAL cross-module LinAlg.expm work at two very different sizes. A
+  // self-contained in-module loop is unreliable here: the optimizer either
+  // dead-code-eliminates it (blackhole cannot fully anchor a trivial local
+  // computation) or solves affine/closed-form recurrences in O(1), collapsing
+  // the ratio to a meaningless 1.0. expm is opaque across the module boundary
+  // (no DCE, no closed form) and O(n³), so a small vs. large matrix yields a
+  // large, robust, real time difference — exactly what a FAIL self-test needs.
+  let smallM = BenchFixtures.expmMatrix(n: 8)
+  let largeM = BenchFixtures.expmMatrix(n: 32)
+
+  // Denominator: small expm — fast reference.
   let denominator: () -> Void = {
-    var x: Double = 1.0
-    for i in 0..<1_000 {
-      x *= 1.000_001 + Double(i) * 1e-9
-    }
-    blackhole(x)
+    blackhole(try? LinAlg.expm(smallM))
   }
 
-  // Numerator: 4× more iterations than denominator — guaranteed materially
-  // slower. Any realistic scheduler jitter cannot bridge a 4× gap.
+  // Numerator: much larger expm — O(n³) makes it many× slower than the
+  // denominator. No realistic scheduler jitter can bridge that gap.
   let numerator: () -> Void = {
-    var x: Double = 1.0
-    for i in 0..<4_000 {
-      x *= 1.000_001 + Double(i) * 1e-9
-    }
-    blackhole(x)
+    blackhole(try? LinAlg.expm(largeM))
   }
 
   let gate = GateDefinition(
     name: "self-test: slow-numerator must FAIL",
     threshold: 1.01,
-    denominatorDescription: "fast trivial loop (1000 iters)",
-    numeratorDescription: "slow trivial loop (4000 iters) — must exceed 1.01 threshold",
+    denominatorDescription: "LinAlg.expm 8×8 (fast reference)",
+    numeratorDescription: "LinAlg.expm 32×32 — O(n³) makes it must exceed 1.01 threshold",
     denominator: denominator,
     numerator: numerator
   )

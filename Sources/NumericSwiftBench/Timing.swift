@@ -67,6 +67,56 @@ func medianNanoseconds(
   return durations[samples / 2]
 }
 
+/// Interleaved paired timing for a two-leg ratio gate.
+///
+/// Per sample, the denominator and numerator legs are timed **back-to-back**,
+/// so both share the same thermal / CPU-frequency / allocator / scheduling
+/// window. The gate ratio is the **median of the per-sample ratios**, not
+/// `median(numer) / median(denom)`.
+///
+/// This is robust to between-leg drift — the failure mode of the naive
+/// "time leg A fully, then time leg B fully" approach, where the two timing
+/// windows can land in different thermal/turbo states and corrupt the ratio
+/// even when both legs do identical work. (Observed on the expm gate as ratio
+/// spikes up to ~1.5 despite a true overhead near zero.)
+///
+/// - Returns: median denominator ns and numerator ns (for display) and the
+///   median per-sample ratio (used for the pass/fail decision).
+func medianRatioInterleaved(
+  warmup: Int = 5,
+  samples: Int = 31,
+  denominator: () -> Void,
+  numerator: () -> Void
+) -> (denomNs: UInt64, numerNs: UInt64, ratio: Double) {
+  // Warmup both legs together.
+  for _ in 0..<warmup {
+    denominator()
+    numerator()
+  }
+
+  var denoms = [UInt64](repeating: 0, count: samples)
+  var numers = [UInt64](repeating: 0, count: samples)
+  var ratios = [Double](repeating: 0, count: samples)
+  for i in 0..<samples {
+    let d0 = nowNanoseconds()
+    denominator()
+    let d1 = nowNanoseconds()
+    let n0 = nowNanoseconds()
+    numerator()
+    let n1 = nowNanoseconds()
+    let d = d1 - d0
+    let n = n1 - n0
+    denoms[i] = d
+    numers[i] = n
+    ratios[i] = d == 0 ? Double.infinity : Double(n) / Double(d)
+  }
+
+  denoms.sort()
+  numers.sort()
+  ratios.sort()
+  return (denoms[samples / 2], numers[samples / 2], ratios[samples / 2])
+}
+
 // MARK: - Utility
 
 /// Prevents the compiler from optimising away a value.
