@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "capturedAt": "2026-06-14",
+  "description": "Phase 0 code-size baseline for NumericSwift library release build (pre-unification). Anchor for tracking size impact of the unified-numeric-pipeline milestone. See Tests/NumericSwiftTests/Fixtures/README.md.",
+  "buildConfig": {
+    "swiftVersion": "Apple Swift version 6.3.2 (swiftlang-6.3.2.1.108 clang-2100.1.1.101)",
+    "target": "x86_64-apple-macosx26.0",
+    "configuration": "release",
+    "buildCommand": "swift build -c release",
+    "optionalFlags": "none (NUMERICSWIFT_INCLUDE_ARRAYSWIFT=0, NUMERICSWIFT_INCLUDE_PLOTSWIFT=0)"
+  },
+  "measurement": {
+    "objectFileDir": ".build/release/NumericSwift.build/",
+    "objectFileCount": 28,
+    "totalObjectBytes": 6126552,
+    "totalObjectKB": 5983,
+    "topFiveBySize": [
+      { "file": "MathLexAST+DecodableExtra.swift.o", "bytes": 794616 },
+      { "file": "LinAlg.swift.o", "bytes": 707360 },
+      { "file": "Geometry.swift.o", "bytes": 520432 },
+      { "file": "Regression.swift.o", "bytes": 476240 },
+      { "file": "MathLexAST+Decodable.swift.o", "bytes": 450600 }
+    ]
+  },
+  "notes": "This baseline was captured after the Phase 0 parity snapshot work (task #2) and the two-tier size-cap work (task #5) but before any unified evaluator code is added. Future phases should compare their release object size against totalObjectBytes=6126552."
+}
