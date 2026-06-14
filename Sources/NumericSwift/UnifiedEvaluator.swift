@@ -90,6 +90,20 @@ extension MathExpr {
     /// `.matrix` literal nodes, so matrices must be supplied via `values`.
     /// On the mathlex build both paths are supported simultaneously.
     ///
+    /// ## Fallback-parser bracket limitation
+    ///
+    /// The default-build pure-Swift parser has **no bracket tokenizer**.
+    /// Expressions such as `[1,2,3]` or `[[1,2],[3,4]]` cannot be parsed and
+    /// will throw `MathExprError.parseError` from `MathExpr.parse(_:)`.
+    /// This is intentional — on the default build, matrix values enter the
+    /// pipeline through the `values:` binding dictionary. Bracket-literal
+    /// parsing is only available when the opt-in mathlex Rust backend is
+    /// compiled in (`NUMERICSWIFT_INCLUDE_MATHLEX=1`).
+    ///
+    /// **Imaginary literals are not affected** — expressions such as `2*i`,
+    /// `3.5*i`, or `1 + 2*i` parse and evaluate correctly on the default build.
+    /// The imaginary constant `i` is handled by the existing fallback tokenizer.
+    ///
     /// ## Operator semantics
     ///
     /// - `*` between two matrices is **matrix multiplication** (matmul), not
