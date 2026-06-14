@@ -9,6 +9,11 @@
 //  NumericDispatch+EvalStubs.swift; DELEG cells call LinAlg directly after
 //  pre-validating shapes (Group-A) or propagate LinAlg's own errors (Group-B).
 //
+//  Group-A pre-validation contract (AC2.2/§4.5):
+//    The dispatcher pre-validates shapes and THROWS `MathExprError.shapeMismatch`
+//    (or `.divisionByZero`) BEFORE any LinAlg precondition can fire. The shared
+//    `validateShapes(_:lhs:rhs:rule:)` helper centralises this gate.
+//
 //  All methods are `internal` so that extension files produced by Tasks 10–12 can
 //  reference sibling helpers within the same module.
 //
@@ -16,6 +21,51 @@
 //
 
 import Foundation
+
+// MARK: - Shape pre-validation
+
+extension NumericDispatch {
+
+    /// Shape-validation rule for Group-A real-matrix operators.
+    enum ShapeRule {
+        /// add / sub / hadamard / elementDiv — both operands must have identical shape.
+        case equalDims
+        /// dot (matmul / mat·vec / vec·vec) — lhs.cols must equal rhs.rows.
+        case matmulInner
+    }
+
+    /// Pre-validate two matrix shapes against a Group-A operator rule.
+    ///
+    /// Throws `MathExprError.shapeMismatch` when the shapes are incompatible,
+    /// so no `LinAlg` precondition can fire for script-driven inputs.
+    ///
+    /// - Parameters:
+    ///   - op:  Human-readable operator name for the error message.
+    ///   - lhs: Left operand matrix.
+    ///   - rhs: Right operand matrix.
+    ///   - rule: The shape compatibility rule.
+    /// - Throws: `MathExprError.shapeMismatch` on incompatible shapes.
+    static func validateShapes(
+        _ op: String,
+        lhs: LinAlg.Matrix,
+        rhs: LinAlg.Matrix,
+        rule: ShapeRule
+    ) throws {
+        switch rule {
+        case .equalDims:
+            guard lhs.rows == rhs.rows && lhs.cols == rhs.cols else {
+                throw MathExprError.shapeMismatch(
+                    "\(op): shapes (\(lhs.rows)×\(lhs.cols)) "
+                    + "and (\(rhs.rows)×\(rhs.cols)) must match")
+            }
+        case .matmulInner:
+            guard lhs.cols == rhs.rows else {
+                throw MathExprError.shapeMismatch(
+                    "\(op): lhs.cols (\(lhs.cols)) must equal rhs.rows (\(rhs.rows))")
+            }
+        }
+    }
+}
 
 // MARK: - Binary sub-dispatchers
 
@@ -30,6 +80,7 @@ extension NumericDispatch {
         rhs: NumericValue
     ) throws -> NumericValue {
         let isAdd = op == .add
+        let opName = isAdd ? "add" : "sub"
 
         switch (lhs.kind, rhs.kind) {
         case (.scalar, .scalar):
@@ -65,11 +116,9 @@ extension NumericDispatch {
         case (.matrix, .matrix):
             let l = lhs.asMatrix!, r = rhs.asMatrix!
             // Group-A: pre-validate before LinAlg.add/sub precondition fires
-            guard l.rows == r.rows && l.cols == r.cols else {
-                throw LinAlg.LinAlgError.dimensionMismatch(
-                    "matrix shapes (\(l.rows)×\(l.cols)) and (\(r.rows)×\(r.cols)) "
-                    + "must match for \(isAdd ? "add" : "sub")")
-            }
+            try validateShapes(opName, lhs: l, rhs: r, rule: .equalDims)
+            // Soft-cap: result has same shape as operands
+            try LinAlg.checkSoftCap(rows: l.rows, cols: l.cols)
             return .matrix(isAdd ? LinAlg.add(l, r) : LinAlg.sub(l, r))
 
         // matrix ± complexMatrix / complexMatrix ± matrix — SEAM Task 10
@@ -116,12 +165,12 @@ extension NumericDispatch {
             return try evalComplexMulComplexMatrix(lhs: lhs, rhs: rhs)
 
         case (.matrix, .matrix):
+            // `*` between matrices = matmul (dot); element-wise = hadamard().
+            // Covers: mat·mat, mat·vec (rhs.cols==1), vec·mat (lhs.cols==1),
+            //         vec·vec (both cols==1, yields 1×1 → scalar via coerce1x1).
             let l = lhs.asMatrix!, r = rhs.asMatrix!
             // Group-A: pre-validate inner dimensions before LinAlg.dot precondition
-            guard l.cols == r.rows else {
-                throw LinAlg.LinAlgError.dimensionMismatch(
-                    "matrix multiply: lhs.cols (\(l.cols)) must equal rhs.rows (\(r.rows))")
-            }
+            try validateShapes("*", lhs: l, rhs: r, rule: .matmulInner)
             // Soft-cap: guard result size before allocating
             try LinAlg.checkSoftCap(rows: l.rows, cols: r.cols)
             return coerce1x1(.matrix(LinAlg.dot(l, r)))
@@ -292,7 +341,7 @@ extension NumericDispatch {
         }
     }
 
-    // MARK: - dotProduct / hadamard helpers
+    // MARK: - dotProduct / hadamard / elementDiv helpers
 
     static func applyDotProduct(
         lhs: NumericValue,
@@ -302,10 +351,7 @@ extension NumericDispatch {
         case (.matrix, .matrix):
             let l = lhs.asMatrix!, r = rhs.asMatrix!
             // Group-A: pre-validate before LinAlg.dot precondition
-            guard l.cols == r.rows else {
-                throw LinAlg.LinAlgError.dimensionMismatch(
-                    "dotProduct: lhs.cols (\(l.cols)) must equal rhs.rows (\(r.rows))")
-            }
+            try validateShapes("dotProduct", lhs: l, rhs: r, rule: .matmulInner)
             try LinAlg.checkSoftCap(rows: l.rows, cols: r.cols)
             return coerce1x1(.matrix(LinAlg.dot(l, r)))
         case (.complexMatrix, .complexMatrix):
@@ -326,16 +372,42 @@ extension NumericDispatch {
         case (.matrix, .matrix):
             let l = lhs.asMatrix!, r = rhs.asMatrix!
             // Group-A: pre-validate before LinAlg.hadamard precondition
-            guard l.rows == r.rows && l.cols == r.cols else {
-                throw LinAlg.LinAlgError.dimensionMismatch(
-                    "hadamard: shapes (\(l.rows)×\(l.cols)) and (\(r.rows)×\(r.cols)) must match")
-            }
+            try validateShapes("hadamard", lhs: l, rhs: r, rule: .equalDims)
+            // Soft-cap: result has same shape as operands
+            try LinAlg.checkSoftCap(rows: l.rows, cols: l.cols)
             return .matrix(LinAlg.hadamard(l, r))
         case (.complexMatrix, .complexMatrix):
             return try evalComplexHadamard(lhs: lhs.asComplexMatrix!, rhs: rhs.asComplexMatrix!)
         default:
             throw MathExprError.invalidArguments(
                 "hadamard requires two matrix arguments of the same shape; "
+                + "got \(lhs.kind) and \(rhs.kind)")
+        }
+    }
+
+    /// Element-wise matrix division (`./ ` in MATLAB notation).
+    ///
+    /// Both operands must be matrices of identical shape. Each element in the
+    /// result is `lhs[i,j] / rhs[i,j]`. Division by zero propagates as `inf`
+    /// or `nan` per IEEE 754 (consistent with element-wise scalar division).
+    ///
+    /// - Throws: `MathExprError.shapeMismatch` when shapes differ;
+    ///           `MathExprError.invalidArguments` when kinds are unsupported.
+    static func applyElementDiv(
+        lhs: NumericValue,
+        rhs: NumericValue
+    ) throws -> NumericValue {
+        switch (lhs.kind, rhs.kind) {
+        case (.matrix, .matrix):
+            let l = lhs.asMatrix!, r = rhs.asMatrix!
+            // Group-A: pre-validate before LinAlg.elementDiv precondition
+            try validateShapes("elementDiv", lhs: l, rhs: r, rule: .equalDims)
+            // Soft-cap: result has same shape as operands
+            try LinAlg.checkSoftCap(rows: l.rows, cols: l.cols)
+            return .matrix(LinAlg.elementDiv(l, r))
+        default:
+            throw MathExprError.invalidArguments(
+                "elementDiv requires two real matrices of the same shape; "
                 + "got \(lhs.kind) and \(rhs.kind)")
         }
     }

@@ -155,7 +155,7 @@ public enum NumericDispatch {
             return try applyAbsInvDetTrace(name, args: args)
         case "transpose":
             return try applyTransposeFunction(args: args)
-        case "dotProduct", "hadamard":
+        case "dotProduct", "hadamard", "elementDiv":
             return try applyMultiArgFunction(name, args: args)
         case "crossProduct":
             throw MathExprError.unsupportedNode(

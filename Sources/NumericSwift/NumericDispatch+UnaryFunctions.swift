@@ -300,6 +300,8 @@ extension NumericDispatch {
             return try applyDotProduct(lhs: args[0], rhs: args[1])
         case "hadamard":
             return try applyHadamard(lhs: args[0], rhs: args[1])
+        case "elementDiv":
+            return try applyElementDiv(lhs: args[0], rhs: args[1])
         default:
             throw MathExprError.unknownFunction(name)
         }

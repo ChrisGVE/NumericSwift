@@ -32,6 +32,12 @@ public enum MathExprError: Error, Equatable {
   case invalidArguments(String)
   case unsupportedNode(String)
   case nonFiniteFloat
+  /// Matrix shape incompatibility detected by the Group-A dispatcher pre-check.
+  ///
+  /// Thrown before any `LinAlg` precondition can fire, so callers always receive
+  /// a recoverable error rather than a process trap. Carries a human-readable
+  /// message naming the operator and the two incompatible shapes.
+  case shapeMismatch(String)
 
   public var description: String {
     switch self {
@@ -49,6 +55,8 @@ public enum MathExprError: Error, Equatable {
       return "unsupported AST node: \(name)"
     case .nonFiniteFloat:
       return "non-finite float in AST"
+    case .shapeMismatch(let msg):
+      return "shape mismatch: \(msg)"
     }
   }
 }
