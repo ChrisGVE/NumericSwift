@@ -317,12 +317,19 @@ final class NumericDispatchTests: XCTestCase {
         guard case .complex = result else { return XCTFail("Expected complex") }
     }
 
-    func testPowMatrixScalar_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .pow, lhs: self.makeMatrix(2, 2), rhs: .scalar(2.0))
+    func testPowMatrixScalar_implemented() throws {
+        // [[1,1],[1,1]]^2 = [[2,2],[2,2]]  (exponentiation-by-squaring)
+        let result = try NumericDispatch.applyBinary(
+            .pow, lhs: self.makeMatrix(2, 2), rhs: .scalar(2.0))
+        guard case .matrix(let m) = result else {
+            return XCTFail("Expected .matrix result for matrix^2")
         }
-        assertStub(result, taskTag: "Task 12")
+        XCTAssertEqual(m.rows, 2)
+        XCTAssertEqual(m.cols, 2)
+        for i in 0..<4 {
+            XCTAssertEqual(m.data[i], 2.0, accuracy: 1e-12,
+                "[[1,1],[1,1]]^2 should be all-2 matrix, data[\(i)] mismatch")
+        }
     }
 
     func testPowScalarMatrix_throws() {

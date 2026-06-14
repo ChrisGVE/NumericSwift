@@ -141,6 +141,23 @@ extension NumericDispatch {
         }
     }
 
+    /// Route `exp`, `log`, or `sqrt` to the correct scalar, complex, or matrix handler.
+    ///
+    /// Matrix dispatch follows the **Group-B try-and-propagate** model:
+    /// the function calls the throwing `LinAlg` operation inside `try` and lets
+    /// `LinAlgError.notSquare` propagate unmodified to the caller.
+    /// A `nil` return from `logm`/`sqrtm` (non-diagonalizable or negative-eigenvalue
+    /// matrix) is converted to `MathExprError.invalidArguments` with a diagnostic
+    /// message that states the mathematical reason.
+    ///
+    /// - Parameters:
+    ///   - name: One of `"exp"`, `"log"`, `"sqrt"` (case-sensitive).
+    ///   - args: Exactly one `NumericValue` argument.
+    /// - Returns: Scalar, complex, or matrix result per the §15 truth table.
+    /// - Throws: `MathExprError.invalidArguments` for unsupported kind combinations
+    ///           or when `logm`/`sqrtm` returns `nil`;
+    ///           `LinAlgError.notSquare` propagated from `expm`/`logm`/`sqrtm`
+    ///           when the matrix is not square.
     // swiftlint:disable:next cyclomatic_complexity
     static func applyExpLogSqrt(
         _ name: String,
@@ -199,6 +216,25 @@ extension NumericDispatch {
         }
     }
 
+    /// Route `abs`, `inv`, `det`, or `trace` to the correct scalar, complex, or matrix handler.
+    ///
+    /// Matrix dispatch follows the **Group-B try-and-propagate** model:
+    ///
+    /// - `trace(M)` and `det(M)` call the throwing `LinAlg` operation directly;
+    ///   `LinAlgError.notSquare` propagates to the caller without pre-validation.
+    /// - `inv(M)` calls `LinAlg.inv` (which throws `.notSquare` for non-square inputs
+    ///   and returns `nil` for singular square matrices).  A `nil` result is converted
+    ///   to `MathExprError.invalidArguments("inverse of singular matrix")`.
+    /// - `abs(M)` returns the Frobenius norm (MF-2 specification; **not** spectral norm).
+    ///
+    /// - Parameters:
+    ///   - name: One of `"abs"`, `"inv"`, `"det"`, `"trace"` (case-sensitive).
+    ///   - args: Exactly one `NumericValue` argument.
+    /// - Returns: Scalar or matrix result per the §15 truth table.
+    /// - Throws: `MathExprError.invalidArguments` for unsupported kind combinations
+    ///           or when `inv` receives a singular matrix;
+    ///           `LinAlgError.notSquare` propagated from `trace`/`det`/`inv`
+    ///           when the matrix is not square.
     // swiftlint:disable:next cyclomatic_complexity function_body_length
     static func applyAbsInvDetTrace(
         _ name: String,
