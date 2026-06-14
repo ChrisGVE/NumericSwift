@@ -41,7 +41,7 @@ public enum LinAlg {
     /// a non-positive-definite matrix) is *not* reported here: those operations
     /// continue to return `nil`, because `Optional` already models "well-formed
     /// input, no answer."
-    public enum LinAlgError: Error, Equatable {
+    public enum LinAlgError: Error, Equatable, Sendable {
         /// An operation requiring a square matrix received a non-square one.
         case notSquare(rows: Int, cols: Int)
         /// Two operands have shapes that cannot be combined; the message names
@@ -58,7 +58,11 @@ public enum LinAlg {
     ///
     /// Provides linear algebra operations using the Accelerate framework.
     /// For vectors, use a Matrix with cols = 1.
-    public struct Matrix: Equatable, CustomStringConvertible {
+    ///
+    /// `Matrix` is `Sendable`: its storage consists solely of `Int` fields and a
+    /// `[Double]` array, both of which are value types safe to share across
+    /// concurrency boundaries without additional synchronisation.
+    public struct Matrix: Equatable, CustomStringConvertible, Sendable {
         /// Number of rows
         public let rows: Int
         /// Number of columns
@@ -217,7 +221,11 @@ public enum LinAlg {
     /// A complex matrix with separate real and imaginary components.
     ///
     /// Stored in row-major order for both real and imaginary parts.
-    public struct ComplexMatrix: Equatable, CustomStringConvertible {
+    ///
+    /// `ComplexMatrix` is `Sendable`: its storage consists solely of `Int` fields and
+    /// two `[Double]` arrays (real and imaginary parts), all of which are value types
+    /// safe to share across concurrency boundaries without additional synchronisation.
+    public struct ComplexMatrix: Equatable, CustomStringConvertible, Sendable {
         /// Number of rows
         public let rows: Int
         /// Number of columns
