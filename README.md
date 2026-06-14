@@ -166,6 +166,55 @@ let (Q, R) = A.qr()!
 let (U, s, Vt) = A.svd()!
 ```
 
+## Performance
+
+NumericSwift uses a unified numeric evaluation pipeline (`MathExpr.evaluateUnified`) that routes
+mathematical expressions over the `NumericValue` type tower — scalar, complex, real matrix, and
+complex matrix — through a single recursive evaluator backed by the `NumericDispatch` surface.
+The pipeline is designed to keep overhead minimal relative to calling `LinAlg` primitives directly.
+
+### Ratio gates
+
+Performance is validated by a set of self-relative ratio gates (in `Sources/NumericSwiftBench/`).
+Each gate measures two legs on the same machine in the same process and reports the ratio;
+no machine-specific baseline file is committed. All gates must satisfy their threshold:
+
+| Gate | Numerator (unified path) | Denominator (direct) | Threshold |
+|------|--------------------------|----------------------|-----------|
+| Gate 1 | `MathExpr.evaluateUnified` scalar corpus | `MathExpr.evaluate` (legacy) | ≤ 1.15 |
+| Gate 2 | `evaluateUnified("A * B")` with real matrices | `LinAlg.dot(A, B)` (BLAS) | ≤ 1.10 |
+| Gate 3 | `evaluateUnified("A * B")` with complex matrices | 4× `LinAlg.dot` real-block | ≤ 1.10 |
+| Gate 4 | `evaluateUnified("exp(M)")` with matrix | `LinAlg.expm(M)` (Padé) | ≤ 1.10 |
+
+**Interpretation:** a ratio of 1.10 means the unified evaluator path adds at most 10% overhead
+on top of the direct `LinAlg` call. The extra cost is evaluator dispatch (variable lookup,
+`NumericValue` wrapping, function-registry lookup); the underlying BLAS/Padé computation is
+the same in both legs.
+
+### Running the bench
+
+```bash
+# Build and run (release mode gives authoritative numbers)
+swift build -c release --product NumericSwiftBench
+.build/release/NumericSwiftBench
+
+# Tuning environment variables (optional)
+BENCH_WARMUP=10 BENCH_SAMPLES=51 .build/release/NumericSwiftBench
+
+# Gate framework self-tests (negative-case FAIL + PENDING proofs)
+BENCH_SELF_TEST=1 .build/debug/NumericSwiftBench
+```
+
+Typical release-mode results on Apple Silicon (arm64):
+
+```
+Gate                                 Denom ns  Numer ns    Ratio  Threshold  State
+gate1: unified-vs-legacy (≤1.15)      6.4µs     6.3µs   0.984   ≤ 1.15  PASS
+gate2: expr-matmul vs direct-dot     12.0µs    12.3µs   1.026   ≤ 1.10  PASS
+gate3: complex-matmul vs real-block  53.4µs    54.1µs   1.013   ≤ 1.10  PASS
+gate4: expm-via-expr vs expm-direct   3.0µs     3.2µs   1.077   ≤ 1.10  PASS
+```
+
 ## Documentation
 
 Full API documentation is available via DocC. Build locally with:

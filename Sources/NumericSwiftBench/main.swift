@@ -14,9 +14,12 @@
 //   .build/debug/NumericSwiftBench
 //
 // Environment overrides (all optional):
-//   BENCH_WARMUP   — warmup iteration count (default 5)
-//   BENCH_SAMPLES  — timed sample count (default 31)
-//   BENCH_MATSIZE  — matrix side dimension for matrix gates (default 64)
+//   BENCH_WARMUP     — warmup iteration count (default 5)
+//   BENCH_SAMPLES    — timed sample count (default 31)
+//   BENCH_MATSIZE    — matrix side dimension for matrix gates (default 64)
+//   BENCH_SELF_TEST  — when set to "1", run gate-framework self-tests
+//                      (negative-case FAIL + placeholder PENDING proofs)
+//                      and exit; no performance gates are executed.
 //
 // Gate legend:
 //   PASS    — ratio ≤ threshold; gate satisfied.
@@ -35,6 +38,17 @@
 
 import Foundation
 import NumericSwift
+
+// MARK: - Gate self-test mode (BENCH_SELF_TEST=1)
+
+// When BENCH_SELF_TEST=1, run structural gate-framework proofs and exit.
+// These verify the gate model correctly detects regressions (negative-case
+// FAIL) and correctly blocks placeholder promotion (PENDING proof).
+// No performance gates are executed in this mode.
+if ProcessInfo.processInfo.environment["BENCH_SELF_TEST"] == "1" {
+  runGateSelfTests()
+  exit(0)
+}
 
 // MARK: - Load frozen corpus
 

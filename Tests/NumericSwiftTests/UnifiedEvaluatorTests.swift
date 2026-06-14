@@ -962,4 +962,63 @@ final class UnifiedEvaluatorTests: XCTestCase {
         XCTAssertEqual(got.rows, 3)
         XCTAssertEqual(got.cols, 2)
     }
+
+    // MARK: - CoW-identity pass-through (AC8.4, subtask 21.17)
+
+    /// Verifies that a matrix supplied as a variable binding is returned
+    /// by value through `evaluateUnified` with identical shape and data.
+    ///
+    /// The `NumericValue.matrix` case wraps `LinAlg.Matrix` by value (the
+    /// enum payload is a struct). Resolving a `.variable` AST node returns
+    /// the `NumericValue` from the `values` dictionary directly — no copy
+    /// of the underlying data array is made unless the caller mutates the
+    /// result. This test confirms the round-trip identity: the returned
+    /// matrix has the same dimensions and data as the input matrix.
+    ///
+    /// Scope: structural identity (rows, cols, data equality) rather than
+    /// pointer identity, because Swift value-type CoW semantics only preserve
+    /// the buffer address until the first mutation — XCTest has no way to
+    /// assert buffer pointer identity safely across different allocations.
+    func testMatrixVariablePassThroughIdentity() throws {
+        // Arrange: a 3×3 matrix with known values.
+        let input = LinAlg.Matrix(
+            rows: 3, cols: 3,
+            data: [1.0, 2.0, 3.0,
+                   4.0, 5.0, 6.0,
+                   7.0, 8.0, 9.0])
+
+        // Act: evaluate a bare variable expression — no arithmetic applied.
+        let result = try MathExpr.evaluateUnified(
+            .variable("M"),
+            values: ["M": .matrix(input)])
+
+        // Assert: the returned NumericValue carries the same matrix payload.
+        let output = try XCTUnwrap(matrixOf(result),
+            "expected .matrix result from variable pass-through, got \(result)")
+        XCTAssertEqual(output.rows, input.rows)
+        XCTAssertEqual(output.cols, input.cols)
+        XCTAssertEqual(output.data, input.data,
+            "matrix data must be bit-identical after variable pass-through")
+    }
+
+    /// Verifies that a complex matrix is passed through a variable resolution
+    /// unchanged, covering the `.complexMatrix` CoW path.
+    func testComplexMatrixVariablePassThroughIdentity() throws {
+        let real = [1.0, 2.0, 3.0, 4.0]
+        let imag = [0.5, 1.5, 2.5, 3.5]
+        let input = LinAlg.ComplexMatrix(rows: 2, cols: 2, real: real, imag: imag)
+
+        let result = try MathExpr.evaluateUnified(
+            .variable("C"),
+            values: ["C": .complexMatrix(input)])
+
+        guard case .complexMatrix(let output) = result else {
+            XCTFail("expected .complexMatrix result, got \(result)")
+            return
+        }
+        XCTAssertEqual(output.rows, input.rows)
+        XCTAssertEqual(output.cols, input.cols)
+        XCTAssertEqual(output.real, input.real)
+        XCTAssertEqual(output.imag, input.imag)
+    }
 }
