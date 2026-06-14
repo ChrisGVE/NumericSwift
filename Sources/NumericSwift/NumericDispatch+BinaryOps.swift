@@ -305,9 +305,9 @@ extension NumericDispatch {
                 throw MathExprError.invalidArguments(
                     "matrix power requires a square matrix (\(m.rows)×\(m.cols) is not square)")
             }
-            guard e == e.rounded() else {
+            guard e.isFinite && e == e.rounded() else {
                 throw MathExprError.invalidArguments(
-                    "matrix power requires an integer exponent; got \(e)")
+                    "matrix power requires a finite integer exponent; got \(e)")
             }
             // Soft-cap for result (same shape as input)
             try LinAlg.checkSoftCap(rows: m.rows, cols: m.cols)
@@ -323,9 +323,9 @@ extension NumericDispatch {
                 throw MathExprError.invalidArguments(
                     "complexMatrix power requires a square matrix")
             }
-            guard e == e.rounded() else {
+            guard e.isFinite && e == e.rounded() else {
                 throw MathExprError.invalidArguments(
-                    "complexMatrix power requires an integer exponent; got \(e)")
+                    "complexMatrix power requires a finite integer exponent; got \(e)")
             }
             try LinAlg.checkSoftCap(rows: cm.rows, cols: cm.cols)
             return try evalComplexMatrixPow(cm: cm, exponent: e)
