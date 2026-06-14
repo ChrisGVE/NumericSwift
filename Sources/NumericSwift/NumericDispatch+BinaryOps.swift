@@ -30,8 +30,10 @@ extension NumericDispatch {
     enum ShapeRule {
         /// add / sub / hadamard / elementDiv — both operands must have identical shape.
         case equalDims
-        /// dot (matmul / mat·vec / vec·vec) — lhs.cols must equal rhs.rows.
-        case matmulInner
+        /// dot (matmul / mat·vec / vec·vec) — mirrors LinAlg.dot's three sub-cases:
+        ///   - vec·vec (both cols==1): lhs.rows == rhs.rows
+        ///   - mat·vec (rhs.cols==1) or mat·mat: lhs.cols == rhs.rows
+        case dotProduct
     }
 
     /// Pre-validate two matrix shapes against a Group-A operator rule.
@@ -58,10 +60,22 @@ extension NumericDispatch {
                     "\(op): shapes (\(lhs.rows)×\(lhs.cols)) "
                     + "and (\(rhs.rows)×\(rhs.cols)) must match")
             }
-        case .matmulInner:
-            guard lhs.cols == rhs.rows else {
-                throw MathExprError.shapeMismatch(
-                    "\(op): lhs.cols (\(lhs.cols)) must equal rhs.rows (\(rhs.rows))")
+        case .dotProduct:
+            // Mirrors the three branches in LinAlg.dot (LinAlg.swift ~577):
+            //   1. vec·vec (both cols==1): equal row count
+            //   2. mat·vec (rhs.cols==1) or mat·mat: inner dims must match
+            if lhs.cols == 1 && rhs.cols == 1 {
+                // Column-vector dot product
+                guard lhs.rows == rhs.rows else {
+                    throw MathExprError.shapeMismatch(
+                        "\(op): vectors must have the same length "
+                        + "(\(lhs.rows) vs \(rhs.rows))")
+                }
+            } else {
+                guard lhs.cols == rhs.rows else {
+                    throw MathExprError.shapeMismatch(
+                        "\(op): lhs.cols (\(lhs.cols)) must equal rhs.rows (\(rhs.rows))")
+                }
             }
         }
     }
@@ -170,7 +184,7 @@ extension NumericDispatch {
             //         vec·vec (both cols==1, yields 1×1 → scalar via coerce1x1).
             let l = lhs.asMatrix!, r = rhs.asMatrix!
             // Group-A: pre-validate inner dimensions before LinAlg.dot precondition
-            try validateShapes("*", lhs: l, rhs: r, rule: .matmulInner)
+            try validateShapes("*", lhs: l, rhs: r, rule: .dotProduct)
             // Soft-cap: guard result size before allocating
             try LinAlg.checkSoftCap(rows: l.rows, cols: r.cols)
             return coerce1x1(.matrix(LinAlg.dot(l, r)))
@@ -351,7 +365,7 @@ extension NumericDispatch {
         case (.matrix, .matrix):
             let l = lhs.asMatrix!, r = rhs.asMatrix!
             // Group-A: pre-validate before LinAlg.dot precondition
-            try validateShapes("dotProduct", lhs: l, rhs: r, rule: .matmulInner)
+            try validateShapes("dotProduct", lhs: l, rhs: r, rule: .dotProduct)
             try LinAlg.checkSoftCap(rows: l.rows, cols: r.cols)
             return coerce1x1(.matrix(LinAlg.dot(l, r)))
         case (.complexMatrix, .complexMatrix):

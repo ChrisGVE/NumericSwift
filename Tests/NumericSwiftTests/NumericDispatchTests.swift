@@ -117,9 +117,9 @@ final class NumericDispatchTests: XCTestCase {
         guard case .failure(let err) = result else {
             return XCTFail("Expected failure for shape mismatch")
         }
-        // Must be LinAlgError.dimensionMismatch (Group-A pre-validation)
-        if case LinAlg.LinAlgError.dimensionMismatch = err { return }
-        XCTFail("Expected .dimensionMismatch, got \(err)")
+        // Must be MathExprError.shapeMismatch (Group-A pre-validation throws before LinAlg precondition)
+        if case MathExprError.shapeMismatch = err { return }
+        XCTFail("Expected .shapeMismatch, got \(err)")
     }
 
     func testSubMatrixMatrix() throws {
@@ -199,8 +199,8 @@ final class NumericDispatchTests: XCTestCase {
         guard case .failure(let err) = result else {
             return XCTFail("Expected failure for inner-dim mismatch")
         }
-        if case LinAlg.LinAlgError.dimensionMismatch = err { return }
-        XCTFail("Expected .dimensionMismatch, got \(err)")
+        if case MathExprError.shapeMismatch = err { return }
+        XCTFail("Expected .shapeMismatch, got \(err)")
     }
 
     func testMulMatrixMatrix_produces2x2() throws {
@@ -776,8 +776,8 @@ final class NumericDispatchTests: XCTestCase {
                 "dotProduct", args: [self.makeMatrix(2, 3), self.makeMatrix(2, 3)])
         }
         guard case .failure(let err) = result else { return XCTFail("Expected failure") }
-        if case LinAlg.LinAlgError.dimensionMismatch = err { return }
-        XCTFail("Expected .dimensionMismatch, got \(err)")
+        if case MathExprError.shapeMismatch = err { return }
+        XCTFail("Expected .shapeMismatch, got \(err)")
     }
 
     func testDotProduct_scalarArgs_throws() {
@@ -814,8 +814,8 @@ final class NumericDispatchTests: XCTestCase {
                 "hadamard", args: [self.makeMatrix(2, 2), self.makeMatrix(2, 3)])
         }
         guard case .failure(let err) = result else { return XCTFail("Expected failure") }
-        if case LinAlg.LinAlgError.dimensionMismatch = err { return }
-        XCTFail("Expected .dimensionMismatch, got \(err)")
+        if case MathExprError.shapeMismatch = err { return }
+        XCTFail("Expected .shapeMismatch, got \(err)")
     }
 
     func testHadamardComplexMatrix_stub() {
