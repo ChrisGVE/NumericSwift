@@ -272,8 +272,11 @@ extension NumericDispatch {
             }
             return .matrix(result)
         case ("inv", .complexMatrix):
-            // Group-B: cinv throws .notSquare; nil → singular
-            guard let result = try LinAlg.cinv(arg.asComplexMatrix!) else {
+            // Group-B: cinv throws .notSquare; nil → singular.
+            // Soft-cap pre-check: cinv returns an n×n complex matrix.
+            let cm = arg.asComplexMatrix!
+            try LinAlg.checkSoftCap(rows: cm.rows, cols: cm.cols)
+            guard let result = try LinAlg.cinv(cm) else {
                 throw MathExprError.invalidArguments("inverse of singular complex matrix")
             }
             return .complexMatrix(result)
@@ -289,12 +292,12 @@ extension NumericDispatch {
             // Group-B: det throws .notSquare; total over square (no Optional)
             return .scalar(try LinAlg.det(arg.asMatrix!))
         case ("det", .complexMatrix):
-            // Group-B: cdet throws .notSquare; nil → LAPACK failure (MF-9)
+            // Group-B: cdet throws .notSquare; nil → LAPACK failure (MF-9).
+            // (0,0) is a valid result for exactly-singular matrix (DOM-01) — NOT an error.
             guard let tuple = try LinAlg.cdet(arg.asComplexMatrix!) else {
                 throw LinAlg.LinAlgError.invalidParameter(
                     "cdet: LAPACK failed (info < 0)")
             }
-            // (0,0) is a valid result for exactly-singular matrix (DOM-01)
             return .complex(Complex(re: tuple.re, im: tuple.im))
 
         // trace
@@ -360,6 +363,90 @@ extension NumericDispatch {
         default:
             throw MathExprError.invalidArguments(
                 "\(name) requires 1 or 2 scalar arguments, got \(args.count)")
+        }
+    }
+
+    /// Route `cdet` or `cinv` to the complex-matrix determinant / inverse (Group-B).
+    ///
+    /// Both functions require exactly one `.complexMatrix` argument.  Scalars,
+    /// complex scalars, and real matrices are rejected with `MathExprError.invalidArguments`.
+    ///
+    /// ## `cdet` semantics (MF-9, DOM-01)
+    ///
+    /// Delegates to `LinAlg.cdet(_:)` which internally runs `zgetrf_`:
+    ///
+    /// - **Non-square input**: `LinAlg.cdet` throws `LinAlgError.notSquare`, which
+    ///   propagates unmodified to the caller (Group-B contract).
+    /// - **Exactly singular (`zgetrf_` info > 0)**: `LinAlg.cdet` returns `(0, 0)`.
+    ///   This is a **valid** determinant value, not an error — a singular matrix
+    ///   has determinant zero.  The adapter wraps it as `.complex(0+0i)`.
+    /// - **LAPACK illegal argument (`zgetrf_` info < 0)**: `LinAlg.cdet` returns `nil`.
+    ///   This path is not reachable from well-formed public input but is preserved
+    ///   by the adapter which converts `nil` → `LinAlgError.invalidParameter`.
+    ///
+    /// Result type: `.complex` unconditionally (never auto-collapsed to `.scalar`
+    /// even when the imaginary part is zero).  This is consistent with how the
+    /// dispatch table treats all complex-matrix → determinant results.
+    ///
+    /// ## `cinv` semantics (SEC-N03)
+    ///
+    /// Delegates to `LinAlg.cinv(_:)` which runs `zgetrf_` + `zgetri_`:
+    ///
+    /// - **Non-square input**: `LinAlg.cinv` throws `LinAlgError.notSquare`, propagated.
+    /// - **Singular or LAPACK failure (info ≠ 0 at either stage)**: `LinAlg.cinv`
+    ///   returns `nil`.  Unlike `cdet`, `cinv` collapses both `info > 0` (singular)
+    ///   and `info < 0` (illegal argument) into a single `nil`; the adapter converts
+    ///   this to `MathExprError.invalidArguments("inverse of singular complex matrix")`.
+    /// - **Soft cap**: `cinv` returns an n×n complex matrix.  A pre-check via
+    ///   `LinAlg.checkSoftCap(rows:cols:)` guards against over-allocation before
+    ///   calling the LAPACK routine.
+    ///
+    /// - Parameters:
+    ///   - name: `"cdet"` or `"cinv"` (case-sensitive).
+    ///   - args: Exactly one `.complexMatrix` argument.
+    /// - Returns: `.complex` for `cdet`; `.complexMatrix` for `cinv`.
+    /// - Throws: `MathExprError.invalidArguments` for wrong arity or non-`complexMatrix` kind;
+    ///           `LinAlgError.notSquare` propagated from `LinAlg.cdet`/`cinv` for non-square input;
+    ///           `LinAlgError.invalidParameter` when `cdet` returns `nil` (LAPACK info < 0);
+    ///           `LinAlgError.invalidParameter` from `checkSoftCap` when the result exceeds the
+    ///           soft matrix-size cap (cinv only).
+    static func applyCdetCinv(
+        _ name: String,
+        args: [NumericValue]
+    ) throws -> NumericValue {
+        guard args.count == 1 else {
+            throw MathExprError.invalidArguments(
+                "\(name) requires exactly 1 argument, got \(args.count)")
+        }
+        let arg = args[0]
+        guard case .complexMatrix = arg.kind else {
+            throw MathExprError.invalidArguments(
+                "\(name) requires a complex matrix argument, got \(arg.kind)")
+        }
+        let cm = arg.asComplexMatrix!
+        switch name {
+        case "cdet":
+            // Group-B: notSquare propagated from LinAlg.cdet; no pre-guard.
+            // cdet returns a scalar complex value, so no soft-cap applies.
+            guard let tuple = try LinAlg.cdet(cm) else {
+                // info < 0: LAPACK illegal argument — not reachable from valid public
+                // input, but must not be silently swallowed (MF-9).
+                throw LinAlg.LinAlgError.invalidParameter(
+                    "cdet: LAPACK zgetrf_ returned info < 0 (illegal argument)")
+            }
+            // (0, 0) is the correct determinant of a singular matrix (DOM-01) — value, not error.
+            return .complex(Complex(re: tuple.re, im: tuple.im))
+        case "cinv":
+            // Soft-cap pre-check: cinv allocates an n×n complex matrix.
+            try LinAlg.checkSoftCap(rows: cm.rows, cols: cm.cols)
+            // Group-B: notSquare propagated from LinAlg.cinv; no pre-guard.
+            guard let result = try LinAlg.cinv(cm) else {
+                // nil collapses both singular (info > 0) and illegal-argument (info < 0).
+                throw MathExprError.invalidArguments("inverse of singular complex matrix")
+            }
+            return .complexMatrix(result)
+        default:
+            throw MathExprError.unknownFunction(name)
         }
     }
 }

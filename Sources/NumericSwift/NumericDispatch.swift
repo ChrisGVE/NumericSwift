@@ -176,6 +176,8 @@ public enum NumericDispatch {
             return try applyExpLogSqrt(name, args: args)
         case "abs", "inv", "det", "trace":
             return try applyAbsInvDetTrace(name, args: args)
+        case "cdet", "cinv":
+            return try applyCdetCinv(name, args: args)
         case "transpose":
             return try applyTransposeFunction(args: args)
         case "dotProduct", "hadamard", "elementDiv":
