@@ -224,9 +224,14 @@ extension NumericDispatch {
 
         case (.complex, .scalar):
             let b = lhs.asComplex!, e = rhs.asScalar!
+            // Zero-base special case (mirrors legacy evalComplexBinary line 378).
+            if b.re == 0 && b.im == 0 { return .complex(Complex(0)) }
             return .complex((b.log * Complex(e)).exp)
         case (.complex, .complex):
             let b = lhs.asComplex!, e = rhs.asComplex!
+            // Zero-base special case per legacy evalComplexBinary line 378:
+            // 0^z = Complex(0) to avoid -inf/NaN from log(0).
+            if b.re == 0 && b.im == 0 { return .complex(Complex(0)) }
             return .complex((b.log * e).exp)
         case (.complex, .matrix), (.complex, .complexMatrix):
             throw MathExprError.invalidArguments("complex^matrix is undefined")

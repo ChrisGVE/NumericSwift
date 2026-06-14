@@ -46,8 +46,15 @@ extension NumericDispatch {
             }
             return .scalar(tgamma(v + 1))
         case .complex:
-            throw MathExprError.invalidArguments(
-                "factorial is not defined for complex numbers")
+            // Legacy evalComplexUnary allows factorial for purely real non-negative complex;
+            // im=0 and re≥0 delegates to tgamma(re+1), matching MathExpr.swift:391-395.
+            let z = operand.asComplex!
+            guard z.im == 0, z.re >= 0 else {
+                throw MathExprError.invalidArguments(
+                    "factorial requires non-negative real argument; "
+                    + "got complex \(z.re)+\(z.im)i")
+            }
+            return .complex(Complex(tgamma(z.re + 1)))
         case .matrix:
             throw MathExprError.invalidArguments(
                 "factorial is not defined for matrices")
