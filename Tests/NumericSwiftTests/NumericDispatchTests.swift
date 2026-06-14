@@ -132,38 +132,45 @@ final class NumericDispatchTests: XCTestCase {
         XCTAssertEqual(m[0, 0], 3.0)
     }
 
-    // MARK: - applyBinary: add — EVAL stub paths
+    // MARK: - applyBinary: add — EVAL implemented paths
 
-    func testAddScalarMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .add, lhs: .scalar(1), rhs: self.makeMatrix(2, 2))
-        }
-        assertStub(result, taskTag: "Task 10")
+    func testAddScalarMatrix() throws {
+        // scalar + M: broadcasts scalar to every element
+        let result = try NumericDispatch.applyBinary(
+            .add, lhs: .scalar(5), rhs: makeMatrix(2, 2, value: 1.0))
+        guard case .matrix(let m) = result else { return XCTFail("Expected matrix") }
+        XCTAssertEqual(m[0, 0], 6.0, accuracy: 1e-12)
+        XCTAssertEqual(m[1, 1], 6.0, accuracy: 1e-12)
     }
 
-    func testAddMatrixScalar_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .add, lhs: self.makeMatrix(2, 2), rhs: .scalar(1))
-        }
-        assertStub(result, taskTag: "Task 10")
+    func testAddMatrixScalar() throws {
+        // M + scalar: commutative
+        let result = try NumericDispatch.applyBinary(
+            .add, lhs: makeMatrix(2, 2, value: 3.0), rhs: .scalar(2))
+        guard case .matrix(let m) = result else { return XCTFail("Expected matrix") }
+        XCTAssertEqual(m[0, 0], 5.0, accuracy: 1e-12)
     }
 
-    func testAddComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .add, lhs: .complex(Complex(re: 1, im: 0)), rhs: self.makeMatrix(2, 2))
-        }
-        assertStub(result, taskTag: "Task 10")
+    func testAddComplexPlusMatrix() throws {
+        // complex + matrix: promotes M → CM, adds real part only
+        let result = try NumericDispatch.applyBinary(
+            .add, lhs: .complex(Complex(re: 1, im: 2)), rhs: makeMatrix(2, 2, value: 3.0))
+        guard case .complexMatrix(let cm) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(cm.rows, 2)
+        XCTAssertEqual(cm.cols, 2)
+        // Each element should be (3+1) + 2i = 4+2i
+        XCTAssertEqual(cm.real[0], 4.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.imag[0], 2.0, accuracy: 1e-12)
     }
 
-    func testAddComplexMatrixPlusComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .add, lhs: self.makeCM(2, 2), rhs: self.makeCM(2, 2))
-        }
-        assertStub(result, taskTag: "Task 10")
+    func testAddComplexMatrixPlusComplexMatrix() throws {
+        // CM + CM: element-wise on real+imag blocks
+        let a = makeCM(2, 2, re: 1.0, im: 2.0)
+        let b = makeCM(2, 2, re: 3.0, im: 4.0)
+        let result = try NumericDispatch.applyBinary(.add, lhs: a, rhs: b)
+        guard case .complexMatrix(let cm) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(cm.real[0], 4.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.imag[0], 6.0, accuracy: 1e-12)
     }
 
     // MARK: - applyBinary: mul — scalar paths
@@ -225,20 +232,27 @@ final class NumericDispatchTests: XCTestCase {
         XCTAssertEqual(v, 3.0, accuracy: 1e-12)
     }
 
-    func testMulScalarComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .mul, lhs: .scalar(2.0), rhs: self.makeCM(2, 2))
-        }
-        assertStub(result, taskTag: "Task 11")
+    func testMulScalarComplexMatrix() throws {
+        // scalar * CM: broadcasts scalar over both real and imag blocks
+        let result = try NumericDispatch.applyBinary(
+            .mul, lhs: .scalar(2.0), rhs: makeCM(2, 2, re: 3.0, im: 1.0))
+        guard case .complexMatrix(let cm) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(cm.real[0], 6.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.imag[0], 2.0, accuracy: 1e-12)
     }
 
-    func testMulComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .mul, lhs: self.makeCM(2, 2), rhs: self.makeCM(2, 2))
-        }
-        assertStub(result, taskTag: "Task 15")
+    func testMulComplexMatrix_producesComplexMatrix() throws {
+        // I₂ * I₂ as CM should yield I₂ as CM (1+0i per diagonal)
+        let ident = LinAlg.ComplexMatrix(LinAlg.eye(2))
+        let result = try NumericDispatch.applyBinary(
+            .mul, lhs: .complexMatrix(ident), rhs: .complexMatrix(ident))
+        guard case .complexMatrix(let cm) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(cm.rows, 2)
+        XCTAssertEqual(cm.cols, 2)
+        XCTAssertEqual(cm.real[0], 1.0, accuracy: 1e-12)  // (0,0)
+        XCTAssertEqual(cm.imag[0], 0.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.real[1], 0.0, accuracy: 1e-12)  // (0,1)
+        XCTAssertEqual(cm.real[3], 1.0, accuracy: 1e-12)  // (1,1)
     }
 
     // MARK: - applyBinary: div
@@ -295,12 +309,13 @@ final class NumericDispatchTests: XCTestCase {
         XCTFail("Expected .invalidArguments, got \(err)")
     }
 
-    func testDivMatrixComplex_stub() {
-        let result = run {
-            try NumericDispatch.applyBinary(
-                .div, lhs: self.makeMatrix(2, 2), rhs: .complex(Complex(re: 1, im: 0)))
-        }
-        assertStub(result, taskTag: "Task 11")
+    func testDivMatrixComplex() throws {
+        // M / (1+0i): same as M / 1.0, real stays real, imag = 0
+        let result = try NumericDispatch.applyBinary(
+            .div, lhs: makeMatrix(2, 2, value: 4.0), rhs: .complex(Complex(re: 2, im: 0)))
+        guard case .complexMatrix(let cm) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(cm.real[0], 2.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.imag[0], 0.0, accuracy: 1e-12)
     }
 
     // MARK: - applyBinary: pow
@@ -420,9 +435,17 @@ final class NumericDispatchTests: XCTestCase {
         XCTAssertEqual(m[0, 0], -5.0)
     }
 
-    func testNegComplexMatrix_stub() {
-        let result = run { try NumericDispatch.applyUnary(.neg, operand: self.makeCM(2, 2)) }
-        assertStub(result, taskTag: "Task 11")
+    func testNegComplexMatrix() throws {
+        // neg(CM): element-wise negate both real and imag
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+                                      real: [1.0, -2.0, 3.0, -4.0],
+                                      imag: [5.0, -6.0, 7.0, -8.0])
+        let result = try NumericDispatch.applyUnary(.neg, operand: .complexMatrix(cm))
+        guard case .complexMatrix(let neg) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(neg.real[0], -1.0, accuracy: 1e-12)
+        XCTAssertEqual(neg.imag[0], -5.0, accuracy: 1e-12)
+        XCTAssertEqual(neg.real[1],  2.0, accuracy: 1e-12)
+        XCTAssertEqual(neg.imag[3],  8.0, accuracy: 1e-12)
     }
 
     // MARK: - applyUnary: pos (identity)
@@ -484,11 +507,19 @@ final class NumericDispatchTests: XCTestCase {
         XCTAssertEqual(t[1, 0], 2.0)
     }
 
-    func testTransposeComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyUnary(.transpose, operand: self.makeCM(2, 3))
-        }
-        assertStub(result, taskTag: "Task 11")
+    func testTransposeComplexMatrix() throws {
+        // Plain (non-Hermitian) transpose: shape (2×3) → (3×2)
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 3,
+                                      real: [1,2,3, 4,5,6],
+                                      imag: [0,0,0, 0,0,0])
+        let result = try NumericDispatch.applyUnary(.transpose, operand: .complexMatrix(cm))
+        guard case .complexMatrix(let t) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertEqual(t.rows, 3)
+        XCTAssertEqual(t.cols, 2)
+        // Element (0,1) of transpose = element (1,0) of original = 4
+        XCTAssertEqual(t.real[0 * 2 + 1], 4.0, accuracy: 1e-12)
+        // Element (1,0) of transpose = element (0,1) of original = 2
+        XCTAssertEqual(t.real[1 * 2 + 0], 2.0, accuracy: 1e-12)
     }
 
     // MARK: - applyFunction: trig (scalar)
@@ -640,11 +671,13 @@ final class NumericDispatchTests: XCTestCase {
         XCTAssertEqual(v, 5.0, accuracy: 1e-12)
     }
 
-    func testAbsComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyFunction("abs", args: [self.makeCM(2, 2)])
-        }
-        assertStub(result, taskTag: "Task 11")
+    func testAbsComplexMatrix_frobeniusNorm() throws {
+        // abs(CM) = complex Frobenius norm = sqrt(Σ|z_ij|²)
+        // Single element: |3+4i| = 5  → Frobenius norm of 1×1 = 5
+        let cm = LinAlg.ComplexMatrix(rows: 1, cols: 1, real: [3.0], imag: [4.0])
+        let result = try NumericDispatch.applyFunction("abs", args: [.complexMatrix(cm)])
+        guard case .scalar(let v) = result else { return XCTFail("Expected scalar Frobenius norm") }
+        XCTAssertEqual(v, 5.0, accuracy: 1e-12)
     }
 
     // MARK: - applyFunction: inv
@@ -741,11 +774,15 @@ final class NumericDispatchTests: XCTestCase {
         XCTFail("Expected .invalidArguments, got \(err)")
     }
 
-    func testTraceComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyFunction("trace", args: [self.makeCM(2, 2)])
-        }
-        assertStub(result, taskTag: "Task 11")
+    func testTraceComplexMatrix() throws {
+        // trace([[1+2i, 0],[0, 3+4i]]) = (1+2i)+(3+4i) = 4+6i
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+                                      real: [1, 0, 0, 3],
+                                      imag: [2, 0, 0, 4])
+        let result = try NumericDispatch.applyFunction("trace", args: [.complexMatrix(cm)])
+        guard case .complex(let z) = result else { return XCTFail("Expected complex trace") }
+        XCTAssertEqual(z.re, 4.0, accuracy: 1e-12)
+        XCTAssertEqual(z.im, 6.0, accuracy: 1e-12)
     }
 
     // MARK: - applyFunction: transpose (function form)
@@ -797,12 +834,20 @@ final class NumericDispatchTests: XCTestCase {
         XCTFail("Expected .invalidArguments, got \(err)")
     }
 
-    func testDotProduct_complexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyFunction(
-                "dotProduct", args: [self.makeCM(2, 2), self.makeCM(2, 2)])
+    func testDotProduct_complexMatrix_bilinear() throws {
+        // dotProduct(CM, CM): CM here are column vectors (2×1)
+        // [1+i, 2+0i] · [3+0i, 4+i] = (1+i)(3+0i) + (2)(4+i)
+        //                             = (3+3i) + (8+2i) = 11+5i
+        let a = LinAlg.ComplexMatrix(rows: 2, cols: 1, real: [1, 2], imag: [1, 0])
+        let b = LinAlg.ComplexMatrix(rows: 2, cols: 1, real: [3, 4], imag: [0, 1])
+        let result = try NumericDispatch.applyFunction("dotProduct",
+                                                       args: [.complexMatrix(a),
+                                                              .complexMatrix(b)])
+        guard case .complex(let z) = result else {
+            return XCTFail("Expected complex (1×1 coercion), got \(result)")
         }
-        assertStub(result, taskTag: "Task 15")
+        XCTAssertEqual(z.re, 11.0, accuracy: 1e-12)
+        XCTAssertEqual(z.im,  5.0, accuracy: 1e-12)
     }
 
     // MARK: - applyFunction: hadamard
@@ -825,12 +870,23 @@ final class NumericDispatchTests: XCTestCase {
         XCTFail("Expected .shapeMismatch, got \(err)")
     }
 
-    func testHadamardComplexMatrix_stub() {
-        let result = run {
-            try NumericDispatch.applyFunction(
-                "hadamard", args: [self.makeCM(2, 2), self.makeCM(2, 2)])
-        }
-        assertStub(result, taskTag: "Task 11")
+    func testHadamardComplexMatrix() throws {
+        // hadamard([[i, 0],[0, 1+i]], [[2, 1],[1, 1]])
+        // (0+i)(2+0i)=0+2i,  (0+0)(1+0)=0,  (0+0)(1+0)=0,  (1+i)(1+0)=1+i
+        let a = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+                                     real: [0, 0, 0, 1], imag: [1, 0, 0, 1])
+        let b = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+                                     real: [2, 1, 1, 1], imag: [0, 0, 0, 0])
+        let result = try NumericDispatch.applyFunction("hadamard",
+                                                       args: [.complexMatrix(a),
+                                                              .complexMatrix(b)])
+        guard case .complexMatrix(let cm) = result else { return XCTFail("Expected complexMatrix") }
+        // (0+i)*(2+0i) = 0*2-1*0 + i*(0*0+1*2) = 0+2i
+        XCTAssertEqual(cm.real[0], 0.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.imag[0], 2.0, accuracy: 1e-12)
+        // (1+i)*(1+0i) = 1+i
+        XCTAssertEqual(cm.real[3], 1.0, accuracy: 1e-12)
+        XCTAssertEqual(cm.imag[3], 1.0, accuracy: 1e-12)
     }
 
     // MARK: - applyFunction: crossProduct

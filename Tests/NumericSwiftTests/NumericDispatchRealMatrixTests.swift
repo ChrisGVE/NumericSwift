@@ -529,15 +529,18 @@ final class NumericDispatchRealMatrixTests: XCTestCase {
         }
     }
 
-    func testMulComplexMatrix_stub_unsupported() {
-        // complex * complexMatrix is SEAM (Task 11 complex cells — later subtask)
-        XCTAssertThrowsError(
-            try NumericDispatch.applyBinary(
-                .mul,
-                lhs: .complex(Complex(re: 1, im: 0)),
-                rhs: .complexMatrix(LinAlg.ComplexMatrix(
-                    rows: 1, cols: 1, real: [1.0], imag: [0.0])))
-        ) { _ in /* any error is acceptable for stub */ }
+    func testMulComplexMulComplexMatrix_implemented() throws {
+        // complex * complexMatrix: (1+0i) * [[2+3i]] = [[2+3i]]
+        let cm = LinAlg.ComplexMatrix(rows: 1, cols: 1, real: [2.0], imag: [3.0])
+        let result = try NumericDispatch.applyBinary(
+            .mul,
+            lhs: .complex(Complex(re: 1, im: 0)),
+            rhs: .complexMatrix(cm))
+        guard case .complexMatrix(let out) = result else {
+            return XCTFail("Expected complexMatrix, got \(result)")
+        }
+        XCTAssertEqual(out.real[0], 2.0, accuracy: 1e-12)
+        XCTAssertEqual(out.imag[0], 3.0, accuracy: 1e-12)
     }
 
     // -------------------------------------------------------------------------
