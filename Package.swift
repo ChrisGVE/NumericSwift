@@ -107,5 +107,13 @@ let package = Package(
         return settings
       }()
     ),
+    // Performance benchmark harness — NOT part of the NumericSwift library
+    // product and therefore invisible to remote SPM consumers (e.g. LuaSwift).
+    // Build explicitly: swift build --product NumericSwiftBench
+    .executableTarget(
+      name: "NumericSwiftBench",
+      dependencies: ["NumericSwift"],
+      path: "Sources/NumericSwiftBench"
+    ),
   ]
 )
