@@ -233,8 +233,18 @@ extension NumericDispatch {
         return r
     }
 
-    /// Trig, hyperbolic, scalar-only math (atan2, pow, hypot, sign, rounding, clamp, lerp, etc.).
+    /// Trig, hyperbolic trig, and scalar-only utility functions (atan2, pow, rounding, etc.).
+    ///
+    /// Delegates to `registryTrig` (sin/cos/tan, inverse, hyperbolic) and
+    /// `registryScalarMath` (atan2, pow, sign, floor/ceil/round, clamp, lerp, etc.).
     private static func registryTrigAndScalar() -> [String: FunctionDescriptor] {
+        var r = registryTrig()
+        r.merge(registryScalarMath()) { _, new in new }
+        return r
+    }
+
+    /// Trigonometric and hyperbolic functions (all delegating to `applyTrigFunction`).
+    private static func registryTrig() -> [String: FunctionDescriptor] {
         var r: [String: FunctionDescriptor] = [:]
         let trigNames: [String] = [
             "sin", "cos", "tan",
@@ -247,6 +257,12 @@ extension NumericDispatch {
                 try applyTrigFunction(n, args: args)
             }
         }
+        return r
+    }
+
+    /// Scalar-only utility math: atan2, pow, hypot, sign, rounding, clamp, lerp, angle, min/max.
+    private static func registryScalarMath() -> [String: FunctionDescriptor] {
+        var r: [String: FunctionDescriptor] = [:]
         r["atan2"] = FunctionDescriptor(arityMin: 2, arityMax: 2, group: .groupA) { n, args in
             try scalarOnly2(n, args: args) { Foundation.atan2($0, $1) }
         }

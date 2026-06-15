@@ -99,15 +99,42 @@ extension LinAlg {
     static func computeRealEigendecomposition(
         _ data: [Double], _ n: Int
     ) -> (eigenvalues: [Double], eigenvectors: [Double])? {
+        // Convert row-major input to column-major for LAPACK.
         var a = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
-            for j in 0..<n {
-                a[j * n + i] = data[i * n + j]
-            }
+            for j in 0..<n { a[j * n + i] = data[i * n + j] }
         }
 
+        guard let (wr, wi, vr) = dgeevCall(&a, n: n) else { return nil }
+
+        // Reject matrices with non-real eigenvalues (imaginary part > 1e-10).
+        for im in wi { if abs(im) > 1e-10 { return nil } }
+
+        // Transpose eigenvectors from LAPACK column-major to row-major.
+        var vecs = [Double](repeating: 0, count: n * n)
+        for i in 0..<n {
+            for j in 0..<n { vecs[i * n + j] = vr[j * n + i] }
+        }
+
+        return (wr, vecs)
+    }
+
+    /// Call LAPACK `dgeev` with a two-phase workspace query then compute.
+    ///
+    /// Phase 1 queries the optimal LWORK size; phase 2 performs the actual
+    /// eigendecomposition.  `a` is a column-major copy of the input matrix — dgeev_
+    /// may overwrite it during the workspace query, so we snapshot and restore it
+    /// before the actual compute call (same defensive pattern as the original code).
+    /// Returns `(wr, wi, vr)` — real eigenvalues, imaginary parts, and right
+    /// eigenvectors in column-major order — or `nil` on LAPACK failure.
+    private static func dgeevCall(
+        _ a: inout [Double], n: Int
+    ) -> (wr: [Double], wi: [Double], vr: [Double])? {
+        let snapshot = a                                // save before workspace query
+        var jobvl = Int8(UInt8(ascii: "N"))
+        var jobvr = Int8(UInt8(ascii: "V"))
         var n1 = __CLPK_integer(n)
-        var lda1 = __CLPK_integer(n)
+        var lda = __CLPK_integer(n)
         var wr = [Double](repeating: 0, count: n)
         var wi = [Double](repeating: 0, count: n)
         var vl = [Double](repeating: 0, count: 1)
@@ -116,25 +143,17 @@ extension LinAlg {
         var ldvr = __CLPK_integer(n)
         var info: __CLPK_integer = 0
 
+        // Phase 1: workspace size query (lwork = -1).
         var lwork: __CLPK_integer = -1
         var work = [Double](repeating: 0, count: 1)
-        var jobvl = Int8(UInt8(ascii: "N"))
-        var jobvr = Int8(UInt8(ascii: "V"))
-
-        dgeev_(&jobvl, &jobvr, &n1, &a, &lda1,
+        dgeev_(&jobvl, &jobvr, &n1, &a, &lda,
                &wr, &wi, &vl, &ldvl, &vr, &ldvr,
                &work, &lwork, &info)
-
         lwork = __CLPK_integer(work[0])
         work = [Double](repeating: 0, count: Int(lwork))
 
-        // Reset a before the actual call
-        for i in 0..<n {
-            for j in 0..<n {
-                a[j * n + i] = data[i * n + j]
-            }
-        }
-
+        // Phase 2: actual eigendecomposition — restore the matrix first.
+        a = snapshot
         var n2 = __CLPK_integer(n)
         var lda2 = __CLPK_integer(n)
         dgeev_(&jobvl, &jobvr, &n2, &a, &lda2,
@@ -142,19 +161,7 @@ extension LinAlg {
                &work, &lwork, &info)
 
         if info != 0 { return nil }
-
-        for im in wi {
-            if abs(im) > 1e-10 { return nil }
-        }
-
-        var vecs = [Double](repeating: 0, count: n * n)
-        for i in 0..<n {
-            for j in 0..<n {
-                vecs[i * n + j] = vr[j * n + i]
-            }
-        }
-
-        return (wr, vecs)
+        return (wr, wi, vr)
     }
 
     /// Reconstruct a matrix from eigendecomposition: result = V * diag(λ) * V⁻¹.
