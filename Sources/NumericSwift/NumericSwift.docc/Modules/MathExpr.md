@@ -114,6 +114,34 @@ do {
 }
 ```
 
+## Bilinear Dot Product Semantics
+
+`dot(u, v)` for two complex column vectors computes the **bilinear** inner product
+Σ uᵢ·vᵢ — there is **no conjugation** of the first argument. This differs from the
+Hermitian (conjugate-linear) inner product ⟨u, v⟩ = Σ ū_i · vᵢ used in physics
+and much of numerical linear algebra. Hermitian/conjugated dot product is deferred
+to a future release.
+
+## Known Limitations
+
+### evaluateComplex — complex-context promotion lost for sqrt/log/pow of negative reals
+
+After the Phase 4 delegation (`MathExpr.evaluateComplex` now delegates to
+`evaluateUnified`), expressions such as `sqrt(-1)` via `evaluateComplex` return
+`NaN + 0i` instead of the expected principal complex value (`≈ 0 − 1i`). The root
+cause is that the unified front door (`evaluateUnified`) has no complex-mode flag,
+so `sqrt`, `log`, and fractional-`pow` of a negative-real `.scalar` always route
+to the real-valued function path.
+
+The legacy fallback `legacyComplexEvaluate` retains the correct behavior and the
+regression is quarantined with `XCTSkip` referencing GitHub issue
+[#1](https://github.com/ChrisGVE/NumericSwift/issues/1).
+
+Fix awaits an owner decision on the correct architecture approach. Do not attempt
+to work around it by calling `evaluateUnified` directly with complex-valued
+variables — the issue is in the unary-function dispatch for real-scalar inputs,
+not in variable binding.
+
 ## Legacy Scalar Evaluation
 
 The legacy scalar and complex paths are unchanged and remain the primary API for

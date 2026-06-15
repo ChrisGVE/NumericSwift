@@ -63,16 +63,48 @@ public enum NumericValue: Sendable {
 
     // MARK: - Cases
 
-    /// A real scalar (Double-precision floating-point).
+    /// A real scalar holding a `Double`-precision floating-point value.
+    ///
+    /// This is the narrowest kind in the coercion lattice. A `.scalar` result
+    /// from a matmul or dot-product may have been **coerced** from a 1×1
+    /// `.matrix` by the §4.3a rule (see `NumericDispatch.coerce1x1`), but a
+    /// `.scalar` value supplied by the caller is never a matrix.
+    ///
+    /// IEEE-754 special values (`+inf`, `-inf`, `nan`) are valid payloads.
+    /// `isExactlyEqual` treats `nan` as non-reflexive (IEEE 754 §5.11).
     case scalar(Double)
 
-    /// A complex scalar.
+    /// A complex scalar holding a `Complex` value (real + imaginary `Double` pair).
+    ///
+    /// Sits above `.scalar` in the coercion lattice: a scalar can be widened to
+    /// complex by `promoteScalarToComplex`, but not the reverse (narrowing is
+    /// always explicit). `isExactlyEqual` treats NaN in either component as
+    /// non-reflexive per IEEE 754 §5.11.
     case complex(Complex)
 
-    /// A real matrix (may also represent a real vector when `cols == 1`).
+    /// A real matrix backed by a row-major `[Double]` array.
+    ///
+    /// A column-vector is represented as an `n × 1` matrix (`cols == 1`).
+    /// The shape is available via `rows`, `cols`, and `shape`. Use `is1x1` to
+    /// detect the §4.3a coercion gate (a 1×1 matrix that the pipeline may
+    /// collapse to `.scalar` at dot-product / matmul result sites).
+    ///
+    /// `*` between two `.matrix` values is **matrix multiplication** (matmul),
+    /// not element-wise. Element-wise multiplication uses the `hadamard` named
+    /// function (or `.mul` → `applyBinary(.mul, …)` routes to matmul).
     case matrix(LinAlg.Matrix)
 
-    /// A complex matrix (may also represent a complex vector when `cols == 1`).
+    /// A complex matrix with separate row-major `[Double]` arrays for real and imaginary parts.
+    ///
+    /// A complex column-vector is represented as an `n × 1` complex matrix.
+    /// Sits at the top of the coercion lattice — all other kinds can be widened
+    /// to `.complexMatrix` but no implicit narrowing occurs. Use `is1x1` to
+    /// detect the §4.3a coercion gate (a 1×1 complex matrix that the pipeline
+    /// may collapse to `.complex` at complex dot-product / complex matmul sites).
+    ///
+    /// `dot(u, v)` of two complex column vectors returns the **bilinear** inner
+    /// product Σ uᵢ·vᵢ (no conjugation). Conjugated / Hermitian inner product
+    /// is not yet available and is deferred to a future release.
     case complexMatrix(LinAlg.ComplexMatrix)
 }
 

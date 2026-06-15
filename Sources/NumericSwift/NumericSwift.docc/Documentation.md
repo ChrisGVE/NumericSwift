@@ -24,6 +24,13 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 
 - ``Complex``
 - ``LinAlg``
+- ``NumericValue``
+
+### Unified Numeric Pipeline (0.3.0)
+
+- <doc:UnifiedPipeline>
+- ``NumericDispatch``
+- ``MathExpr/evaluateUnified(_:values:)``
 
 ### Mathematical Functions
 
