@@ -162,8 +162,12 @@ extension NumericDispatch {
 
         // scalar * matrix  / matrix * scalar — delegated to LinAlg scalar overloads
         case (.scalar, .matrix):
+            // Soft-cap: result has same shape as the matrix operand
+            try LinAlg.checkSoftCap(rows: rhs.asMatrix!.rows, cols: rhs.asMatrix!.cols)
             return .matrix(LinAlg.mul(lhs.asScalar!, rhs.asMatrix!))
         case (.matrix, .scalar):
+            // Soft-cap: result has same shape as the matrix operand
+            try LinAlg.checkSoftCap(rows: lhs.asMatrix!.rows, cols: lhs.asMatrix!.cols)
             return .matrix(LinAlg.mul(lhs.asMatrix!, rhs.asScalar!))
 
         // scalar * complexMatrix / complexMatrix * scalar — SEAM Task 11
@@ -238,6 +242,8 @@ extension NumericDispatch {
             let r = rhs.asScalar!
             // Group-A: pre-validate divisor before LinAlg.div precondition(scalar != 0)
             if r == 0 { throw MathExprError.divisionByZero }
+            // Soft-cap: result has same shape as the matrix operand
+            try LinAlg.checkSoftCap(rows: lhs.asMatrix!.rows, cols: lhs.asMatrix!.cols)
             return .matrix(LinAlg.div(lhs.asMatrix!, r))
 
         // matrix / complex — SEAM Task 11

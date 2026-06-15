@@ -24,7 +24,10 @@ extension NumericDispatch {
             let z = operand.asComplex!
             return .complex(Complex(re: -z.re, im: -z.im))
         case .matrix:
-            return .matrix(LinAlg.neg(operand.asMatrix!))
+            // Soft-cap: result has same shape as the operand
+            let m = operand.asMatrix!
+            try LinAlg.checkSoftCap(rows: m.rows, cols: m.cols)
+            return .matrix(LinAlg.neg(m))
         case .complexMatrix:
             return try evalNegComplexMatrix(cm: operand.asComplexMatrix!)
         }
@@ -65,7 +68,10 @@ extension NumericDispatch {
         case .complex:
             return operand           // transpose of a complex scalar is the scalar
         case .matrix:
-            return .matrix(operand.asMatrix!.T)
+            // Soft-cap: transposed shape is (cols × rows); check the result dims.
+            let m = operand.asMatrix!
+            try LinAlg.checkSoftCap(rows: m.cols, cols: m.rows)
+            return .matrix(m.T)
         case .complexMatrix:
             return try evalTransposeComplexMatrix(cm: operand.asComplexMatrix!)
         }

@@ -115,8 +115,11 @@ extension NumericDispatch {
         case ("exp", .complex):
             return .complex(arg.asComplex!.exp)
         case ("exp", .matrix):
-            // Group-B: expm already throws .notSquare; propagate
-            return .matrix(try LinAlg.expm(arg.asMatrix!))
+            // Soft-cap: expm returns a same-shape matrix; check before LAPACK call.
+            // Group-B: expm already throws .notSquare; propagate.
+            let em = arg.asMatrix!
+            try LinAlg.checkSoftCap(rows: em.rows, cols: em.cols)
+            return .matrix(try LinAlg.expm(em))
         case ("exp", .complexMatrix):
             throw MathExprError.invalidArguments(
                 "exp(complexMatrix) is not supported; expm is defined for real matrices only")
@@ -126,8 +129,11 @@ extension NumericDispatch {
         case ("log", .complex):
             return .complex(arg.asComplex!.log)
         case ("log", .matrix):
-            // Group-B: logm throws .notSquare; nil → non-diagonalizable
-            guard let result = try LinAlg.logm(arg.asMatrix!) else {
+            // Soft-cap: logm returns a same-shape matrix; check before LAPACK call.
+            // Group-B: logm throws .notSquare; nil → non-diagonalizable.
+            let lm = arg.asMatrix!
+            try LinAlg.checkSoftCap(rows: lm.rows, cols: lm.cols)
+            guard let result = try LinAlg.logm(lm) else {
                 throw MathExprError.invalidArguments(
                     "matrix logarithm failed: matrix is not diagonalizable "
                     + "with real positive eigenvalues")
@@ -142,8 +148,11 @@ extension NumericDispatch {
         case ("sqrt", .complex):
             return .complex(arg.asComplex!.sqrt)
         case ("sqrt", .matrix):
-            // Group-B: sqrtm throws .notSquare; nil → negative eigenvalues
-            guard let result = try LinAlg.sqrtm(arg.asMatrix!) else {
+            // Soft-cap: sqrtm returns a same-shape matrix; check before LAPACK call.
+            // Group-B: sqrtm throws .notSquare; nil → negative eigenvalues.
+            let sm = arg.asMatrix!
+            try LinAlg.checkSoftCap(rows: sm.rows, cols: sm.cols)
+            guard let result = try LinAlg.sqrtm(sm) else {
                 throw MathExprError.invalidArguments(
                     "matrix square root failed: eigenvalues are negative or complex")
             }
@@ -207,8 +216,11 @@ extension NumericDispatch {
             throw MathExprError.invalidArguments(
                 "inv() requires a matrix; for complex use 1/z")
         case ("inv", .matrix):
-            // Group-B: inv throws .notSquare; nil → singular
-            guard let result = try LinAlg.inv(arg.asMatrix!) else {
+            // Soft-cap: inv returns an n×n matrix (same shape as square input).
+            // Group-B: inv throws .notSquare; nil → singular.
+            let im = arg.asMatrix!
+            try LinAlg.checkSoftCap(rows: im.rows, cols: im.cols)
+            guard let result = try LinAlg.inv(im) else {
                 throw MathExprError.invalidArguments("inverse of singular matrix")
             }
             return .matrix(result)
