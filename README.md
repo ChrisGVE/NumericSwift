@@ -125,6 +125,8 @@ let eigenvalues = A.eigenvalues()
 | **Utilities** | vDSP-optimized array operations |
 | **MathExpr** | Mathematical expression parsing and evaluation |
 | **Regression** | Linear/nonlinear regression, ARIMA time series (statsmodels-inspired) |
+| **NumericValue** | Unified numeric type tower (0.3.0) — discriminated union over scalar/complex/matrix/complexMatrix |
+| **NumericDispatch** | Unified dispatch surface (0.3.0) — routes (op, kind) pairs to typed results |
 
 ## Ecosystem
 
@@ -165,6 +167,59 @@ let x = A.solve(b)  // Solve Ax = b
 let (Q, R) = A.qr()!
 let (U, s, Vt) = A.svd()!
 ```
+
+## Unified Numeric Pipeline (0.3.0)
+
+NumericSwift 0.3.0 introduces a unified numeric evaluation pipeline that handles scalars, complex
+numbers, real matrices, and complex matrices in a single recursive pass.
+
+### NumericValue — the type tower
+
+`NumericValue` is a discriminated union (`enum`) over the four numeric kinds:
+
+```swift
+import NumericSwift
+
+// Supply a matrix via the variable binding dictionary
+let A = LinAlg.Matrix(rows: 2, cols: 2, data: [1, 2, 3, 4])
+
+let ast = try MathExpr.parse("det(A) + trace(A)")
+let result = try MathExpr.evaluateUnified(ast, values: ["A": .matrix(A)])
+// result == .scalar(det(A) + trace(A)) == .scalar(-2.0 + 5.0) == .scalar(3.0)
+```
+
+Pattern-match on the result to extract the payload:
+
+```swift
+switch result {
+case .scalar(let x):        print("scalar:", x)
+case .complex(let z):       print("complex:", z)
+case .matrix(let m):        print("matrix:", m.rows, "x", m.cols)
+case .complexMatrix(let cm): print("complexMatrix:", cm.rows, "x", cm.cols)
+}
+```
+
+### Operator semantics
+
+- `*` between two matrices is **matrix multiplication** (matmul), not element-wise.
+  Element-wise multiplication uses the `hadamard` named function.
+- `dot(u, v)` on two column vectors returns a `.scalar` (1×1 → scalar coercion, §4.3a).
+- `dot(u, v)` on complex column vectors is **bilinear** (Σ uᵢ·vᵢ, no conjugation).
+
+### Fallback-parser limitation
+
+The default build has no bracket tokenizer. Expressions like `[1, 2, 3]` or `[[1, 2], [3, 4]]`
+throw `MathExprError.parseError`. Supply matrix values via the `values:` dictionary instead.
+Bracket-literal parsing is available with the MathLex Rust backend
+(`NUMERICSWIFT_INCLUDE_MATHLEX=1`).
+
+### Known limitation
+
+**Issue #1** — `evaluateComplex` returns `NaN` for `sqrt(-1)`, `log(-1)`, and similar expressions
+that require complex-context promotion. The unified front door has no complex-mode flag, so
+negative-real scalar inputs always take the real-valued path. The legacy `legacyComplexEvaluate`
+retains the correct behavior. Fix awaits an architecture decision.
+See [GitHub issue #1](https://github.com/ChrisGVE/NumericSwift/issues/1).
 
 ## Performance
 
