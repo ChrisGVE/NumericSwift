@@ -146,9 +146,19 @@ public struct MathExpr {
     #endif
   }
 
-  // MARK: - Real Evaluation
+  // MARK: - Real Evaluation (public — delegates to unified evaluator)
 
   /// Evaluate an AST with given variable bindings.
+  ///
+  /// Delegates to `MathExpr.evaluateUnified` and unwraps the result to
+  /// `Double`. The unified evaluator is the single recursive pass introduced
+  /// in Phase 3; this wrapper maintains the original public signature for
+  /// full backward compatibility with existing callers (e.g. LuaSwift).
+  ///
+  /// The legacy scalar implementation is retained internally as
+  /// `legacyScalarEvaluate` so the frozen-snapshot oracle can regenerate
+  /// from the true legacy path without going through the unified evaluator
+  /// (preventing the vacuous-gate bug).
   ///
   /// - Parameters:
   ///   - ast: The AST to evaluate
@@ -158,31 +168,10 @@ public struct MathExpr {
   public static func evaluate(
     _ ast: MathLexExpression, variables: [String: Double] = [:]
   ) throws -> Double {
-    switch ast {
-    case .integer(let n):
-      return Double(n)
-    case .float(let v):
-      guard let v else { throw MathExprError.nonFiniteFloat }
-      return v
-    case .variable(let name):
-      guard let value = variables[name] else {
-        throw MathExprError.undefinedVariable(name)
-      }
-      return value
-    case .constant(let c):
-      return try resolveConstant(c)
-    case .rational(let num, let den):
-      return try evaluate(num, variables: variables) / evaluate(den, variables: variables)
-    case .binary(let op, let left, let right):
-      return try evalBinary(op, left, right, variables: variables)
-    case .unary(let op, let operand):
-      return try evalUnary(op, operand, variables: variables)
-    case .function(let name, let args):
-      let vals = try args.map { try evaluate($0, variables: variables) }
-      return try evalFunction(name, args: vals)
-    default:
-      throw MathExprError.unsupportedNode(nodeLabel(ast))
-    }
+    // Bridge [String: Double] → [String: NumericValue] for the unified front door.
+    let values = variables.mapValues { NumericValue.scalar($0) }
+    let result = try evaluateUnified(ast, values: values)
+    return try extractDouble(result)
   }
 
   /// Parse and evaluate an expression string.
@@ -198,9 +187,140 @@ public struct MathExpr {
     return try evaluate(ast, variables: variables)
   }
 
-  // MARK: - Constant Resolution
+  // MARK: - Complex Evaluation (public — delegates to unified evaluator)
 
-  private static func resolveConstant(_ c: MathLexConstant) throws -> Double {
+  /// Evaluate an AST to a complex number.
+  ///
+  /// Delegates to `MathExpr.evaluateUnified` and unwraps the result to
+  /// `Complex`. Supports the same operators and functions as the real
+  /// evaluator, plus imaginary number handling via the `i` constant.
+  ///
+  /// The legacy complex implementation is retained internally as
+  /// `legacyComplexEvaluate` for the snapshot oracle — see
+  /// `legacyScalarEvaluate` for the rationale.
+  public static func evaluateComplex(
+    _ ast: MathLexExpression,
+    variables: [String: Double] = [:],
+    complexVariables: [String: Complex] = [:]
+  ) throws -> Complex {
+    // Bridge both variable dictionaries to [String: NumericValue].
+    // Complex variables take precedence over real ones for the same key.
+    var values: [String: NumericValue] = variables.mapValues { .scalar($0) }
+    for (key, z) in complexVariables {
+      values[key] = .complex(z)
+    }
+    let result = try evaluateUnified(ast, values: values)
+    return try extractComplex(result)
+  }
+
+  // MARK: - Legacy evaluator implementations (internal — snapshot oracle)
+  //
+  // These functions are the ORIGINAL evaluation implementations, unchanged
+  // from before the Phase 4 delegation refactor. They are kept here so that
+  // `LegacySnapshotGenerator` can regenerate `LegacySnapshot.json` from the
+  // true legacy path — never from the unified evaluator — preserving the
+  // parity contract (no vacuous-gate bug).
+  //
+  // They are `internal` (not `private`) so the test target can access them
+  // via `@testable import NumericSwift`.
+  //
+  // DO NOT call these from production code. The public entry points above
+  // (`evaluate`, `evaluateComplex`) are the correct path for all callers.
+
+  /// Legacy real-scalar recursive evaluator — snapshot oracle only.
+  ///
+  /// This is the pre-Phase-4 implementation of `evaluate(_:variables:)`,
+  /// preserved verbatim. Used exclusively by `LegacySnapshotGenerator` to
+  /// regenerate the frozen parity baseline from the authentic legacy path.
+  // swiftlint:disable:next function_body_length
+  static func legacyScalarEvaluate(
+    _ ast: MathLexExpression, variables: [String: Double] = [:]
+  ) throws -> Double {
+    switch ast {
+    case .integer(let n):
+      return Double(n)
+    case .float(let v):
+      guard let v else { throw MathExprError.nonFiniteFloat }
+      return v
+    case .variable(let name):
+      guard let value = variables[name] else {
+        throw MathExprError.undefinedVariable(name)
+      }
+      return value
+    case .constant(let c):
+      return try legacyResolveConstant(c)
+    case .rational(let num, let den):
+      return try legacyScalarEvaluate(num, variables: variables)
+        / legacyScalarEvaluate(den, variables: variables)
+    case .binary(let op, let left, let right):
+      return try legacyEvalBinary(op, left, right, variables: variables)
+    case .unary(let op, let operand):
+      return try legacyEvalUnary(op, operand, variables: variables)
+    case .function(let name, let args):
+      let vals = try args.map { try legacyScalarEvaluate($0, variables: variables) }
+      return try legacyEvalFunction(name, args: vals)
+    default:
+      throw MathExprError.unsupportedNode(nodeLabel(ast))
+    }
+  }
+
+  /// Legacy complex-scalar recursive evaluator — snapshot oracle only.
+  ///
+  /// This is the pre-Phase-4 implementation of
+  /// `evaluateComplex(_:variables:complexVariables:)`, preserved verbatim.
+  // swiftlint:disable:next function_body_length
+  static func legacyComplexEvaluate(
+    _ ast: MathLexExpression,
+    variables: [String: Double] = [:],
+    complexVariables: [String: Complex] = [:]
+  ) throws -> Complex {
+    switch ast {
+    case .integer(let n):
+      return Complex(Double(n))
+    case .float(let v):
+      guard let v else { throw MathExprError.nonFiniteFloat }
+      return Complex(v)
+    case .variable(let name):
+      if let cval = complexVariables[name] { return cval }
+      if let rval = variables[name] { return Complex(rval) }
+      throw MathExprError.undefinedVariable(name)
+    case .constant(let c):
+      return try legacyResolveComplexConstant(c)
+    case .rational(let num, let den):
+      let n = try legacyComplexEvaluate(
+        num, variables: variables, complexVariables: complexVariables)
+      let d = try legacyComplexEvaluate(
+        den, variables: variables, complexVariables: complexVariables)
+      return n / d
+    case .complex(let re, let im):
+      let r = try legacyComplexEvaluate(
+        re, variables: variables, complexVariables: complexVariables)
+      let i = try legacyComplexEvaluate(
+        im, variables: variables, complexVariables: complexVariables)
+      return Complex(re: r.re, im: i.re)
+    case .binary(let op, let left, let right):
+      let l = try legacyComplexEvaluate(
+        left, variables: variables, complexVariables: complexVariables)
+      let r = try legacyComplexEvaluate(
+        right, variables: variables, complexVariables: complexVariables)
+      return try legacyEvalComplexBinary(op, l, r)
+    case .unary(let op, let operand):
+      let v = try legacyComplexEvaluate(
+        operand, variables: variables, complexVariables: complexVariables)
+      return try legacyEvalComplexUnary(op, v)
+    case .function(let name, let args):
+      let vals = try args.map {
+        try legacyComplexEvaluate($0, variables: variables, complexVariables: complexVariables)
+      }
+      return try legacyEvalComplexFunction(name, args: vals)
+    default:
+      throw MathExprError.unsupportedNode(nodeLabel(ast))
+    }
+  }
+
+  // MARK: - Legacy helpers (internal — used only by legacy oracle functions above)
+
+  private static func legacyResolveConstant(_ c: MathLexConstant) throws -> Double {
     switch c {
     case .pi: return .pi
     case .e: return M_E
@@ -213,16 +333,14 @@ public struct MathExpr {
     }
   }
 
-  // MARK: - Binary Operators
-
-  private static func evalBinary(
+  private static func legacyEvalBinary(
     _ op: BinaryOp,
     _ left: MathLexExpression,
     _ right: MathLexExpression,
     variables: [String: Double]
   ) throws -> Double {
-    let l = try evaluate(left, variables: variables)
-    let r = try evaluate(right, variables: variables)
+    let l = try legacyScalarEvaluate(left, variables: variables)
+    let r = try legacyScalarEvaluate(right, variables: variables)
     switch op {
     case .add: return l + r
     case .sub: return l - r
@@ -237,14 +355,12 @@ public struct MathExpr {
     }
   }
 
-  // MARK: - Unary Operators
-
-  private static func evalUnary(
+  private static func legacyEvalUnary(
     _ op: UnaryOp,
     _ operand: MathLexExpression,
     variables: [String: Double]
   ) throws -> Double {
-    let v = try evaluate(operand, variables: variables)
+    let v = try legacyScalarEvaluate(operand, variables: variables)
     switch op {
     case .neg: return -v
     case .pos: return v
@@ -258,10 +374,8 @@ public struct MathExpr {
     }
   }
 
-  // MARK: - Function Evaluation
-
   // swiftlint:disable:next cyclomatic_complexity function_body_length
-  private static func evalFunction(_ name: String, args: [Double]) throws -> Double {
+  private static func legacyEvalFunction(_ name: String, args: [Double]) throws -> Double {
     switch (name, args.count) {
     // Trigonometric
     case ("sin", 1): return sin(args[0])
@@ -310,56 +424,7 @@ public struct MathExpr {
     }
   }
 
-  // MARK: - Complex Evaluation
-
-  /// Evaluate an AST to a complex number.
-  ///
-  /// Supports the same operators and functions as the real evaluator, plus
-  /// imaginary number handling via the `i` constant.
-  public static func evaluateComplex(
-    _ ast: MathLexExpression,
-    variables: [String: Double] = [:],
-    complexVariables: [String: Complex] = [:]
-  ) throws -> Complex {
-    switch ast {
-    case .integer(let n):
-      return Complex(Double(n))
-    case .float(let v):
-      guard let v else { throw MathExprError.nonFiniteFloat }
-      return Complex(v)
-    case .variable(let name):
-      if let cval = complexVariables[name] { return cval }
-      if let rval = variables[name] { return Complex(rval) }
-      throw MathExprError.undefinedVariable(name)
-    case .constant(let c):
-      return try resolveComplexConstant(c)
-    case .rational(let num, let den):
-      let n = try evaluateComplex(num, variables: variables, complexVariables: complexVariables)
-      let d = try evaluateComplex(den, variables: variables, complexVariables: complexVariables)
-      return n / d
-    case .complex(let re, let im):
-      let r = try evaluateComplex(re, variables: variables, complexVariables: complexVariables)
-      let i = try evaluateComplex(im, variables: variables, complexVariables: complexVariables)
-      return Complex(re: r.re, im: i.re)
-    case .binary(let op, let left, let right):
-      let l = try evaluateComplex(left, variables: variables, complexVariables: complexVariables)
-      let r = try evaluateComplex(right, variables: variables, complexVariables: complexVariables)
-      return try evalComplexBinary(op, l, r)
-    case .unary(let op, let operand):
-      let v = try evaluateComplex(
-        operand, variables: variables, complexVariables: complexVariables)
-      return try evalComplexUnary(op, v)
-    case .function(let name, let args):
-      let vals = try args.map {
-        try evaluateComplex($0, variables: variables, complexVariables: complexVariables)
-      }
-      return try evalComplexFunction(name, args: vals)
-    default:
-      throw MathExprError.unsupportedNode(nodeLabel(ast))
-    }
-  }
-
-  private static func resolveComplexConstant(_ c: MathLexConstant) throws -> Complex {
+  private static func legacyResolveComplexConstant(_ c: MathLexConstant) throws -> Complex {
     switch c {
     case .pi: return Complex(.pi)
     case .e: return Complex(M_E)
@@ -372,7 +437,7 @@ public struct MathExpr {
     }
   }
 
-  private static func evalComplexBinary(
+  private static func legacyEvalComplexBinary(
     _ op: BinaryOp, _ l: Complex, _ r: Complex
   ) throws -> Complex {
     switch op {
@@ -392,7 +457,7 @@ public struct MathExpr {
     }
   }
 
-  private static func evalComplexUnary(_ op: UnaryOp, _ v: Complex) throws -> Complex {
+  private static func legacyEvalComplexUnary(_ op: UnaryOp, _ v: Complex) throws -> Complex {
     switch op {
     case .neg: return Complex(re: -v.re, im: -v.im)
     case .pos: return v
@@ -406,12 +471,14 @@ public struct MathExpr {
     }
   }
 
-  private static func evalComplexFunction(_ name: String, args: [Complex]) throws -> Complex {
+  private static func legacyEvalComplexFunction(
+    _ name: String, args: [Complex]
+  ) throws -> Complex {
     guard args.count == 1 else {
       // Multi-arg functions: fall back to real if all args are real
       if args.allSatisfy({ $0.im == 0 }) {
         let reals = args.map(\.re)
-        let result = try evalFunction(name, args: reals)
+        let result = try legacyEvalFunction(name, args: reals)
         return Complex(result)
       }
       throw MathExprError.invalidArguments(
@@ -436,7 +503,7 @@ public struct MathExpr {
     default:
       // Fall back to real evaluation for purely real arguments
       if z.im == 0 {
-        let result = try evalFunction(name, args: [z.re])
+        let result = try legacyEvalFunction(name, args: [z.re])
         return Complex(result)
       }
       throw MathExprError.invalidArguments(

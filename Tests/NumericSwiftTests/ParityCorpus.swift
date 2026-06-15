@@ -300,7 +300,10 @@ public enum ParityCorpusBuilder {
     ]
     return try cases.map { id, expr, vars in
       let ast = try MathExpr.parse(expr)
-      let value = try MathExpr.evaluate(ast, variables: vars)
+      // Use the legacy oracle directly — never the unified-pipeline path.
+      // This preserves the parity contract: the snapshot is always generated
+      // from the legacy implementation, not from the unified evaluator.
+      let value = try MathExpr.legacyScalarEvaluate(ast, variables: vars)
       return CorpusEntry(
         id: "scalar-\(id)",
         description: "scalar: \(expr)" + (vars.isEmpty ? "" : " where \(vars)"),
@@ -344,7 +347,8 @@ public enum ParityCorpusBuilder {
     ]
     return try cases.map { id, expr, vars, cvars in
       let ast = try MathExpr.parse(expr)
-      let z = try MathExpr.evaluateComplex(ast, variables: vars, complexVariables: cvars)
+      // Use the legacy oracle directly — never the unified-pipeline path.
+      let z = try MathExpr.legacyComplexEvaluate(ast, variables: vars, complexVariables: cvars)
       return CorpusEntry(
         id: "complex-\(id)",
         description: "complex: \(expr)",
@@ -869,7 +873,8 @@ public enum ParityCorpusBuilder {
     var entries: [CorpusEntry] = []
 
     // sqrt(-1) through real path → nan (Double.nan)
-    let sqrtNeg = try? MathExpr.eval("sqrt(-1)")
+    // Use the legacy oracle directly — never the unified-pipeline path.
+    let sqrtNeg = try? MathExpr.legacyScalarEvaluate(MathExpr.parse("sqrt(-1)"))
     entries.append(CorpusEntry(
       id: "ieee-f01",
       description: "IEEE-754: sqrt(-1) → NaN (real path)",
@@ -877,7 +882,7 @@ public enum ParityCorpusBuilder {
       result: .scalar(sqrtNeg ?? Double.nan)))
 
     // log(-1) → nan
-    let logNeg = try? MathExpr.eval("log(-1)")
+    let logNeg = try? MathExpr.legacyScalarEvaluate(MathExpr.parse("log(-1)"))
     entries.append(CorpusEntry(
       id: "ieee-f02",
       description: "IEEE-754: log(-1) → NaN",
@@ -885,7 +890,7 @@ public enum ParityCorpusBuilder {
       result: .scalar(logNeg ?? Double.nan)))
 
     // exp(1e308) may produce +inf
-    let expLarge = try? MathExpr.eval("exp(1e308)")
+    let expLarge = try? MathExpr.legacyScalarEvaluate(MathExpr.parse("exp(1e308)"))
     entries.append(CorpusEntry(
       id: "ieee-f03",
       description: "IEEE-754: exp(1e308) → +Inf",
@@ -893,7 +898,7 @@ public enum ParityCorpusBuilder {
       result: .scalar(expLarge ?? Double.infinity)))
 
     // -exp(1e308) → -inf
-    let negExpLarge = try? MathExpr.eval("-exp(1e308)")
+    let negExpLarge = try? MathExpr.legacyScalarEvaluate(MathExpr.parse("-exp(1e308)"))
     entries.append(CorpusEntry(
       id: "ieee-f04",
       description: "IEEE-754: -exp(1e308) → -Inf",
@@ -939,7 +944,8 @@ public enum ParityCorpusBuilder {
       result: .scalar(-Double.infinity)))
 
     // NaN through complex path: sqrt(-1) = complex result (NOT nan in complex)
-    let sqrtNegComplex = try MathExpr.evaluateComplex(
+    // Use the legacy oracle directly — never the unified-pipeline path.
+    let sqrtNegComplex = try MathExpr.legacyComplexEvaluate(
       MathExpr.parse("sqrt(-1)"))   // sqrt(-1) complex = i
     entries.append(CorpusEntry(
       id: "ieee-f10",
