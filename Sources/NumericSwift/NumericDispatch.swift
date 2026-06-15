@@ -122,11 +122,28 @@ public enum NumericDispatch {
 
     /// Route a unary operator over a `NumericValue` operand.
     ///
+    /// ## Soft-cap enforcement (AC3.6 / CONS-07)
+    ///
+    /// Unary operators that allocate a result matrix pre-check the result shape
+    /// via `LinAlg.checkSoftCap(rows:cols:)` before any allocation:
+    ///
+    /// - `.neg` on a real or complex matrix: same-shape result.
+    /// - `.transpose` on a real or complex matrix: transposed shape (`cols × rows`).
+    ///
+    /// When the result would exceed `LinAlg.maxEvaluatorMatrixElements` the check
+    /// throws `LinAlgError.invalidParameter` (CONS-07 — **never** `MathExprError`).
+    ///
+    /// > Note: This is a **per-result** guard.  It bounds the element count of a
+    /// > single output matrix, not the cumulative working set of a chained expression
+    /// > (MF-5 / §5 deferral).
+    ///
     /// - Parameters:
     ///   - op:      The unary operator.
     ///   - operand: The operand.
     /// - Returns: The result as a `NumericValue`.
-    /// - Throws: `MathExprError` for invalid combinations.
+    /// - Throws: `MathExprError` for invalid kind/argument combinations;
+    ///           `LinAlgError.invalidParameter` when the result shape exceeds
+    ///           the evaluator soft cap (CONS-07).
     public static func applyUnary(
         _ op: UnaryOp,
         operand: NumericValue
@@ -158,11 +175,28 @@ public enum NumericDispatch {
     /// Group-B functions (trace/det/inv/expm/logm/sqrtm/cdet/cinv) propagate
     /// `LinAlgError.notSquare` unmodified when the input matrix is non-square.
     ///
+    /// ## Soft-cap enforcement (AC3.6 / CONS-07)
+    ///
+    /// Functions that allocate a result matrix pre-check the result shape via
+    /// `LinAlg.checkSoftCap(rows:cols:)` before any LAPACK call or allocation.
+    /// Affected matrix-producing functions: `inv`, `exp` (expm), `log` (logm),
+    /// `sqrt` (sqrtm), `cinv`, `hadamard`, `elementDiv`, `dotProduct`.
+    /// When the result shape would exceed `LinAlg.maxEvaluatorMatrixElements`
+    /// the check throws `LinAlgError.invalidParameter` (CONS-07).
+    ///
+    /// > Note: This is a **per-result** guard.  It bounds the element count of a
+    /// > single output matrix, not the cumulative working set of a chained
+    /// > expression (MF-5 / §5 deferral).
+    ///
     /// - Parameters:
     ///   - name: The function name (case-sensitive).
     ///   - args: The evaluated argument list.
     /// - Returns: The result as a `NumericValue`.
-    /// - Throws: `MathExprError` or `LinAlgError` as described above.
+    /// - Throws: `MathExprError.unknownFunction` for unrecognised names;
+    ///           `MathExprError.invalidArguments` for arity or kind mismatches;
+    ///           `LinAlgError.notSquare` propagated from Group-B functions;
+    ///           `LinAlgError.invalidParameter` when the result shape exceeds
+    ///           the evaluator soft cap (CONS-07).
     public static func applyFunction(
         _ name: String,
         args: [NumericValue]

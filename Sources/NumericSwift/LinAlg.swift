@@ -142,7 +142,35 @@ public enum LinAlg {
     }
 
     /// Validate a prospective matrix shape against the soft-cap, throwing when
-    /// it would be rejected by the evaluator pre-pass.
+    /// it would be rejected by the evaluator pre-pass (AC3.6 / CONS-07).
+    ///
+    /// ## Two-tier interaction (AC7.2 / §4.10)
+    ///
+    /// The size-guard system has two tiers:
+    ///
+    /// - **SOFT cap** (this function): checks `rows * cols` against
+    ///   ``maxEvaluatorMatrixElements``.  A finite product that exceeds the cap
+    ///   throws ``LinAlgError/invalidParameter(_:)`` — a *catchable* error.
+    ///   An Int-overflowing product is also thrown here as a secondary defence
+    ///   (the product is meaningless, so the cap comparison cannot be meaningful).
+    ///
+    /// - **HARD cap** (constructor ``assertWithinHardCap(rows:cols:)``): uses
+    ///   `precondition` to trap when `rows * cols` overflows `Int` or exceeds
+    ///   ``hardMaxMatrixElementCount``.  This trap is **not catchable** — it is
+    ///   a programmer error, not a runtime condition.
+    ///
+    /// The evaluator pre-pass calls this function BEFORE delegating to any LinAlg
+    /// or LAPACK routine; an over-cap allocation is never attempted (AC3.6).
+    /// The check is placed at the **value-construction boundary** — i.e. on every
+    /// result-shape that the dispatcher predicts, not inside the LinAlg primitives.
+    ///
+    /// ## Scope honesty (MF-5 / §5)
+    ///
+    /// This guard bounds the element count of **each individual result matrix**.
+    /// It does **not** bound the cumulative working set of a chained expression:
+    /// *k* at-cap intermediates held simultaneously consume *k × maxEvaluatorMatrixElements*
+    /// doubles, which is neither detected nor rejected by this function.
+    /// Cumulative working-set bounding is deferred to a future release (§14 / v-next).
     ///
     /// - Parameters:
     ///   - rows: Prospective row count.
@@ -151,7 +179,6 @@ public enum LinAlg {
     ///   ``maxEvaluatorMatrixElements`` or when the product overflows `Int`.
     ///
     /// Per CONS-07 the error type is always ``LinAlgError`` — never MathExprError.
-    /// Called by the evaluator pre-pass (Task 20) before allocating any matrix.
     public static func checkSoftCap(rows: Int, cols: Int) throws {
         let (count, overflow) = elementCount(rows: rows, cols: cols)
         guard !overflow && count <= maxEvaluatorMatrixElements else {
