@@ -11,9 +11,15 @@
 //
 //    • `arityMin` / `arityMax` — accepted argument count range (most functions
 //      have min == max; "min" and "max" accept 1 or 2 scalars).
-//    • `group`   — `.groupA` (scalar/complex only; no matrix) or `.groupB`
-//      (matrix throwing: `LinAlgError.notSquare` propagates unmodified).
 //    • `handler` — `(String, [NumericValue]) throws → NumericValue`.
+//
+//  Functions are classified Group-A / Group-B for the two-mechanism error model
+//  (see the "Function corpus" tables below). The classification governs how each
+//  handler is written — Group-A pre-validates so its `LinAlg` preconditions are
+//  unreachable for well-formed inputs (the evaluator soft cap is the one
+//  exception, surfaced as a thrown `LinAlgError.invalidParameter`); Group-B calls
+//  `LinAlg` directly and propagates `LinAlgError` unmodified. It is a property of
+//  each handler's implementation, not a runtime dispatch input.
 //
 //  `applyFunction` performs three validation steps before invoking the handler:
 //    1. Name lookup → `.unknownFunction` if absent.
@@ -92,21 +98,6 @@
 
 import Foundation
 
-// MARK: - FunctionGroup
-
-/// Classification of a registered function for error-model purposes.
-///
-/// - `.groupA`: Pure scalar/complex functions, or functions whose matrix paths
-///   are pre-validated by the dispatcher before calling `LinAlg`. Any
-///   `LinAlg` preconditions are unreachable for well-formed inputs.
-/// - `.groupB`: Named functions that throw `LinAlgError.notSquare` (or other
-///   `LinAlgError` variants) from inside `LinAlg`. The dispatcher calls them
-///   with `try` and propagates the error unmodified — no redundant pre-guard.
-enum FunctionGroup {
-    case groupA
-    case groupB
-}
-
 // MARK: - FunctionDescriptor
 
 /// A registry entry describing one named function in the dispatch table.
@@ -123,8 +114,6 @@ struct FunctionDescriptor: Sendable {
     let arityMin: Int
     /// Maximum number of accepted arguments. Equal to `arityMin` for fixed-arity functions.
     let arityMax: Int
-    /// Group-A or Group-B per the two-mechanism error model (§4.5/AC2.2).
-    let group: FunctionGroup
     /// The handler invoked after name/arity/kind validation passes.
     ///
     /// Declared `@Sendable` so the compiler rejects any future handler that
@@ -258,7 +247,7 @@ extension NumericDispatch {
             "asinh", "arcsinh", "acosh", "arccosh", "atanh", "arctanh",
         ]
         for name in trigNames {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
                 try applyTrigFunction(n, args: args)
             }
         }
@@ -268,49 +257,49 @@ extension NumericDispatch {
     /// Scalar-only utility math: atan2, pow, hypot, sign, rounding, clamp, lerp, angle, min/max.
     private static func registryScalarMath() -> [String: FunctionDescriptor] {
         var r: [String: FunctionDescriptor] = [:]
-        r["atan2"] = FunctionDescriptor(arityMin: 2, arityMax: 2, group: .groupA) { n, args in
+        r["atan2"] = FunctionDescriptor(arityMin: 2, arityMax: 2) { n, args in
             try scalarOnly2(n, args: args) { Foundation.atan2($0, $1) }
         }
-        r["cbrt"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["cbrt"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { Darwin.cbrt($0) }
         }
-        r["pow"] = FunctionDescriptor(arityMin: 2, arityMax: 2, group: .groupA) { n, args in
+        r["pow"] = FunctionDescriptor(arityMin: 2, arityMax: 2) { n, args in
             try scalarOnly2(n, args: args) { Foundation.pow($0, $1) }
         }
-        r["hypot"] = FunctionDescriptor(arityMin: 2, arityMax: 2, group: .groupA) { n, args in
+        r["hypot"] = FunctionDescriptor(arityMin: 2, arityMax: 2) { n, args in
             try scalarOnly2(n, args: args) { Foundation.hypot($0, $1) }
         }
         for name in ["sign", "sgn"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { _, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
                 try scalarOnly1("sign", args: args) { x in x > 0 ? 1.0 : (x < 0 ? -1.0 : 0.0) }
             }
         }
-        r["floor"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["floor"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { Foundation.floor($0) }
         }
-        r["ceil"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["ceil"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { Foundation.ceil($0) }
         }
-        r["round"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["round"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { Foundation.round($0) }
         }
-        r["trunc"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["trunc"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { Foundation.trunc($0) }
         }
-        r["clamp"] = FunctionDescriptor(arityMin: 3, arityMax: 3, group: .groupA) { n, args in
+        r["clamp"] = FunctionDescriptor(arityMin: 3, arityMax: 3) { n, args in
             try scalarOnly3(n, args: args) { x, lo, hi in Swift.min(Swift.max(x, lo), hi) }
         }
-        r["lerp"] = FunctionDescriptor(arityMin: 3, arityMax: 3, group: .groupA) { n, args in
+        r["lerp"] = FunctionDescriptor(arityMin: 3, arityMax: 3) { n, args in
             try scalarOnly3(n, args: args) { a, b, t in a + (b - a) * t }
         }
-        r["rad"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["rad"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { $0 * .pi / 180.0 }
         }
-        r["deg"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["deg"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { $0 * 180.0 / .pi }
         }
         for name in ["min", "max"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 2, group: .groupA) { n, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 2) { n, args in
                 try applyMinMax(name: n, args: args)
             }
         }
@@ -320,29 +309,29 @@ extension NumericDispatch {
     /// exp / log / ln / log10 / log2 / lg / sqrt / abs / transpose (scalar+complex+matrix).
     private static func registryExpLogSqrtAbs() -> [String: FunctionDescriptor] {
         var r: [String: FunctionDescriptor] = [:]
-        r["exp"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupB) { n, args in
+        r["exp"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try applyExpLogSqrt(n, args: args)
         }
         for name in ["log", "ln"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupB) { _, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
                 try applyExpLogSqrt("log", args: args)
             }
         }
-        r["log10"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["log10"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try scalarOnly1(n, args: args) { Foundation.log10($0) }
         }
         for name in ["log2", "lg"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { _, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
                 try scalarOnly1("log2", args: args) { Foundation.log2($0) }
             }
         }
-        r["sqrt"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupB) { n, args in
+        r["sqrt"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try applyExpLogSqrt(n, args: args)
         }
-        r["abs"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["abs"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try applyAbsInvDetTrace(n, args: args)
         }
-        r["transpose"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { _, args in
+        r["transpose"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
             try applyTransposeFunction(args: args)
         }
         return r
@@ -352,21 +341,21 @@ extension NumericDispatch {
     private static func registryMatrixFunctions() -> [String: FunctionDescriptor] {
         var r: [String: FunctionDescriptor] = [:]
         for name in ["inv", "det", "trace"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupB) { n, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
                 try applyAbsInvDetTrace(n, args: args)
             }
         }
         for name in ["cdet", "cinv"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupB) { n, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
                 try applyCdetCinv(n, args: args)
             }
         }
         for name in ["dotProduct", "hadamard", "elementDiv"] {
-            r[name] = FunctionDescriptor(arityMin: 2, arityMax: 2, group: .groupA) { n, args in
+            r[name] = FunctionDescriptor(arityMin: 2, arityMax: 2) { n, args in
                 try applyMultiArgFunction(n, args: args)
             }
         }
-        r["crossProduct"] = FunctionDescriptor(arityMin: 2, arityMax: 2, group: .groupA) { n, _ in
+        r["crossProduct"] = FunctionDescriptor(arityMin: 2, arityMax: 2) { n, _ in
             throw MathExprError.unsupportedNode("\(n) not yet implemented (deferred §14)")
         }
         return r
@@ -375,21 +364,21 @@ extension NumericDispatch {
     /// Complex-only functions (conj / real / re / imag / im / arg / phase).
     private static func registryComplexFunctions() -> [String: FunctionDescriptor] {
         var r: [String: FunctionDescriptor] = [:]
-        r["conj"] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { n, args in
+        r["conj"] = FunctionDescriptor(arityMin: 1, arityMax: 1) { n, args in
             try complexOnly1(n, args: args) { $0.conj }
         }
         for name in ["real", "re"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { _, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
                 try complexOnly1("real", args: args) { Complex($0.re) }
             }
         }
         for name in ["imag", "im"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { _, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
                 try complexOnly1("imag", args: args) { Complex($0.im) }
             }
         }
         for name in ["arg", "phase"] {
-            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1, group: .groupA) { _, args in
+            r[name] = FunctionDescriptor(arityMin: 1, arityMax: 1) { _, args in
                 try complexOnly1("arg", args: args) { Complex($0.arg) }
             }
         }
