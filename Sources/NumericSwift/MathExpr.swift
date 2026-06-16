@@ -32,7 +32,7 @@ import Foundation
 // MARK: - Errors
 
 /// Errors for mathematical expression parsing and evaluation.
-public enum MathExprError: Error, Equatable {
+public enum MathExprError: Error, Equatable, Sendable, CustomStringConvertible {
     case parseError(String)
     case undefinedVariable(String)
     case unknownFunction(String)
