@@ -97,14 +97,29 @@ final class UnifiedEvaluatorLiteralTests: XCTestCase {
         XCTAssertEqual(result.kind, NumericValue.Kind.complex)
     }
 
-    func testConstantJTreatedAsI() throws {
-        // j is the quaternion j but is currently mapped to .complex(0+1i)
-        // matching the documented partial-support note in UnifiedEvaluator.swift
+    func testConstantJThrows() {
+        // `.j` is a quaternion basis element distinct from the imaginary unit,
+        // not representable in complex arithmetic. It throws `.unsupportedNode`
+        // exactly like `.k` and the legacy complex oracle (CR-D4). It previously
+        // aliased to `.complex(0+1i)`, silently wrong for quaternion expressions.
         let ast = MathLexExpression.constant(.j)
-        let result = try MathExpr.evaluateUnified(ast)
-        let z = try XCTUnwrap(complexOf(result))
-        XCTAssertEqual(z.re, 0.0, accuracy: 1e-15)
-        XCTAssertEqual(z.im, 1.0, accuracy: 1e-15)
+        XCTAssertThrowsError(try MathExpr.evaluateUnified(ast)) { error in
+            guard case MathExprError.unsupportedNode(let msg) = error else {
+                return XCTFail("expected .unsupportedNode, got \(error)")
+            }
+            XCTAssertEqual(msg, "quaternion basis requires quaternion arithmetic")
+        }
+    }
+
+    func testConstantKThrows() {
+        // `.k` shares the same quaternion-basis error as `.j`.
+        let ast = MathLexExpression.constant(.k)
+        XCTAssertThrowsError(try MathExpr.evaluateUnified(ast)) { error in
+            guard case MathExprError.unsupportedNode(let msg) = error else {
+                return XCTFail("expected .unsupportedNode, got \(error)")
+            }
+            XCTAssertEqual(msg, "quaternion basis requires quaternion arithmetic")
+        }
     }
 
     func testConstantInfinityPositive() throws {

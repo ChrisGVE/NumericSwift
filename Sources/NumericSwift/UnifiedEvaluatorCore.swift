@@ -185,17 +185,20 @@ enum UnifiedEvaluatorCore {
 
     /// Resolve a `MathLexConstant` to a `NumericValue`.
     ///
-    /// Named constants that are inherently complex (`.i`, `.j`) resolve to
-    /// `.complex` values. The quaternion constant `.k` is unsupported (§14).
+    /// Only the imaginary unit `.i` resolves to a `.complex` value. The
+    /// quaternion basis elements `.j` and `.k` are distinct units that complex
+    /// arithmetic cannot represent, so both throw — matching the legacy complex
+    /// oracle (`legacyResolveComplexConstant`). `.j` previously aliased to `.i`,
+    /// which silently produced wrong results for any quaternion expression while
+    /// `.k` threw; the two are now consistent (CR-D4).
     private static func evalConstant(_ c: MathLexConstant) throws -> NumericValue {
         switch c {
         case .pi:         return .scalar(Double.pi)
         case .e:          return .scalar(M_E)
         case .i:          return .complex(Complex(re: 0, im: 1))
-        case .j:          return .complex(Complex(re: 0, im: 1))  // quaternion j treated as i for now
-        case .k:
+        case .j, .k:
             throw MathExprError.unsupportedNode(
-                "quaternion constant k requires quaternion arithmetic (deferred §14)")
+                "quaternion basis requires quaternion arithmetic")
         case .infinity:    return .scalar(Double.infinity)
         case .negInfinity: return .scalar(-Double.infinity)
         case .nan:         return .scalar(Double.nan)
