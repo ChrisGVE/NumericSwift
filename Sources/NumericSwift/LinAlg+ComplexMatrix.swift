@@ -26,10 +26,16 @@ extension LinAlg {
         public let rows: Int
         /// Number of columns
         public let cols: Int
-        /// Real part data in row-major order
-        public var real: [Double]
-        /// Imaginary part data in row-major order
-        public var imag: [Double]
+        /// Real part data in row-major order.
+        ///
+        /// The setter is `private`: `real.count == rows * cols` is a construction
+        /// invariant a public setter could break. Mutate elements through the
+        /// `[row, col]` subscript; reshape through an initializer.
+        public private(set) var real: [Double]
+        /// Imaginary part data in row-major order.
+        ///
+        /// The setter is `private` for the same invariant reason as `real`.
+        public private(set) var imag: [Double]
 
         /// Whether this is a vector (single column)
         public var isVector: Bool { cols == 1 }

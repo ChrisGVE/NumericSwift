@@ -27,8 +27,15 @@ extension LinAlg {
         public let rows: Int
         /// Number of columns
         public let cols: Int
-        /// Data stored in row-major order
-        public var data: [Double]
+        /// Data stored in row-major order.
+        ///
+        /// The setter is `private`: `data.count == rows * cols` is an invariant
+        /// established at construction, and exposing a public setter would let a
+        /// consumer break it (resize the backing array out of step with
+        /// `rows`/`cols`). Mutate individual elements through the `[row, col]`
+        /// subscript, which preserves the invariant; build a differently shaped
+        /// matrix through an initializer.
+        public private(set) var data: [Double]
 
         /// Whether this is a vector (single column)
         public var isVector: Bool { cols == 1 }
