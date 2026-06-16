@@ -186,10 +186,11 @@ extension NumericDispatch {
     ) throws -> NumericValue {
         // Group-A: validate conformant shapes for dot product
         try validateCMMatmulShape(lhs: lhs, rhs: rhs)
-        // Soft cap: 1×1 result is always trivially under cap, but check uniformly
-        try LinAlg.checkSoftCap(rows: 1, cols: 1)
 
-        // Delegate to the core complex matmul (handles vec·vec → 1×1 → coerce)
+        // Soft-cap is enforced inside `complexMatmul` against the *actual* result
+        // shape (lhs.rows × rhs.cols, or 1×1 for vec·vec). The previous
+        // `checkSoftCap(rows:1, cols:1)` here was vacuous (1×1 is always under cap)
+        // and asserted the wrong shape for the matrix·matrix case (CR-D7).
         return try complexMatmul(lhs: lhs, rhs: rhs)
     }
 

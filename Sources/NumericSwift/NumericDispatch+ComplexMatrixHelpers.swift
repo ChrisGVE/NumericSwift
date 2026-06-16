@@ -117,7 +117,12 @@ extension NumericDispatch {
     /// Implements CM*CM via real-block decomposition: Cr=Ar·Br−Ai·Bi, Ci=Ar·Bi+Ai·Br.
     ///
     /// - Performs Group-A shape pre-validation.
-    /// - Soft-cap covers all four intermediate real products AND the final result.
+    /// - Soft-cap is checked once against the result shape. The four intermediate
+    ///   real products (`arBr`, `aiBi`, `arBi`, `aiBr`) each have that same shape,
+    ///   so every individual allocation is within the cap. The *aggregate* peak
+    ///   working set (≈ 4–5× the result size held simultaneously) is NOT bounded
+    ///   here — that is the cumulative-working-set limitation documented on
+    ///   ``LinAlg/checkSoftCap(rows:cols:)`` (MF-5 / §5), deferred to v-next.
     /// - Calls `coerce1x1Complex` for the 1×1 vec·vec → .complex collapse (§4.3a).
     ///
     /// Each real product is delegated to LinAlg.dot (BLAS/Accelerate-backed).
@@ -133,7 +138,8 @@ extension NumericDispatch {
         let isVecDot = lhs.cols == 1 && rhs.cols == 1
         let resultRows = isVecDot ? 1 : lhs.rows
         let resultCols = isVecDot ? 1 : rhs.cols
-        // §4.8 soft-cap: guard result + all four intermediate real products
+        // §4.8 soft-cap: guard the result shape (each of the four intermediate
+        // real products shares this shape; aggregate working set is unbounded — §5).
         try LinAlg.checkSoftCap(rows: resultRows, cols: resultCols)
 
         // Extract real and imaginary blocks
