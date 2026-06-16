@@ -118,7 +118,7 @@ enum FunctionGroup {
 /// Handler receives: (`name: String`, `args: [NumericValue]`) throws → `NumericValue`.
 /// Passing `name` lets shared handlers (e.g. `applyTrigFunction`) discriminate
 /// between related function names without requiring separate closures.
-struct FunctionDescriptor {
+struct FunctionDescriptor: Sendable {
     /// Minimum number of accepted arguments (≥ 0).
     let arityMin: Int
     /// Maximum number of accepted arguments. Equal to `arityMin` for fixed-arity functions.
@@ -126,7 +126,12 @@ struct FunctionDescriptor {
     /// Group-A or Group-B per the two-mechanism error model (§4.5/AC2.2).
     let group: FunctionGroup
     /// The handler invoked after name/arity/kind validation passes.
-    let handler: (String, [NumericValue]) throws -> NumericValue
+    ///
+    /// Declared `@Sendable` so the compiler rejects any future handler that
+    /// captures non-`Sendable` reference state — `functionRegistry` is a shared
+    /// `static let` read concurrently, and all current handlers are stateless
+    /// (they reference only other stateless `enum`-namespace statics).
+    let handler: @Sendable (String, [NumericValue]) throws -> NumericValue
 }
 
 // MARK: - Registry

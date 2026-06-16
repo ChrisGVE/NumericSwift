@@ -228,13 +228,13 @@ The promotion set is narrow by design (the complex-native names only); `pow(x,y)
 ### Dispatch Surface
 
 - ``NumericDispatch``
-- ``NumericDispatch/applyBinary(_:lhs:rhs:)``
+- ``NumericDispatch/applyBinary(_:lhs:rhs:complexMode:)``
 - ``NumericDispatch/applyUnary(_:operand:)``
-- ``NumericDispatch/applyFunction(_:args:)``
+- ``NumericDispatch/applyFunction(_:args:complexMode:)``
 
 ### Evaluator Front Door
 
-- ``MathExpr/evaluateUnified(_:values:)``
+- ``MathExpr/evaluateUnified(_:values:complexMode:)``
 
 ### Size Caps
 

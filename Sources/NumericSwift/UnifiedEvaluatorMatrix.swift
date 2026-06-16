@@ -73,14 +73,17 @@ enum UnifiedEvaluatorMatrix {
     ///   if the resulting shape exceeds the soft cap.
     static func evalVector(
         _ elements: [MathLexExpression],
-        values: [String: NumericValue]
+        values: [String: NumericValue],
+        complexMode: Bool = false
     ) throws -> NumericValue {
         let rows = elements.count
         guard rows > 0 else {
             return .matrix(LinAlg.Matrix(rows: 0, cols: 1, data: []))
         }
         try LinAlg.checkSoftCap(rows: rows, cols: 1)
-        let evaluated = try elements.map { try UnifiedEvaluatorCore.eval($0, values: values) }
+        let evaluated = try elements.map {
+            try UnifiedEvaluatorCore.eval($0, values: values, complexMode: complexMode)
+        }
         return try buildColumnVector(evaluated, expectedRows: rows)
     }
 
@@ -102,7 +105,8 @@ enum UnifiedEvaluatorMatrix {
     ///   `LinAlgError.invalidParameter` if the shape exceeds the soft cap.
     static func evalMatrix(
         _ rows: [[MathLexExpression]],
-        values: [String: NumericValue]
+        values: [String: NumericValue],
+        complexMode: Bool = false
     ) throws -> NumericValue {
         guard !rows.isEmpty else {
             return .matrix(LinAlg.Matrix(rows: 0, cols: 0, data: []))
@@ -117,7 +121,7 @@ enum UnifiedEvaluatorMatrix {
         let nRows = rows.count
         try LinAlg.checkSoftCap(rows: nRows, cols: nCols)
         let evaluated = try rows.map { row -> [NumericValue] in
-            try row.map { try UnifiedEvaluatorCore.eval($0, values: values) }
+            try row.map { try UnifiedEvaluatorCore.eval($0, values: values, complexMode: complexMode) }
         }
         return try buildMatrix2D(evaluated, nRows: nRows, nCols: nCols)
     }

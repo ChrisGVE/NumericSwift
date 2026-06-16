@@ -14,7 +14,8 @@
 //                                         applyPow / applyMod)
 //    • NumericDispatch+UnaryFunctions.swift (applyNeg / applyFactorial /
 //                                            applyTranspose + function routers)
-//    • NumericDispatch+EvalStubs.swift   (EVAL-cell stubs, Tasks 10-12 fill in)
+//    • NumericDispatch+ComplexMatrix{Arithmetic,Functions,Helpers}.swift and
+//      NumericDispatch+MatrixPower.swift   (the matrix/complex-matrix EVAL cells)
 //
 //  Routing discriminant (9.2): `NumericValue.Kind` from NumericValue+Accessors.swift
 //  is the routing key for all dispatch switches. No competing kind enum is defined
@@ -41,16 +42,17 @@ import Foundation
 /// Routes `(operator/function, NumericValue kinds)` → typed result following the
 /// §15 truth table. Three public entry points cover all dispatch needs:
 ///
-/// - ``applyBinary(_:lhs:rhs:)`` — binary arithmetic/algebraic operators
+/// - ``applyBinary(_:lhs:rhs:complexMode:)`` — binary arithmetic/algebraic operators
 /// - ``applyUnary(_:operand:)``  — unary prefix/postfix operators
-/// - ``applyFunction(_:args:)``  — named function calls
+/// - ``applyFunction(_:args:complexMode:)``  — named function calls
 ///
 /// ## Handler seams
 ///
-/// Every truth-table cell marked **EVAL** in §15 is currently a stub in
-/// `NumericDispatch+EvalStubs.swift`. Tasks 10–16 replace those stubs with real
-/// implementations by providing `extension NumericDispatch` in separate files.
-/// The stubs throw `MathExprError.unsupportedNode("not yet implemented: … (Task N)")`.
+/// Every truth-table cell marked **EVAL** in §15 is implemented across the
+/// `extension NumericDispatch` files (`+BinaryOps`, `+ComplexMatrixArithmetic`,
+/// `+ComplexMatrixFunctions`, `+MatrixPower`). The only remaining deferral is
+/// `complexMatrix^scalar` (`evalComplexMatrixPow`, §14), which throws
+/// `MathExprError.unsupportedNode`.
 ///
 /// ## Error boundary
 ///

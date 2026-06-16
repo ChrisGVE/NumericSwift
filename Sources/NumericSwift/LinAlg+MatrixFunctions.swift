@@ -27,6 +27,14 @@ extension LinAlg {
 
         let normA = cblas_dnrm2(Int32(n * n), m.data, 1)
 
+        // A non-finite norm (any ±inf or NaN element) makes the scaling loop below
+        // never terminate (`inf / scale > 1.0` is always true) — guard it as a
+        // recoverable error rather than hanging the process. (Audit CR.)
+        guard normA.isFinite else {
+            throw LinAlgError.invalidParameter(
+                "expm requires finite matrix elements; norm is \(normA)")
+        }
+
         var s = 0
         var scale = 1.0
         while normA / scale > 1.0 {

@@ -9,7 +9,7 @@ given as strings. Two evaluation paths are available:
 
 - **Legacy scalar/complex path** — `evaluate(_:variables:)` and `evaluateComplex(_:variables:complexVariables:)`
   for expressions that produce a single `Double` or `Complex` value.
-- **Unified pipeline path** — `evaluateUnified(_:values:)` (Phase 3), the single front
+- **Unified pipeline path** — `evaluateUnified(_:values:complexMode:)`, the single front
   door that traverses the full AST and produces a `NumericValue`, supporting scalars,
   complex numbers, real matrices, and complex matrices in one call.
 
@@ -173,7 +173,7 @@ let z: Complex = try MathExpr.evaluateComplex(
 
 ### Unified Evaluation (Phase 3)
 
-- ``MathExpr/evaluateUnified(_:values:)``
+- ``MathExpr/evaluateUnified(_:values:complexMode:)``
 
 ### Legacy Scalar/Complex Evaluation
 

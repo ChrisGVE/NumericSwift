@@ -119,10 +119,10 @@ enum UnifiedEvaluatorCore {
 
         // MARK: Matrix/vector literal nodes
         case .vector(let elements):
-            return try UnifiedEvaluatorMatrix.evalVector(elements, values: values)
+            return try UnifiedEvaluatorMatrix.evalVector(elements, values: values, complexMode: complexMode)
 
         case .matrix(let rows):
-            return try UnifiedEvaluatorMatrix.evalMatrix(rows, values: values)
+            return try UnifiedEvaluatorMatrix.evalMatrix(rows, values: values, complexMode: complexMode)
 
         // MARK: Linear-algebra AST nodes
         case .dotProduct(let left, let right):

@@ -13,7 +13,7 @@
 //
 //  The shared helpers (validateCMSameShape, validateCMMatmulShape, realBlock,
 //  imagBlock, divideComplex, complexMatmul) live in
-//  NumericDispatch+ComplexMatrixArithmetic.swift.
+//  NumericDispatch+ComplexMatrixHelpers.swift.
 //
 //  Licensed under the Apache License, Version 2.0.
 //

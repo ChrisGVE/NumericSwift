@@ -42,6 +42,16 @@ extension NumericDispatch {
     static func evalMatrixPow(
         matrix: LinAlg.Matrix, exponent: Double
     ) throws -> NumericValue {
+        // Self-protect the `Int(exponent)` cast: a finite integer-valued Double
+        // beyond ±2^53 (e.g. 1e20) passes the caller's `== rounded()` guard but
+        // overflows `Int` and would TRAP (process kill). 2^53 is also the largest
+        // Double that represents consecutive integers exactly, so anything beyond
+        // is a meaningless matrix exponent. (Audit CR — issue #1 follow-up.)
+        guard exponent.magnitude <= 9_007_199_254_740_992 else {
+            throw MathExprError.invalidArguments(
+                "matrix power exponent \(exponent) exceeds ±2^53; "
+                + "an exponent this large is not a meaningful matrix power")
+        }
         let n = Int(exponent)       // caller guarantees no fractional part
 
         // n == 0 → A⁰ = identity regardless of A (even singular)

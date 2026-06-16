@@ -30,7 +30,7 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 
 - <doc:UnifiedPipeline>
 - ``NumericDispatch``
-- ``MathExpr/evaluateUnified(_:values:)``
+- ``MathExpr/evaluateUnified(_:values:complexMode:)``
 
 ### Mathematical Functions
 

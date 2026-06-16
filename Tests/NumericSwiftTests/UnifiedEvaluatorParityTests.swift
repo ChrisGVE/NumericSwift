@@ -1375,6 +1375,70 @@ final class UnifiedEvaluatorParityTests: XCTestCase {
             "(-2)^3 must have exactly zero imaginary part (no complex noise)")
     }
 
+    /// The `complexMode` parameter is exercised DIRECTLY at the dispatch layer
+    /// (not only via `evaluateComplex`), so the dispatch contract is pinned
+    /// independently of the expression evaluator (audit CR — qa coverage gap).
+    func testIssue1_complexModeAtDispatchLayer() throws {
+        // applyPow with complexMode:true promotes negative base + non-integer exp.
+        let powHot = try NumericDispatch.applyBinary(
+            .pow, lhs: .scalar(-2), rhs: .scalar(0.5), complexMode: true)
+        guard case .complex(let z) = powHot else {
+            XCTFail("(-2)^0.5 in complex mode must yield .complex"); return
+        }
+        XCTAssertEqual(abs(z.im), sqrt(2.0), accuracy: 1e-12, "|im| of (-2)^0.5 = √2")
+
+        // applyPow with complexMode:false (default) stays real → NaN.
+        let powCold = try NumericDispatch.applyBinary(
+            .pow, lhs: .scalar(-2), rhs: .scalar(0.5))
+        guard case .scalar(let x) = powCold else {
+            XCTFail("(-2)^0.5 in real mode must stay .scalar"); return
+        }
+        XCTAssertTrue(x.isNaN, "(-2)^0.5 in real mode is NaN")
+
+        // applyFunction sqrt with complexMode:true promotes negative-real arg.
+        let sqrtHot = try NumericDispatch.applyFunction(
+            "sqrt", args: [.scalar(-4)], complexMode: true)
+        guard case .complex(let s) = sqrtHot else {
+            XCTFail("sqrt(-4) in complex mode must yield .complex"); return
+        }
+        XCTAssertEqual(s.re, 0.0, accuracy: 1e-12, "Re(sqrt(-4)) = 0")
+        XCTAssertEqual(abs(s.im), 2.0, accuracy: 1e-12, "|Im(sqrt(-4))| = 2")
+
+        // applyFunction log10 with complexMode:true must NOT promote (stays NaN).
+        let log10Hot = try NumericDispatch.applyFunction(
+            "log10", args: [.scalar(-1)], complexMode: true)
+        guard case .scalar(let l) = log10Hot else {
+            XCTFail("log10(-1) must stay .scalar (not promoted)"); return
+        }
+        XCTAssertTrue(l.isNaN, "log10(-1) is not promoted, stays NaN")
+    }
+
+    // MARK: - Audit CR regression guards
+
+    /// A huge but finite integer matrix exponent must throw, not TRAP via
+    /// `Int(1e20)` overflow (audit CR — process-kill guard).
+    func testMatrixPow_hugeExponentThrowsNotTrap() throws {
+        let a = NumericValue.matrix(LinAlg.eye(2))
+        XCTAssertThrowsError(
+            try NumericDispatch.applyBinary(.pow, lhs: a, rhs: .scalar(1e20))
+        ) { error in
+            guard case MathExprError.invalidArguments = error else {
+                XCTFail("expected .invalidArguments, got \(error)"); return
+            }
+        }
+    }
+
+    /// `expm` of a matrix with a non-finite element must throw, not hang in the
+    /// scaling loop (audit CR — infinite-loop guard).
+    func testExpm_nonFiniteElementThrowsNotHang() throws {
+        let m = LinAlg.Matrix([[Double.infinity, 0], [0, 1]])
+        XCTAssertThrowsError(try LinAlg.expm(m)) { error in
+            guard case LinAlg.LinAlgError.invalidParameter = error else {
+                XCTFail("expected .invalidParameter, got \(error)"); return
+            }
+        }
+    }
+
     // MARK: - §22.18 Soft-cap size-precheck
 
     func testSoftCap_matrixAddExceedsCapThrows() throws {

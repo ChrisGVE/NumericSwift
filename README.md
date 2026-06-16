@@ -26,7 +26,7 @@ Add NumericSwift to your Swift package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ChrisGVE/NumericSwift.git", from: "0.1.0")
+    .package(url: "https://github.com/ChrisGVE/NumericSwift.git", from: "0.3.0")
 ]
 ```
 
@@ -213,13 +213,14 @@ throw `MathExprError.parseError`. Supply matrix values via the `values:` diction
 Bracket-literal parsing is available with the MathLex Rust backend
 (`NUMERICSWIFT_INCLUDE_MATHLEX=1`).
 
-### Known limitation
+### Complex-context promotion
 
-**Issue #1** — `evaluateComplex` returns `NaN` for `sqrt(-1)`, `log(-1)`, and similar expressions
-that require complex-context promotion. The unified front door has no complex-mode flag, so
-negative-real scalar inputs always take the real-valued path. The legacy `legacyComplexEvaluate`
-retains the correct behavior. Fix awaits an architecture decision.
-See [GitHub issue #1](https://github.com/ChrisGVE/NumericSwift/issues/1).
+`evaluateComplex` evaluates in **complex mode**: `sqrt(-1)`, `log(-1)`, `ln(-1)`, and the `^`
+operator with a negative base and a non-integer exponent are promoted to their complex
+principal value (numpy/SciPy convention — `sqrt(-1) = +i`, `log(-1) = +iπ`) instead of `NaN`.
+The real `evaluate` keeps the IEEE-754 NaN contract (`eval("sqrt(-4)")` is `NaN`). The
+promotion set is narrow: `pow(x, y)` as a *function*, `log10`/`log2`, and inverse-trig still
+return `NaN` for negative reals. (Resolved [GitHub issue #1](https://github.com/ChrisGVE/NumericSwift/issues/1).)
 
 ## Performance
 

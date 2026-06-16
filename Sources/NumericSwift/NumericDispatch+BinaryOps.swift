@@ -5,8 +5,9 @@
 //  Binary-operator sub-dispatchers for the unified numeric pipeline.
 //
 //  Each function handles one operator family across all (lhsKind × rhsKind) pairs
-//  defined in the §15 truth table. EVAL cells call stubs in
-//  NumericDispatch+EvalStubs.swift; DELEG cells call LinAlg directly after
+//  defined in the §15 truth table. EVAL cells delegate to the complex-matrix
+//  implementations in NumericDispatch+ComplexMatrix{Arithmetic,Functions,Helpers}.swift
+//  and NumericDispatch+MatrixPower.swift; DELEG cells call LinAlg directly after
 //  pre-validating shapes (Group-A) or propagate LinAlg's own errors (Group-B).
 //
 //  Group-A pre-validation contract (AC2.2/§4.5):
@@ -295,7 +296,7 @@ extension NumericDispatch {
             // (e.g. (-2)^3 = -8 exactly), which the frozen snapshot oracle leaves
             // unconstrained and where the exact real value is preferable.
             if complexMode && base < 0 && exponent != exponent.rounded() {
-                return try applyPow(lhs: .complex(Complex(base)), rhs: rhs)
+                return try applyPow(lhs: .complex(Complex(base)), rhs: rhs, complexMode: complexMode)
             }
             return .scalar(pow(base, exponent))
         case (.scalar, .complex):
