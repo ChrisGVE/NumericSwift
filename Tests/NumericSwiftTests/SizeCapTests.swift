@@ -327,18 +327,28 @@ final class SizeCapTests: XCTestCase {
     // MARK: - SEC-05: setter isolation from mathlex/Lua bridge
     // -------------------------------------------------------------------------
 
-    func testSetterNameAbsentFromMathExprIdentifiers() {
-        // Negative test: verify the setter symbol name is not in MathExpr's
-        // callable-function table (if any).  Since MathExpr uses a closed set of
-        // registered function names, we confirm the setter name is absent.
-        // This is a documentation/inspection test; it passes as long as the
-        // setter was never registered in MathExpr's function dispatch table.
-        //
-        // MathExpr does not expose a public list of registered functions at the
-        // time this test was written; absence of a registration call in the
-        // source is the authoritative check (see subtask 15 audit notes).
-        // This test serves as a sentinel: if MathExpr ever adds a registration
-        // mechanism, add a runtime assertion here against the registered names.
-        XCTAssertTrue(true, "SEC-05: setMaxEvaluatorMatrixElements is not bridged to mathlex/Lua")
+    func testSetterNameAbsentFromMathExprIdentifiers() throws {
+        // SEC-05: the soft-cap setter/getter must never be reachable as an
+        // expression-callable function — exposing them would let untrusted
+        // script code disable the resource guard. The dispatch surface is the
+        // closed `NumericDispatch.functionRegistry`, so assert the cap-control
+        // symbols are absent from its keys, and that calling them as functions
+        // raises `.unknownFunction` rather than dispatching.
+        let registryKeys = Set(NumericDispatch.functionRegistry.keys)
+        let forbidden = [
+            "setMaxEvaluatorMatrixElements",
+            "maxEvaluatorMatrixElements",
+            "hardMaxMatrixElementCount",
+        ]
+        for name in forbidden {
+            XCTAssertFalse(registryKeys.contains(name),
+                           "SEC-05: '\(name)' must not be an expression-callable function")
+            XCTAssertThrowsError(try NumericDispatch.applyFunction(name, args: [.scalar(1)])) { error in
+                guard case MathExprError.unknownFunction(let got) = error else {
+                    return XCTFail("expected .unknownFunction for '\(name)', got \(error)")
+                }
+                XCTAssertEqual(got, name)
+            }
+        }
     }
 }
