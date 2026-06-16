@@ -108,7 +108,7 @@ public enum LinAlg {
     /// above this package's iOS 15 / macOS 12 floor.
     private static let _softCapLock = NSLock()
 
-    /// Backing store for the tunable soft-cap; guarded by ``_softCapLock``.
+    /// Backing store for the tunable soft-cap; guarded by `_softCapLock`.
     private static var _maxEvaluatorMatrixElements: Int = defaultEvaluatorMatrixElements
 
     /// The SOFT element-count ceiling checked by the evaluator pre-pass.
@@ -119,7 +119,7 @@ public enum LinAlg {
     ///
     /// Modify only from Swift host code via ``setMaxEvaluatorMatrixElements(_:)``.
     /// This getter is readable from both the host and the evaluator pre-pass; the
-    /// read is serialized against the setter via ``_softCapLock``.
+    /// read is serialized against the setter via `_softCapLock`.
     public static var maxEvaluatorMatrixElements: Int {
         _softCapLock.lock()
         defer { _softCapLock.unlock() }
@@ -186,7 +186,7 @@ public enum LinAlg {
     ///   An Int-overflowing product is also thrown here as a secondary defence
     ///   (the product is meaningless, so the cap comparison cannot be meaningful).
     ///
-    /// - **HARD cap** (constructor ``assertWithinHardCap(rows:cols:)``): uses
+    /// - **HARD cap** (constructor `assertWithinHardCap(rows:cols:)`): uses
     ///   `precondition` to trap when `rows * cols` overflows `Int` or exceeds
     ///   ``hardMaxMatrixElementCount``.  This trap is **not catchable** — it is
     ///   a programmer error, not a runtime condition.

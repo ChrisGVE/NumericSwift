@@ -121,4 +121,4 @@ print(popt)  // Optimal parameters
 ### Curve Fitting
 
 - ``curveFit(_:xdata:ydata:p0:ftol:xtol:maxiter:)``
-- ``leastSquares(_:x0:ftol:xtol:maxiter:)``
+- ``leastSquares(_:x0:bounds:ftol:xtol:gtol:maxiter:)``

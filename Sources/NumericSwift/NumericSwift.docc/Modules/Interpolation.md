@@ -104,7 +104,8 @@ let yNew = evalBarycentric(x: x, y: y, w: weights, xNew: 2.5)
 
 ### Generic
 
-- ``interp1d(x:y:xNew:kind:fillValue:boundsError:coeffs:)``
+- ``interp1d(x:y:xNew:kind:fillValue:boundsError:coeffs:)->Double``
+- ``interp1d(x:y:xNew:kind:fillValue:boundsError:coeffs:)->[Double]``
 - ``InterpolationKind``
 
 ### Lagrange and Barycentric

@@ -256,6 +256,7 @@ public func nanmedian(_ data: [Double]) -> Double {
 
 /// Variance ignoring NaN values.
 ///
+/// - Parameter data: Input values; NaN entries are filtered out before computing.
 /// - Parameter ddof: Delta degrees of freedom (0 = population, 1 = sample).
 /// Returns `Double.nan` if the array is empty or all values are NaN.
 public func nanvariance(_ data: [Double], ddof: Int = 0) -> Double {
@@ -265,6 +266,7 @@ public func nanvariance(_ data: [Double], ddof: Int = 0) -> Double {
 
 /// Standard deviation ignoring NaN values.
 ///
+/// - Parameter data: Input values; NaN entries are filtered out before computing.
 /// - Parameter ddof: Delta degrees of freedom (0 = population, 1 = sample).
 /// Returns `Double.nan` if the array is empty or all values are NaN.
 public func nanstd(_ data: [Double], ddof: Int = 0) -> Double {
@@ -298,6 +300,7 @@ public func nansum(_ data: [Double]) -> Double {
 
 /// Percentile using linear interpolation, ignoring NaN values.
 ///
+/// - Parameter data: Input values; NaN entries are filtered out before computing.
 /// - Parameter p: Percentile in the range 0–100.
 /// Returns `Double.nan` if the array is empty or all values are NaN.
 public func nanpercentile(_ data: [Double], _ p: Double) -> Double {

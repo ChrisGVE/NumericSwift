@@ -23,6 +23,7 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 ### Core Types
 
 - ``Complex``
+- <doc:ComplexNumbers>
 - ``LinAlg``
 - ``NumericValue``
 
@@ -67,4 +68,4 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 
 - <doc:Constants>
 - <doc:Utilities>
-- <doc:MathExpr>
+- <doc:MathExpressions>

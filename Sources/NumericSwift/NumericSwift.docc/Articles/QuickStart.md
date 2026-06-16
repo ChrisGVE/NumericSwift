@@ -114,7 +114,7 @@ print(digamma(2.0))  // 0.4228...
 
 Explore the individual module documentation for detailed API references:
 
-- <doc:Complex> for complex number operations
+- <doc:ComplexNumbers> for complex number operations
 - <doc:LinAlg> for linear algebra
 - <doc:Distributions> for probability distributions
 - <doc:SpecialFunctions> for mathematical special functions

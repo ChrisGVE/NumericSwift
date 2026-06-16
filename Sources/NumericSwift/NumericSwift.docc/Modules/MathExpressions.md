@@ -183,8 +183,8 @@ let z: Complex = try MathExpr.evaluateComplex(
 
 ### Utilities
 
-- ``MathExpr/findVariables(in:)-4c5q0``
-- ``MathExpr/findVariables(in:)-6fkpu``
+- ``MathExpr/findVariables(in:)-(String)``
+- ``MathExpr/findVariables(in:)-(MathLexExpression)``
 - ``MathExpr/substitute(_:with:)``
 - ``MathExpr/toString(_:)``
 

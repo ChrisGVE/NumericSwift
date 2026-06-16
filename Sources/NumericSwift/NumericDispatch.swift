@@ -172,7 +172,7 @@ public enum NumericDispatch {
 
     /// Route a named function call over one or more `NumericValue` arguments.
     ///
-    /// Dispatch uses the unified ``functionRegistry`` (see
+    /// Dispatch uses the unified `functionRegistry` (see
     /// `NumericDispatch+FunctionRegistry.swift`). Three distinct error paths follow
     /// AC2.3a:
     ///   1. Unknown name → `MathExprError.unknownFunction(name)`
@@ -202,7 +202,7 @@ public enum NumericDispatch {
     /// `log`, or `ln` is promoted to a `.complex` value before dispatch, so the
     /// function returns the complex principal value instead of NaN (GitHub
     /// issue #1). This is the function-side half of the legacy `evaluateComplex`
-    /// complex-context behaviour; the `^` operator half lives in ``applyPow``.
+    /// complex-context behaviour; the `^` operator half lives in `applyPow`.
     /// The set is intentionally narrow — exactly the names whose legacy complex
     /// path was complex-native (`z.sqrt` / `z.log`). Names that the legacy
     /// complex evaluator routed through the *real* fallback (`log10`, `log2`,
