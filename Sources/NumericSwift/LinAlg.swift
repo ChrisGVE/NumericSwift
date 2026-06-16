@@ -96,7 +96,19 @@ public enum LinAlg {
     /// Default value for ``maxEvaluatorMatrixElements`` (4096 × 4096 = 16 777 216).
     private static let defaultEvaluatorMatrixElements: Int = 16_777_216
 
-    /// Backing store for the tunable soft-cap; isolated to this file.
+    /// Serializes all access to ``_maxEvaluatorMatrixElements``.
+    ///
+    /// The soft cap is intended to be set once from host code before any
+    /// evaluation runs, but nothing prevents a consumer from calling
+    /// ``setMaxEvaluatorMatrixElements(_:)`` on one thread while another thread
+    /// reads the cap inside ``checkSoftCap(rows:cols:)`` during a concurrent
+    /// evaluation. Guarding both the getter and the setter with this lock makes
+    /// the access atomic, removing the data race (CR-D3). `NSLock` is used rather
+    /// than `OSAllocatedUnfairLock` because the latter requires iOS 16 / macOS 13,
+    /// above this package's iOS 15 / macOS 12 floor.
+    private static let _softCapLock = NSLock()
+
+    /// Backing store for the tunable soft-cap; guarded by ``_softCapLock``.
     private static var _maxEvaluatorMatrixElements: Int = defaultEvaluatorMatrixElements
 
     /// The SOFT element-count ceiling checked by the evaluator pre-pass.
@@ -106,8 +118,13 @@ public enum LinAlg {
     /// (Task 20, `checkSoftCap(rows:cols:)`).  Default: 16 777 216 (4096²).
     ///
     /// Modify only from Swift host code via ``setMaxEvaluatorMatrixElements(_:)``.
-    /// This getter is readable from both the host and the evaluator pre-pass.
-    public static var maxEvaluatorMatrixElements: Int { _maxEvaluatorMatrixElements }
+    /// This getter is readable from both the host and the evaluator pre-pass; the
+    /// read is serialized against the setter via ``_softCapLock``.
+    public static var maxEvaluatorMatrixElements: Int {
+        _softCapLock.lock()
+        defer { _softCapLock.unlock() }
+        return _maxEvaluatorMatrixElements
+    }
 
     /// Set the evaluator-level soft-cap threshold.
     ///
@@ -127,7 +144,9 @@ public enum LinAlg {
             throw LinAlgError.invalidParameter(
                 "maxEvaluatorMatrixElements (\(n)) must not exceed hardMaxMatrixElementCount (\(hardMaxMatrixElementCount))")
         }
+        _softCapLock.lock()
         _maxEvaluatorMatrixElements = n
+        _softCapLock.unlock()
     }
 
     // MARK: - Size-cap helpers (internal)
