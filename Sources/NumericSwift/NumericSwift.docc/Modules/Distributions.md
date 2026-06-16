@@ -105,6 +105,12 @@ let k = kurtosis(data)  // Fisher=true by default (excess kurtosis)
 - ``ExponentialDistribution``
 - ``UniformDistribution``
 
+### Discrete Distributions
+
+- ``BernoulliDistribution``
+- ``BinomialDistribution``
+- ``PoissonDistribution``
+
 ### Statistical Tests
 
 - ``ttest1Sample(_:popmean:)``

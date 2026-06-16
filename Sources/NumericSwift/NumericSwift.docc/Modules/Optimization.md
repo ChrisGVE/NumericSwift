@@ -117,6 +117,8 @@ print(popt)  // Optimal parameters
 
 - ``nelderMead(_:x0:xtol:ftol:maxiter:)``
 - ``newtonMulti(_:x0:tol:maxiter:)``
+- ``bfgs(_:x0:grad:maxIter:gtol:)``
+- ``BFGSResult``
 
 ### Curve Fitting
 
