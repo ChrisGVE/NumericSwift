@@ -219,7 +219,9 @@ public struct MathExpr {
         for (key, z) in complexVariables {
             values[key] = .complex(z)
         }
-        let result = try evaluateUnified(ast, values: values)
+        // complexMode: true restores legacy complex-context promotion for
+        // negative-real sqrt/log/ln and the `^` operator (GitHub issue #1).
+        let result = try evaluateUnified(ast, values: values, complexMode: true)
         return try extractComplex(result)
     }
 }

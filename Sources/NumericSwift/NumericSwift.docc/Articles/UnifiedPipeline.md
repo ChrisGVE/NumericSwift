@@ -211,13 +211,11 @@ The default-build pure-Swift parser has **no bracket tokenizer**. Expressions su
 
 The public `MathExpr.evaluate` and `MathExpr.evaluateComplex` wrappers delegate to `evaluateUnified` and extract the result. These wrappers preserve the pre-0.3.0 API contract. See ``MathExpr`` for details.
 
-## Known Limitations
+## Complex-Context Promotion (issue #1, resolved)
 
-### Issue #1 — evaluateComplex loses complex-context promotion for sqrt/log/pow of negative reals
+`evaluateUnified` takes a `complexMode: Bool = false` flag, threaded through `NumericDispatch.applyBinary`/`applyFunction`/`applyPow`. `evaluateComplex` sets it `true`, so a negative-real `sqrt`/`log`/`ln` scalar argument — and the `^` operator with a negative base and a non-integer exponent — is promoted to the complex principal value (`sqrt(-1) ≈ 0 + 1i`) instead of NaN. The real `evaluate` leaves the flag `false`, preserving the IEEE-754 NaN contract.
 
-After the Phase 4 delegation (`evaluateComplex` delegates to `evaluateUnified`), `sqrt(-1)` via `evaluateComplex` returns `NaN + 0i` instead of the expected `≈ 0 − 1i`. The root cause is that the unified front door has no complex-mode flag, so `sqrt`/`log`/fractional-`pow` of a negative-real `.scalar` always routes to the real-valued function.
-
-Tracked as GitHub issue [#1](https://github.com/ChrisGVE/NumericSwift/issues/1). The fix requires an owner decision on the architecture approach (threading a `complexMode` flag vs. post-hoc NaN detection vs. always-promote). Skipped tests reference the issue; `legacyComplexEvaluate` retains the correct behavior in the interim.
+The promotion set is narrow by design (the complex-native names only); `pow(x,y)` as a function, `log10`/`log2`, and inverse-trig still return NaN for negative reals, matching the legacy complex evaluator. Results follow the numpy/SciPy principal (upper) branch. Resolved GitHub issue [#1](https://github.com/ChrisGVE/NumericSwift/issues/1); see ``MathExpr`` for the full convention note.
 
 ## Topics
 

@@ -49,11 +49,24 @@ enum UnifiedEvaluatorCore {
     /// - Parameters:
     ///   - ast: The node to evaluate.
     ///   - values: Variable bindings shared across the entire traversal.
+    ///   - complexMode: When `true`, the negative-real domain functions that the
+    ///     real path sends to NaN are promoted to the complex principal value:
+    ///     `sqrt`/`log`/`ln` of a negative-real scalar, and the `^` operator with
+    ///     a negative-real base and a non-integer exponent. This restores the
+    ///     legacy `evaluateComplex` complex-context behaviour that the unified
+    ///     front door otherwise collapses (GitHub issue #1). The flag propagates
+    ///     through every recursive subexpression so nested promotions work
+    ///     (`sqrt(-1) + sqrt(-2)`). The real `evaluate` wrapper leaves it `false`,
+    ///     preserving the frozen real NaN contract. The `pow(x, y)` *function*
+    ///     intentionally does NOT promote (legacy routed it through the real
+    ///     fallback), only the `^` *operator* does.
     /// - Returns: A `NumericValue` for this subtree.
     /// - Throws: `MathExprError` or `LinAlgError`.
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     static func eval(
-        _ ast: MathLexExpression, values: [String: NumericValue]
+        _ ast: MathLexExpression,
+        values: [String: NumericValue],
+        complexMode: Bool = false
     ) throws -> NumericValue {
         switch ast {
 
@@ -78,31 +91,31 @@ enum UnifiedEvaluatorCore {
 
         // MARK: Rational number constructor
         case .rational(let num, let den):
-            let n = try eval(num, values: values)
-            let d = try eval(den, values: values)
-            return try NumericDispatch.applyBinary(.div, lhs: n, rhs: d)
+            let n = try eval(num, values: values, complexMode: complexMode)
+            let d = try eval(den, values: values, complexMode: complexMode)
+            return try NumericDispatch.applyBinary(.div, lhs: n, rhs: d, complexMode: complexMode)
 
         // MARK: Complex number constructor
         case .complex(let re, let im):
-            let r = try eval(re, values: values)
-            let i = try eval(im, values: values)
+            let r = try eval(re, values: values, complexMode: complexMode)
+            let i = try eval(im, values: values, complexMode: complexMode)
             return try buildComplexFromParts(re: r, im: i)
 
         // MARK: Binary operators
         case .binary(let op, let left, let right):
-            let lhs = try eval(left, values: values)
-            let rhs = try eval(right, values: values)
-            return try NumericDispatch.applyBinary(op, lhs: lhs, rhs: rhs)
+            let lhs = try eval(left, values: values, complexMode: complexMode)
+            let rhs = try eval(right, values: values, complexMode: complexMode)
+            return try NumericDispatch.applyBinary(op, lhs: lhs, rhs: rhs, complexMode: complexMode)
 
         // MARK: Unary operators
         case .unary(let op, let operand):
-            let val = try eval(operand, values: values)
+            let val = try eval(operand, values: values, complexMode: complexMode)
             return try NumericDispatch.applyUnary(op, operand: val)
 
         // MARK: Function calls
         case .function(let name, let args):
-            let argVals = try args.map { try eval($0, values: values) }
-            return try NumericDispatch.applyFunction(name, args: argVals)
+            let argVals = try args.map { try eval($0, values: values, complexMode: complexMode) }
+            return try NumericDispatch.applyFunction(name, args: argVals, complexMode: complexMode)
 
         // MARK: Matrix/vector literal nodes
         case .vector(let elements):
@@ -113,30 +126,30 @@ enum UnifiedEvaluatorCore {
 
         // MARK: Linear-algebra AST nodes
         case .dotProduct(let left, let right):
-            let l = try eval(left, values: values)
-            let r = try eval(right, values: values)
-            return try NumericDispatch.applyFunction("dotProduct", args: [l, r])
+            let l = try eval(left, values: values, complexMode: complexMode)
+            let r = try eval(right, values: values, complexMode: complexMode)
+            return try NumericDispatch.applyFunction("dotProduct", args: [l, r], complexMode: complexMode)
 
         case .determinant(let matrix):
-            let m = try eval(matrix, values: values)
-            return try NumericDispatch.applyFunction("det", args: [m])
+            let m = try eval(matrix, values: values, complexMode: complexMode)
+            return try NumericDispatch.applyFunction("det", args: [m], complexMode: complexMode)
 
         case .matrixInverse(let matrix):
-            let m = try eval(matrix, values: values)
-            return try NumericDispatch.applyFunction("inv", args: [m])
+            let m = try eval(matrix, values: values, complexMode: complexMode)
+            return try NumericDispatch.applyFunction("inv", args: [m], complexMode: complexMode)
 
         case .trace(let matrix):
-            let m = try eval(matrix, values: values)
-            return try NumericDispatch.applyFunction("trace", args: [m])
+            let m = try eval(matrix, values: values, complexMode: complexMode)
+            return try NumericDispatch.applyFunction("trace", args: [m], complexMode: complexMode)
 
         case .conjugateTranspose(let matrix):
             // Hermitian adjoint: transpose then conjugate each element.
             // For real matrices this equals the regular transpose.
-            let m = try eval(matrix, values: values)
+            let m = try eval(matrix, values: values, complexMode: complexMode)
             return try UnifiedEvaluatorMatrix.evalConjugateTranspose(m)
 
         case .rank(let matrix):
-            let m = try eval(matrix, values: values)
+            let m = try eval(matrix, values: values, complexMode: complexMode)
             return try UnifiedEvaluatorMatrix.evalRank(m)
 
         // MARK: Quaternion (partial)

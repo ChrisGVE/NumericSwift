@@ -279,10 +279,25 @@ extension NumericDispatch {
     // MARK: ^
 
     // swiftlint:disable:next cyclomatic_complexity function_body_length
-    static func applyPow(lhs: NumericValue, rhs: NumericValue) throws -> NumericValue {
+    static func applyPow(
+        lhs: NumericValue,
+        rhs: NumericValue,
+        complexMode: Bool = false
+    ) throws -> NumericValue {
         switch (lhs.kind, rhs.kind) {
         case (.scalar, .scalar):
-            return .scalar(pow(lhs.asScalar!, rhs.asScalar!))
+            let base = lhs.asScalar!, exponent = rhs.asScalar!
+            // Complex-context promotion (issue #1): a negative-real base with a
+            // non-integer exponent is exactly the case where the real `pow`
+            // returns NaN. In complex mode, promote the base and take the complex
+            // `(.complex, .scalar)` path below — matching the legacy `^` operator
+            // `(exponent * base.log).exp`. Integer exponents stay on the real path
+            // (e.g. (-2)^3 = -8 exactly), which the frozen snapshot oracle leaves
+            // unconstrained and where the exact real value is preferable.
+            if complexMode && base < 0 && exponent != exponent.rounded() {
+                return try applyPow(lhs: .complex(Complex(base)), rhs: rhs)
+            }
+            return .scalar(pow(base, exponent))
         case (.scalar, .complex):
             // s^c = exp(c * log(s))
             let s = Complex(lhs.asScalar!), c = rhs.asComplex!

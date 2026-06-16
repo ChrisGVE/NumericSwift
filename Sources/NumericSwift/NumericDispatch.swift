@@ -90,6 +90,11 @@ public enum NumericDispatch {
     ///   - op:  The binary operator.
     ///   - lhs: Left-hand operand.
     ///   - rhs: Right-hand operand.
+    ///   - complexMode: When `true`, the `^` operator promotes a negative-real
+    ///     scalar base with a non-integer exponent to the complex principal value
+    ///     instead of producing NaN (GitHub issue #1). Defaults to `false`, which
+    ///     leaves the real-domain `pow` behaviour unchanged. Only `^` consults
+    ///     this flag; all other operators ignore it.
     /// - Returns: The result as a `NumericValue`.
     /// - Throws: `MathExprError.shapeMismatch` for Group-A shape mismatches;
     ///           `MathExprError.divisionByZero` for scalar or matrix ÷ 0;
@@ -99,7 +104,8 @@ public enum NumericDispatch {
     public static func applyBinary(
         _ op: BinaryOp,
         lhs: NumericValue,
-        rhs: NumericValue
+        rhs: NumericValue,
+        complexMode: Bool = false
     ) throws -> NumericValue {
         switch op {
         case .add, .sub:
@@ -109,7 +115,7 @@ public enum NumericDispatch {
         case .div:
             return try applyDiv(lhs: lhs, rhs: rhs)
         case .pow:
-            return try applyPow(lhs: lhs, rhs: rhs)
+            return try applyPow(lhs: lhs, rhs: rhs, complexMode: complexMode)
         case .mod:
             return try applyMod(lhs: lhs, rhs: rhs)
         case .plusMinus, .minusPlus:
@@ -188,9 +194,24 @@ public enum NumericDispatch {
     /// > single output matrix, not the cumulative working set of a chained
     /// > expression (MF-5 / §5 deferral).
     ///
+    /// ## Complex-context promotion (`complexMode`)
+    ///
+    /// When `complexMode` is `true`, a negative-real scalar argument to `sqrt`,
+    /// `log`, or `ln` is promoted to a `.complex` value before dispatch, so the
+    /// function returns the complex principal value instead of NaN (GitHub
+    /// issue #1). This is the function-side half of the legacy `evaluateComplex`
+    /// complex-context behaviour; the `^` operator half lives in ``applyPow``.
+    /// The set is intentionally narrow — exactly the names whose legacy complex
+    /// path was complex-native (`z.sqrt` / `z.log`). Names that the legacy
+    /// complex evaluator routed through the *real* fallback (`log10`, `log2`,
+    /// `cbrt`, inverse trig, the 2-arg `pow` function, …) are NOT promoted, so
+    /// they keep returning NaN for negative reals exactly as before.
+    ///
     /// - Parameters:
     ///   - name: The function name (case-sensitive).
     ///   - args: The evaluated argument list.
+    ///   - complexMode: Promote negative-real `sqrt`/`log`/`ln` arguments to
+    ///     `.complex`. Defaults to `false`.
     /// - Returns: The result as a `NumericValue`.
     /// - Throws: `MathExprError.unknownFunction` for unrecognised names;
     ///           `MathExprError.invalidArguments` for arity or kind mismatches;
@@ -199,7 +220,8 @@ public enum NumericDispatch {
     ///           the evaluator soft cap (CONS-07).
     public static func applyFunction(
         _ name: String,
-        args: [NumericValue]
+        args: [NumericValue],
+        complexMode: Bool = false
     ) throws -> NumericValue {
         // Step 1: Name lookup — AC2.3a error 1.
         guard let descriptor = functionRegistry[name] else {
@@ -215,9 +237,35 @@ public enum NumericDispatch {
                 "\(name) requires \(arityDesc) argument(s), got \(args.count)")
         }
 
+        // Step 2.5: Complex-context promotion (issue #1) — narrow to the three
+        // complex-native single-argument functions whose negative-real input the
+        // real path sends to NaN.
+        let dispatchArgs = complexMode
+            ? promoteNegativeRealForComplexMode(name, args: args)
+            : args
+
         // Step 3: Invoke handler — kind validation and Group-B error propagation
         // are performed inside the handler (AC2.3a error 3 + Group-B contract).
-        return try descriptor.handler(name, args)
+        return try descriptor.handler(name, dispatchArgs)
+    }
+
+    /// Promote a negative-real scalar argument of `sqrt`/`log`/`ln` to `.complex`
+    /// so the complex-native function path is taken (issue #1, complex mode).
+    ///
+    /// Only the listed names and only a `.scalar(x)` with `x < 0` are promoted;
+    /// every other argument is returned unchanged. `x == 0` is left as a scalar
+    /// because `sqrt(0)`/`log(0)` agree on the real and complex paths.
+    private static func promoteNegativeRealForComplexMode(
+        _ name: String,
+        args: [NumericValue]
+    ) -> [NumericValue] {
+        guard name == "sqrt" || name == "log" || name == "ln",
+              args.count == 1,
+              case .scalar(let x) = args[0],
+              x < 0 else {
+            return args
+        }
+        return [.complex(Complex(x))]
     }
 
 }

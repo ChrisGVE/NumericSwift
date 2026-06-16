@@ -82,16 +82,31 @@ extension MathExpr {
     ///
     /// `LinAlgError.notSquare` propagates unchanged from Group-B functions.
     ///
+    /// ## Complex-context promotion (`complexMode`)
+    ///
+    /// When `complexMode` is `true`, the negative-real domain functions that the
+    /// real path sends to NaN are instead promoted to their complex principal
+    /// value: `sqrt`/`log`/`ln` of a negative-real scalar, and the `^` operator
+    /// with a negative-real base and a non-integer exponent. The public
+    /// `evaluateComplex` wrapper sets this `true` so it regains the legacy
+    /// complex-context behaviour (GitHub issue #1); the real `evaluate` wrapper
+    /// leaves it `false`, preserving the frozen real NaN contract. The
+    /// `pow(x, y)` *function* never promotes (legacy routed it through the real
+    /// fallback) — only the `^` *operator* does.
+    ///
     /// - Parameters:
     ///   - ast: The decoded `MathLexExpression` AST to evaluate.
     ///   - values: Variable bindings — any `NumericValue` kind is accepted.
+    ///   - complexMode: Promote negative-real `sqrt`/`log`/`ln`/`^` to the
+    ///     complex principal value instead of NaN. Defaults to `false`.
     /// - Returns: The evaluated result as a `NumericValue`.
     /// - Throws: `MathExprError` or `LinAlgError` as described above.
     public static func evaluateUnified(
         _ ast: MathLexExpression,
-        values: [String: NumericValue] = [:]
+        values: [String: NumericValue] = [:],
+        complexMode: Bool = false
     ) throws -> NumericValue {
-        try UnifiedEvaluatorCore.eval(ast, values: values)
+        try UnifiedEvaluatorCore.eval(ast, values: values, complexMode: complexMode)
     }
 }
 

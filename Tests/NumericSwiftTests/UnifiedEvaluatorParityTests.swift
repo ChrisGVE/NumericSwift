@@ -1271,16 +1271,13 @@ final class UnifiedEvaluatorParityTests: XCTestCase {
     }
 
     func testIEEE_sqrtNegViaComplexPath_returnsI() throws {
-        // KNOWN REGRESSION — GitHub issue #1. Quarantined (XCTSkip) until the
-        // owner decides the fix approach (complex-context mode on the unified
-        // evaluator). Snapshot assertions below still hold and document the
-        // legacy ground truth; the unified divergence is the tracked defect.
+        // GitHub issue #1 — FIXED. `evaluateComplex` now sets `complexMode: true`
+        // on the unified front door, so a negative-real `sqrt`/`log`/`ln` argument
+        // (and the `^` operator with a negative base and non-integer exponent) is
+        // promoted to the complex principal value instead of NaN. This asserts the
+        // unified EXPRESSION path matches the legacy snapshot ground truth.
         //
-        // ieee-f10: legacy evaluateComplex("sqrt(-1)") → ≈0 − 1i (snapshot).
-        // On the EXPRESSION path, public evaluateComplex("sqrt(-1)") now returns
-        // NaN+0i: the unified front door routes sqrt of a negative-real .scalar
-        // to the REAL sqrt, losing legacy's complex-context promotion. Same for
-        // log/ln and fractional pow of negative reals.
+        // ieee-f10: legacy evaluateComplex("sqrt(-1)") → 0 − 1i (snapshot).
         let snap = try Self.snapshotIndex()
         guard let entry = snap["ieee-f10"],
               case .complex(let snapRe, let snapIm) = entry.result else {
@@ -1291,12 +1288,91 @@ final class UnifiedEvaluatorParityTests: XCTestCase {
         XCTAssertEqual(abs(snapIm), 1.0, accuracy: 1e-12,
             "Snapshot: |Im(sqrt(-1))| via legacy complex = 1")
 
-        throw XCTSkip("""
-            Tracked by GitHub issue #1: evaluateComplex no longer promotes \
-            negative-real sqrt/log/pow to complex (returns NaN). Awaiting the \
-            owner's fix-approach decision before re-enabling the unified-path \
-            parity assertion for this entry.
-            """)
+        // Unified path reproduces the snapshot MAGNITUDE (0, |1|) and is finite.
+        // The imaginary SIGN is the principal (upper-branch) value +i, matching
+        // numpy (`np.sqrt(-1+0j) == 1j`) per design-philosophy #1 (SciPy parity).
+        // Legacy returned −i only because its literal `-1` carried a −0.0
+        // imaginary part (unary-negated +0.0), flipping the sqrt branch cut; the
+        // snapshot author already encoded that fragility by asserting `abs(im)`.
+        let unified = try MathExpr.evaluateComplex(MathExpr.parse("sqrt(-1)"))
+        XCTAssertEqual(unified.re, snapRe, accuracy: 1e-12,
+            "Unified evaluateComplex(sqrt(-1)).re must match legacy snapshot (0)")
+        XCTAssertEqual(abs(unified.im), abs(snapIm), accuracy: 1e-12,
+            "Unified evaluateComplex(sqrt(-1)) |im| must match legacy snapshot magnitude")
+        XCTAssertEqual(unified.im, 1.0, accuracy: 1e-12,
+            "Unified takes the principal (upper) branch: sqrt(-1) = +i")
+        XCTAssertFalse(unified.re.isNaN || unified.im.isNaN,
+            "Unified evaluateComplex(sqrt(-1)) must not be NaN (issue #1 fixed)")
+    }
+
+    // MARK: - Issue #1 complex-context promotion (parity vs legacy complex oracle)
+
+    /// The promoted set — `sqrt`/`log`/`ln` of negative reals and the `^`
+    /// operator with a negative base and non-integer exponent — must match the
+    /// legacy complex evaluator in MAGNITUDE via the unified `evaluateComplex`.
+    ///
+    /// The real part matches legacy exactly; the imaginary part matches in
+    /// absolute value but takes the principal (upper) branch (`+`) where legacy's
+    /// signed-zero artifact took the lower branch (`−`). See
+    /// `testIEEE_sqrtNegViaComplexPath_returnsI` for the rationale (numpy/SciPy
+    /// principal-value parity, design-philosophy #1).
+    func testIssue1_promotedSet_matchesLegacyComplexOracle() throws {
+        let exprs = [
+            "sqrt(-1)", "sqrt(-4)", "sqrt(-2.5)",
+            "log(-1)", "ln(-1)", "log(-2)",
+            "(-1)^0.5", "(-8)^(1/3)", "(-2)^0.5",
+            "sqrt(-1) + sqrt(-4)",          // nested promotion propagates
+        ]
+        for src in exprs {
+            let ast = try MathExpr.parse(src)
+            let unified = try MathExpr.evaluateComplex(ast)
+            let legacy = try MathExpr.legacyComplexEvaluate(ast)
+            XCTAssertEqual(unified.re, legacy.re, accuracy: 1e-12,
+                "Re mismatch vs legacy for \(src)")
+            XCTAssertEqual(abs(unified.im), abs(legacy.im), accuracy: 1e-12,
+                "|Im| mismatch vs legacy for \(src)")
+            XCTAssertGreaterThanOrEqual(unified.im, 0.0,
+                "\(src) must take the principal (upper, +im) branch")
+            XCTAssertFalse(unified.re.isNaN || unified.im.isNaN,
+                "\(src) must promote to a finite complex value, not NaN")
+        }
+    }
+
+    /// The real `evaluate`/`eval` contract is unchanged: negative-real
+    /// `sqrt`/`log` stay NaN (frozen real-path behaviour, complexMode == false).
+    func testIssue1_realPathStillNaN() throws {
+        XCTAssertTrue(try MathExpr.eval("sqrt(-4)").isNaN,
+            "Real eval(sqrt(-4)) must stay NaN")
+        XCTAssertTrue(try MathExpr.eval("log(-1)").isNaN,
+            "Real eval(log(-1)) must stay NaN")
+        XCTAssertTrue(try MathExpr.eval("(-2)^0.5").isNaN,
+            "Real eval((-2)^0.5) must stay NaN")
+    }
+
+    /// Names the legacy complex evaluator routed through the *real* fallback must
+    /// NOT be promoted, so they still return NaN for negative reals in complex
+    /// mode — exact legacy parity, no over-promotion (asin/log10/pow-function).
+    func testIssue1_nonPromotedSet_staysNaN() throws {
+        // asin(2) — legacy complex default branch → real asin(2) = NaN.
+        let asin2 = try MathExpr.evaluateComplex(MathExpr.parse("asin(2)"))
+        XCTAssertTrue(asin2.re.isNaN, "asin(2) must stay NaN (not promoted)")
+        // log10(-1) — legacy complex default branch → real log10(-1) = NaN.
+        let log10Neg = try MathExpr.evaluateComplex(MathExpr.parse("log10(-1)"))
+        XCTAssertTrue(log10Neg.re.isNaN, "log10(-1) must stay NaN (not promoted)")
+        // pow(-2, 0.5) FUNCTION form — legacy complex 2-arg real fallback → NaN.
+        // (Contrast: the `^` OPERATOR form promotes — covered above.)
+        let powFn = try MathExpr.evaluateComplex(MathExpr.parse("pow(-2, 0.5)"))
+        XCTAssertTrue(powFn.re.isNaN, "pow(-2,0.5) function must stay NaN (not promoted)")
+    }
+
+    /// Integer exponents on a negative base keep the exact real value on the
+    /// `^` operator (no spurious imaginary noise) in complex mode.
+    func testIssue1_integerExponentNegativeBase_staysExactReal() throws {
+        let r = try MathExpr.evaluateComplex(MathExpr.parse("(-2)^3"))
+        XCTAssertEqual(r.re, -8.0, accuracy: 0,
+            "(-2)^3 must be exactly -8 on the real-valued path")
+        XCTAssertEqual(r.im, 0.0, accuracy: 0,
+            "(-2)^3 must have exactly zero imaginary part (no complex noise)")
     }
 
     // MARK: - §22.18 Soft-cap size-precheck

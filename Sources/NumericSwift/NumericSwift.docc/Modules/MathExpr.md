@@ -122,25 +122,32 @@ Hermitian (conjugate-linear) inner product ⟨u, v⟩ = Σ ū_i · vᵢ used in 
 and much of numerical linear algebra. Hermitian/conjugated dot product is deferred
 to a future release.
 
-## Known Limitations
+## Complex-Context Promotion (resolved — GitHub issue #1)
 
-### evaluateComplex — complex-context promotion lost for sqrt/log/pow of negative reals
+`MathExpr.evaluateComplex` evaluates in **complex mode**: a negative-real
+`sqrt`, `log`, or `ln` scalar argument — and the `^` operator with a negative
+base and a non-integer exponent — is promoted to its complex principal value
+rather than returning NaN.
 
-After the Phase 4 delegation (`MathExpr.evaluateComplex` now delegates to
-`evaluateUnified`), expressions such as `sqrt(-1)` via `evaluateComplex` return
-`NaN + 0i` instead of the expected principal complex value (`≈ 0 − 1i`). The root
-cause is that the unified front door (`evaluateUnified`) has no complex-mode flag,
-so `sqrt`, `log`, and fractional-`pow` of a negative-real `.scalar` always route
-to the real-valued function path.
+```swift
+let z = try MathExpr.evaluateComplex(MathExpr.parse("sqrt(-1)"))   // ≈ 0 + 1i
+```
 
-The legacy fallback `legacyComplexEvaluate` retains the correct behavior and the
-regression is quarantined with `XCTSkip` referencing GitHub issue
-[#1](https://github.com/ChrisGVE/NumericSwift/issues/1).
+Mechanism: `evaluateUnified` takes a `complexMode: Bool = false` flag threaded
+through `NumericDispatch.applyBinary`/`applyFunction`/`applyPow`. `evaluateComplex`
+sets it `true`; the real `evaluate` leaves it `false`, so the real path keeps its
+IEEE-754 NaN contract (`eval("sqrt(-4)")` is still NaN).
 
-Fix awaits an owner decision on the correct architecture approach. Do not attempt
-to work around it by calling `evaluateUnified` directly with complex-valued
-variables — the issue is in the unary-function dispatch for real-scalar inputs,
-not in variable binding.
+The promotion set is deliberately narrow — exactly the names whose legacy complex
+path was complex-native. The **`pow(x, y)` function**, `log10`/`log2`, and the
+inverse-trig functions still return NaN for negative-real arguments, matching the
+legacy complex evaluator's real-fallback behaviour. Only the `^` **operator**
+promotes a negative base.
+
+**Branch convention:** results are the numpy/SciPy *principal* (upper) branch —
+`sqrt(-1) = +i`, `log(-1) = +iπ` — per design-philosophy #1. This matches legacy
+in magnitude; the imaginary sign differs from legacy's `-i`/`-iπ`, which were an
+incidental signed-zero artifact, not an intended convention.
 
 ## Legacy Scalar Evaluation
 
