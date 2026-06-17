@@ -501,11 +501,74 @@ public func simps(_ y: [Double], dx: Double = 1) -> Double {
   }
 }
 
-/// Simpson's rule integration with x values.
+/// Simpson's rule integration with non-uniform sample points.
+///
+/// Mirrors `scipy.integrate.simpson` (Cartwright composite Simpson for
+/// irregularly-spaced data): each consecutive *pair* of intervals is
+/// integrated with the general unequal-spacing 3-point rule, and when the
+/// number of intervals is odd the final interval is added with the Cartwright
+/// correction. The previous implementation averaged the spacing and was
+/// silently wrong on non-uniform grids.
+///
+/// Exact for polynomials of degree ≤ 2 on an arbitrary grid (degree ≤ 3 on a
+/// uniform grid). With two points it reduces to a single trapezoid; with fewer
+/// than two it returns 0 — both matching SciPy.
+///
+/// - Parameters:
+///   - y: Array of function values.
+///   - x: Sample points (same length as `y`); need not be uniformly spaced.
+/// - Returns: Integral approximation.
+///
+/// Reference: Cartwright, K. V., "Simpson's Rule Cumulative Integration with
+/// MS Excel and Irregularly-spaced Data", J. Math. Sci. & Math. Educ. 12(2).
 public func simps(_ y: [Double], x: [Double]) -> Double {
-  guard y.count == x.count && y.count >= 3 else { return 0 }
-  let dx = (x[x.count - 1] - x[0]) / Double(x.count - 1)
-  return simps(y, dx: dx)
+  let n = y.count
+  guard n == x.count else { return 0 }
+  guard n >= 3 else {
+    if n == 2 { return 0.5 * (x[1] - x[0]) * (y[0] + y[1]) }
+    return 0
+  }
+
+  // Guarded division mirroring SciPy's `true_divide(..., where: den != 0)`,
+  // so degenerate (coincident) sample points zero the affected term instead
+  // of producing inf/NaN.
+  func safeDiv(_ a: Double, _ b: Double) -> Double { b == 0 ? 0 : a / b }
+
+  // Composite Simpson over consecutive interval pairs (i, i+1, i+2),
+  // advancing two intervals at a time up to (but not including) `stop`.
+  func basicSimpson(upTo stop: Int) -> Double {
+    var sum = 0.0
+    var i = 0
+    while i < stop {
+      let h0 = x[i + 1] - x[i]
+      let h1 = x[i + 2] - x[i + 1]
+      let hSum = h0 + h1
+      let hProd = h0 * h1
+      let h0DivH1 = safeDiv(h0, h1)
+      sum += hSum / 6.0
+        * (y[i] * (2.0 - safeDiv(1.0, h0DivH1))
+          + y[i + 1] * (hSum * safeDiv(hSum, hProd))
+          + y[i + 2] * (2.0 - h0DivH1))
+      i += 2
+    }
+    return sum
+  }
+
+  let intervals = n - 1
+  if intervals % 2 == 0 {
+    // Even number of intervals → pure composite Simpson over every pair.
+    return basicSimpson(upTo: n - 2)
+  }
+  // Odd number of intervals → Simpson on all but the last interval, then the
+  // Cartwright correction for the final interval using its last three points.
+  var result = basicSimpson(upTo: n - 3)
+  let h0 = x[n - 2] - x[n - 3]  // second-to-last spacing
+  let h1 = x[n - 1] - x[n - 2]  // last spacing
+  let alpha = safeDiv(2.0 * h1 * h1 + 3.0 * h0 * h1, 6.0 * (h1 + h0))
+  let beta = safeDiv(h1 * h1 + 3.0 * h0 * h1, 6.0 * h0)
+  let eta = safeDiv(h1 * h1 * h1, 6.0 * h0 * (h0 + h1))
+  result += alpha * y[n - 1] + beta * y[n - 2] - eta * y[n - 3]
+  return result
 }
 
 // MARK: - Trapezoidal Rule

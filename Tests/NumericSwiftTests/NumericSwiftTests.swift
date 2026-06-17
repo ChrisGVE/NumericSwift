@@ -575,6 +575,60 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(result, 64.0/3.0, accuracy: 0.1)
     }
 
+    // MARK: simps(y:x:) non-uniform (M10 / issue #4)
+    // Oracle values from scipy.integrate.simpson 1.17.1. The previous
+    // implementation averaged dx and was silently wrong on non-uniform grids.
+
+    func testSimpsNonUniformEvenIntervalsQuadratic() {
+        // 4 intervals (even) → pure composite Simpson; quadratic is exact.
+        let x = [0.0, 0.5, 1.5, 3.5, 4.0]
+        let y = x.map { $0 * $0 }
+        // scipy: 21.333333333333336 ; analytic ∫₀⁴x² = 64/3.
+        XCTAssertEqual(simps(y, x: x), 64.0 / 3.0, accuracy: 1e-12)
+    }
+
+    func testSimpsNonUniformEvenIntervalsCubic() {
+        // Cubic is NOT exact on a non-uniform grid → assert vs scipy value.
+        let x = [0.0, 0.5, 1.5, 3.5, 4.0]
+        let y = x.map { $0 * $0 * $0 }
+        XCTAssertEqual(simps(y, x: x), 62.1875, accuracy: 1e-9)
+    }
+
+    func testSimpsNonUniformOddIntervalsCartwright() {
+        // 5 intervals (odd) → exercises the Cartwright last-interval correction.
+        let x = [0.0, 0.5, 1.5, 3.5, 4.0, 6.0]
+        let y = x.map { $0 * $0 }
+        // scipy: 72.0 ; analytic ∫₀⁶x² = 72.
+        XCTAssertEqual(simps(y, x: x), 72.0, accuracy: 1e-12)
+    }
+
+    func testSimpsNonUniformThreeIntervals() {
+        // n = 4 (3 intervals, odd).
+        let x = [0.0, 1.0, 3.0, 6.0]
+        XCTAssertEqual(simps(x.map { $0 * $0 }, x: x), 72.0, accuracy: 1e-12)
+        XCTAssertEqual(simps(x.map { $0 * $0 * $0 }, x: x), 342.0, accuracy: 1e-9)
+    }
+
+    func testSimpsGeneralDegree2vsScipy() {
+        // General quadratic 2x²+3x+1 on an irregular grid (with a tiny
+        // interval) → bit-level parity with scipy's Cartwright path.
+        let x = [0.0, 0.3, 1.1, 2.0, 2.0001, 5.0]
+        let y = x.map { 2.0 * $0 * $0 + 3.0 * $0 + 1.0 }
+        XCTAssertEqual(simps(y, x: x), 125.83333333334421, accuracy: 1e-9)
+    }
+
+    func testSimpsUniformViaXOverload() {
+        // Uniform spacing passed through the x-overload matches scipy.
+        let x = [0.0, 1.0, 2.0, 3.0, 4.0]
+        let y = x.map { $0 * $0 }
+        XCTAssertEqual(simps(y, x: x), 64.0 / 3.0, accuracy: 1e-12)
+    }
+
+    func testSimpsTwoPointsIsTrapezoid() {
+        // scipy parity: 2 points → single trapezoid.
+        XCTAssertEqual(simps([2.0, 6.0], x: [1.0, 3.0]), 8.0, accuracy: 1e-12)
+    }
+
     func testTrapz() {
         // Trapezoidal rule for x² from 0 to 4
         let y = [0.0, 1.0, 4.0, 9.0, 16.0]
