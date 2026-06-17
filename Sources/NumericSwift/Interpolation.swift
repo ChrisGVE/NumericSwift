@@ -63,10 +63,30 @@ public enum InterpolationKind: String {
 }
 
 /// Boundary condition types for cubic splines.
-public enum SplineBoundaryCondition: String {
+///
+/// The `.clamped` case accepts explicit first-derivative values at the start
+/// and end of the data domain, matching SciPy's
+/// `CubicSpline(bc_type=((1, dStart), (1, dEnd)))`.
+///
+/// Use the zero-argument shorthand `.clamped` to keep the historic f′ = 0
+/// behaviour; supply explicit derivatives via `.clamped(dStart:dEnd:)`.
+public enum SplineBoundaryCondition {
   case natural
-  case clamped
-  case notAKnot = "not-a-knot"
+  /// Clamped boundary: user-specified first-derivative values at both ends.
+  ///
+  /// - Parameters:
+  ///   - dStart: First derivative at x[0].
+  ///   - dEnd:   First derivative at x[n-1].
+  case clamped(dStart: Double, dEnd: Double)
+  case notAKnot
+
+  /// Zero-slope clamped boundary — f′(x₀) = f′(xₙ) = 0.
+  ///
+  /// This static property lets existing call sites keep writing `.clamped`
+  /// without any change; it is equivalent to `.clamped(dStart: 0, dEnd: 0)`.
+  public static var clamped: SplineBoundaryCondition {
+    .clamped(dStart: 0.0, dEnd: 0.0)
+  }
 }
 
 // MARK: - Binary Search
@@ -134,10 +154,16 @@ public func solveTridiagonal(diag: [Double], offDiag: [Double], rhs: [Double]) -
 /// Compute cubic spline coefficients.
 ///
 /// - Parameters:
-///   - x: x-coordinates (must be sorted, strictly increasing)
-///   - y: y-coordinates (function values)
-///   - bc: Boundary condition type (natural, clamped, not-a-knot)
-/// - Returns: Array of cubic coefficients for each segment
+///   - x:  x-coordinates (must be sorted, strictly increasing)
+///   - y:  y-coordinates (function values, same length as x)
+///   - bc: Boundary condition.
+///         `.natural`  — zero second derivative at both ends.
+///         `.clamped`  — zero first derivative at both ends (f′ = 0).
+///         `.clamped(dStart:dEnd:)` — prescribed first derivatives;
+///                       matches SciPy `CubicSpline(bc_type=((1,d0),(1,d1)))`.
+///         `.notAKnot` — third-derivative continuity at the second and
+///                       second-to-last knots (default; requires n ≥ 4).
+/// - Returns: Array of `CubicCoeffs` for each of the n−1 segments.
 public func computeSplineCoeffs(x: [Double], y: [Double], bc: SplineBoundaryCondition = .notAKnot)
   -> [CubicCoeffs]
 {
@@ -173,10 +199,17 @@ public func computeSplineCoeffs(x: [Double], y: [Double], bc: SplineBoundaryCond
       offDiag[n - 2] = 0
     }
 
-  case .clamped:
-    // Clamped: f'(x0) = 0, f'(xn) = 0
-    let fp0 = 0.0
-    let fpn = 0.0
+  case .clamped(let fp0, let fpn):
+    // Clamped boundary condition: prescribed first derivatives at both ends.
+    //
+    // The tridiagonal system for the second-derivative coefficients c[i] is:
+    //   Row 0:   2h₀·c[0] + h₀·c[1]               = 3((y₁-y₀)/h₀ - fp0)
+    //   Row i:   hᵢ₋₁·c[i-1] + 2(hᵢ₋₁+hᵢ)·c[i] + hᵢ·c[i+1]
+    //                = 3((y[i+1]-y[i])/hᵢ - (y[i]-y[i-1])/hᵢ₋₁)
+    //   Row n-1: hₙ₋₂·c[n-2] + 2hₙ₋₂·c[n-1]      = 3(fpn - (yₙ₋₁-yₙ₋₂)/hₙ₋₂)
+    //
+    // Reference: de Boor, "A Practical Guide to Splines" (Springer, 2001),
+    // Chapter IV, §4.2 (clamped-end conditions).
 
     diag[0] = 2.0 * h[0]
     rhs[0] = 3.0 * ((y[1] - y[0]) / h[0] - fp0)
