@@ -165,4 +165,68 @@ final class InterpolationClampedBCTests: XCTestCase {
         "Spline must interpolate data point at x=\(xi)")
     }
   }
+
+  // MARK: - RawRepresentable round-trip (restores 0.2.x public surface)
+  //
+  // Original raw strings (recovered from git history, commit e0fe3aa):
+  //   .natural   → "natural"
+  //   .clamped   → "clamped"
+  //   .notAKnot  → "not-a-knot"
+  //
+  // These are FROZEN: changing them is a breaking change to the published API.
+
+  func testNaturalRawValue() {
+    XCTAssertEqual(SplineBoundaryCondition.natural.rawValue, "natural")
+  }
+
+  func testNaturalRoundTrip() {
+    let bc = SplineBoundaryCondition(rawValue: "natural")
+    XCTAssertNotNil(bc, "init?(rawValue:\"natural\") must succeed")
+    if case .natural = bc! {
+      // correct
+    } else {
+      XCTFail("Expected .natural, got \(bc!)")
+    }
+  }
+
+  func testNotAKnotRawValue() {
+    XCTAssertEqual(SplineBoundaryCondition.notAKnot.rawValue, "not-a-knot")
+  }
+
+  func testNotAKnotRoundTrip() {
+    let bc = SplineBoundaryCondition(rawValue: "not-a-knot")
+    XCTAssertNotNil(bc, "init?(rawValue:\"not-a-knot\") must succeed")
+    if case .notAKnot = bc! {
+      // correct
+    } else {
+      XCTFail("Expected .notAKnot, got \(bc!)")
+    }
+  }
+
+  func testClampedRawValue() {
+    // The static-var `.clamped` shim (zero derivatives) must map to "clamped".
+    XCTAssertEqual(SplineBoundaryCondition.clamped.rawValue, "clamped")
+    // The associated-value form must also map to "clamped" (rawValue is
+    // derivative-independent: it names the BC kind, not the derivative values).
+    XCTAssertEqual(SplineBoundaryCondition.clamped(dStart: 1.0, dEnd: 2.0).rawValue, "clamped")
+  }
+
+  func testClampedRoundTrip() {
+    // init?(rawValue: "clamped") must return .clamped(dStart: 0, dEnd: 0),
+    // preserving the historic zero-slope default.
+    let bc = SplineBoundaryCondition(rawValue: "clamped")
+    XCTAssertNotNil(bc, "init?(rawValue:\"clamped\") must succeed")
+    if case .clamped(let ds, let de) = bc! {
+      XCTAssertEqual(ds, 0.0, "init?(rawValue:\"clamped\").dStart must be 0 (historic default)")
+      XCTAssertEqual(de, 0.0, "init?(rawValue:\"clamped\").dEnd  must be 0 (historic default)")
+    } else {
+      XCTFail("Expected .clamped(dStart:dEnd:), got \(bc!)")
+    }
+  }
+
+  func testUnknownRawValueReturnsNil() {
+    XCTAssertNil(SplineBoundaryCondition(rawValue: "bogus"))
+    XCTAssertNil(SplineBoundaryCondition(rawValue: ""))
+    XCTAssertNil(SplineBoundaryCondition(rawValue: "Clamped"))  // case-sensitive
+  }
 }
