@@ -840,21 +840,31 @@ public enum ODEMethod: String {
   case rk45 = "RK45"
   case rk23 = "RK23"
   case rk4 = "RK4"
+  /// Variable-order (1–5) Backward Differentiation Formula — for stiff systems.
+  case bdf = "BDF"
 }
 
 /// Solve initial value problem for ODE system.
 ///
+/// Supported methods:
+/// - `.rk45` — Dormand-Prince explicit RK45 (default; non-stiff problems)
+/// - `.rk23` — Bogacki-Shampine explicit RK23 (lower order)
+/// - `.rk4`  — Classical 4th-order Runge-Kutta (fixed-step)
+/// - `.bdf`  — Variable-order (1–5) Backward Differentiation Formula (stiff problems)
+///
 /// - Parameters:
-///   - fun: Function(y, t) returning dy/dt
-///   - tSpan: (t0, tf) initial and final time
-///   - y0: Initial state
-///   - method: ODE method (RK45, RK23, RK4)
-///   - tEval: Optional specific times for output
-///   - maxStep: Maximum step size
-///   - rtol: Relative tolerance
-///   - atol: Absolute tolerance
-///   - firstStep: Initial step size (nil for auto)
-/// - Returns: ODEResult
+///   - fun: Function `(y, t) → dy/dt` returning derivatives at state `y` and time `t`
+///   - tSpan: `(t0, tf)` initial and final time
+///   - y0: Initial state vector
+///   - method: ODE integration method (default `.rk45`)
+///   - tEval: Optional times at which to report the solution (interpolated)
+///   - maxStep: Maximum allowed step size (default `.infinity`)
+///   - rtol: Relative error tolerance (default `1e-3`)
+///   - atol: Absolute error tolerance (default `1e-6`)
+///   - firstStep: Initial step size; `nil` selects an automatic estimate
+///   - jacobian: (BDF only) Analytic Jacobian `(y, t) → J` where `J[i][j] = ∂f_i/∂y_j`.
+///     When `nil` the BDF solver computes the Jacobian by finite differences.
+/// - Returns: ``ODEResult``
 public func solveIVP(
   _ fun: @escaping ([Double], Double) -> [Double],
   tSpan: (Double, Double),
@@ -864,7 +874,8 @@ public func solveIVP(
   maxStep: Double = .infinity,
   rtol: Double = 1e-3,
   atol: Double = 1e-6,
-  firstStep: Double? = nil
+  firstStep: Double? = nil,
+  jacobian: (([Double], Double) -> [[Double]])? = nil
 ) -> ODEResult {
   let t0 = tSpan.0
   let tf = tSpan.1
@@ -890,6 +901,16 @@ public func solveIVP(
     h = min(h, abs(tf - t0) / 10)
   }
   h = direction * min(abs(h), maxStep)
+
+  // BDF is handled by a dedicated solver; delegate immediately.
+  if method == .bdf {
+    return bdfSolveIVP(
+      fun, tSpan: tSpan, y0: y0,
+      tEval: tEval, maxStep: maxStep,
+      rtol: rtol, atol: atol, firstStep: h,
+      jacobian: jacobian
+    )
+  }
 
   let maxIter = 10000
   var iter = 0
