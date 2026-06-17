@@ -4,7 +4,30 @@
 
 ## Overview
 
-The Geometry module provides vector and matrix types backed by SIMD, coordinate system transformations, and geometric algorithms.
+The `Geometry` module provides vector and matrix types backed by SIMD,
+coordinate system transformations, and geometric algorithms.
+
+Coordinate conversion and utility functions live under the `Geometry` namespace.
+The SIMD type aliases (`Vec2`, `Vec3`, `Vec4`, `Quat`, `Mat4`) and geometric
+result types remain at module level for brevity. The old top-level free
+functions for coordinate conversion (e.g. `deg2rad`, `polarToCart`,
+`cartToSpherical`) are still available as `@available(*, deprecated)` shims so
+existing code continues to compile with a deprecation warning. New code should
+use the namespaced forms.
+
+## Migration from Top-Level Functions
+
+```swift
+// Before (deprecated)
+deg2rad(180)
+polarToCart(r: 1, theta: .pi / 4)
+cartToSpherical(x: 1, y: 0, z: 0)
+
+// After
+Geometry.deg2rad(180)
+Geometry.polarToCart(r: 1, theta: .pi / 4)
+Geometry.cartToSpherical(x: 1, y: 0, z: 0)
+```
 
 ## Vector Types
 
@@ -37,41 +60,45 @@ let q = Quat(angle: .pi/4, axis: Vec3(0, 1, 0))
 
 ```swift
 // Cartesian to polar
-let (r, theta) = cartToPolar(x: 1, y: 1)  // (sqrt(2), pi/4)
+let (r, theta) = Geometry.cartToPolar(x: 1, y: 1)  // (√2, π/4)
 
 // Polar to Cartesian
-let (x, y) = polarToCart(r: 1, theta: .pi/4)  // (0.707, 0.707)
+let (x, y) = Geometry.polarToCart(r: 1, theta: .pi/4)  // (0.707, 0.707)
 ```
 
 ### 3D Spherical/Cartesian
 
+The library uses the **physics/ISO convention**: θ is the polar angle (from
+the z-axis) and φ is the azimuthal angle (in the xy-plane). This matches
+SciPy's `sph2cart` / `cart2sph` semantics.
+
 ```swift
-// Cartesian to spherical (r, theta, phi)
-let (r, theta, phi) = cartToSpherical(x: 1, y: 0, z: 0)
+// Cartesian to spherical (r, θ, φ) — physics convention
+let (r, theta, phi) = Geometry.cartToSpherical(x: 1, y: 0, z: 0)
 
 // Spherical to Cartesian
-let (x, y, z) = sphericalToCart(r: 1, theta: 0, phi: .pi/2)
+let (x, y, z) = Geometry.sphericalToCart(r: 1, theta: .pi/2, phi: 0)
 ```
 
 ### Angle Conversions
 
 ```swift
-let radians = deg2rad(180)  // pi
-let degrees = rad2deg(.pi)  // 180
+let radians = Geometry.deg2rad(180)  // π
+let degrees = Geometry.rad2deg(.pi)  // 180
 ```
 
 ## Distance Calculations
 
 ```swift
 // 2D distance
-let d2 = distance2D(Vec2(0, 0), Vec2(3, 4))  // 5
+let d2 = Geometry.distance2D(Vec2(0, 0), Vec2(3, 4))  // 5
 
 // 3D distance
-let d3 = distance3D(Vec3(0, 0, 0), Vec3(1, 2, 2))  // 3
+let d3 = Geometry.distance3D(Vec3(0, 0, 0), Vec3(1, 2, 2))  // 3
 
 // Angle between vectors
-let angle2d = angleBetween2D(Vec2(1, 0), Vec2(0, 1))  // pi/2
-let angle3d = angleBetween3D(Vec3(1, 0, 0), Vec3(0, 1, 0))  // pi/2
+let angle2d = Geometry.angleBetween2D(Vec2(1, 0), Vec2(0, 1))  // π/2
+let angle3d = Geometry.angleBetween3D(Vec3(1, 0, 0), Vec3(0, 1, 0))  // π/2
 ```
 
 ## Geometric Algorithms
@@ -139,6 +166,10 @@ if let fit = bsplineFit(points: dataPoints, degree: 3, numControlPoints: 10) {
 
 ## Topics
 
+### Namespace
+
+- ``Geometry``
+
 ### Vector Types
 
 - ``Vec2``
@@ -152,64 +183,64 @@ if let fit = bsplineFit(points: dataPoints, degree: 3, numControlPoints: 10) {
 
 ### Coordinate Conversions
 
-- ``polarToCart(r:theta:)``
-- ``cartToPolar(x:y:)``
-- ``sphericalToCart(r:theta:phi:)``
-- ``cartToSpherical(x:y:z:)``
-- ``deg2rad(_:)``
-- ``rad2deg(_:)``
+- ``Geometry/polarToCart(r:theta:)``
+- ``Geometry/cartToPolar(x:y:)``
+- ``Geometry/sphericalToCart(r:theta:phi:)``
+- ``Geometry/cartToSpherical(x:y:z:)``
+- ``Geometry/deg2rad(_:)``
+- ``Geometry/rad2deg(_:)``
 
 ### Distance and Angle Functions
 
-- ``distance2D(_:_:)``
-- ``distance3D(_:_:)``
-- ``angleBetween2D(_:_:)``
-- ``angleBetween3D(_:_:)``
+- ``Geometry/distance2D(_:_:)``
+- ``Geometry/distance3D(_:_:)``
+- ``Geometry/angleBetween2D(_:_:)``
+- ``Geometry/angleBetween3D(_:_:)``
 
 ### Circle Fitting
 
-- ``circleFrom3Points(_:_:_:)``
-- ``circleFitAlgebraic(_:)``
-- ``circleFitTaubin(_:)``
+- ``Geometry/circleFrom3Points(_:_:_:)``
+- ``Geometry/circleFitAlgebraic(_:)``
+- ``Geometry/circleFitTaubin(_:)``
 - ``CircleResult``
 - ``CircleFitResult``
 
 ### Ellipse Fitting
 
-- ``ellipseFitDirect(points:)``
+- ``Geometry/ellipseFitDirect(points:)``
 - ``EllipseFitResult``
 
 ### Plane Operations
 
-- ``planeFrom3Points(_:_:_:)``
-- ``pointPlaneDistance(_:_:)``
-- ``linePlaneIntersection(linePoint:lineDir:plane:)``
-- ``planePlaneIntersection(_:_:)``
+- ``Geometry/planeFrom3Points(_:_:_:)``
+- ``Geometry/pointPlaneDistance(_:_:)``
+- ``Geometry/linePlaneIntersection(linePoint:lineDir:plane:)``
+- ``Geometry/planePlaneIntersection(_:_:)``
 - ``PlaneResult``
 
 ### Sphere Operations
 
-- ``sphereFrom4Points(_:_:_:_:)``
-- ``sphereFitAlgebraic(_:)``
+- ``Geometry/sphereFrom4Points(_:_:_:_:)``
+- ``Geometry/sphereFitAlgebraic(_:)``
 - ``SphereResult``
 - ``SphereFitResult``
 
 ### B-Splines
 
-- ``bsplineEvaluate(controlPoints:degree:t:knots:)``
-- ``bsplineEvaluate3D(controlPoints:degree:t:knots:)``
-- ``bsplineDerivative(controlPoints:degree:t:knots:)``
-- ``bsplineFit(points:degree:numControlPoints:parameterization:)``
-- ``bsplineFit3D(points:degree:numControlPoints:parameterization:)``
+- ``Geometry/bsplineEvaluate(controlPoints:degree:t:knots:)``
+- ``Geometry/bsplineEvaluate3D(controlPoints:degree:t:knots:)``
+- ``Geometry/bsplineDerivative(controlPoints:degree:t:knots:)``
+- ``Geometry/bsplineFit(points:degree:numControlPoints:parameterization:)``
+- ``Geometry/bsplineFit3D(points:degree:numControlPoints:parameterization:)``
 - ``BSplineFitResult``
 - ``BSplineFitResult3D``
 - ``BSplineParameterization``
 
 ### Polygon Operations
 
-- ``convexHull2D(_:)``
-- ``pointInPolygon(_:_:)``
-- ``triangleArea2D(_:_:_:)``
-- ``triangleArea3D(_:_:_:)``
-- ``centroid2D(_:)``
-- ``centroid3D(_:)``
+- ``Geometry/convexHull2D(_:)``
+- ``Geometry/pointInPolygon(_:_:)``
+- ``Geometry/triangleArea2D(_:_:_:)``
+- ``Geometry/triangleArea3D(_:_:_:)``
+- ``Geometry/centroid2D(_:)``
+- ``Geometry/centroid3D(_:)``

@@ -84,19 +84,41 @@ let (real, imag) = LinAlg.eigvals(A)
 ## Matrix Functions
 
 ```swift
-// Matrix exponential
+// Matrix exponential (always succeeds for real matrices)
 let expA = LinAlg.expm(A)
 
-// Matrix logarithm
-if let logA = LinAlg.logm(A) {
+// Matrix logarithm — returns nil when the matrix has non-positive eigenvalues
+if let logA = try LinAlg.logm(A) {
     print(logA)
 }
 
-// Matrix square root
-if let sqrtA = LinAlg.sqrtm(A) {
+// Matrix square root — returns nil when the matrix has negative eigenvalues
+if let sqrtA = try LinAlg.sqrtm(A) {
     print(sqrtA)
 }
 ```
+
+### Complex-Result Overloads
+
+When a real matrix has eigenvalues with non-positive real part (for `logm`)
+or negative eigenvalues (for `sqrtm`), the real overloads return `nil`.
+The complex overloads always produce a ``LinAlg/ComplexMatrix`` result using
+the principal branch:
+
+```swift
+// logmComplex: always returns a ComplexMatrix or nil on decomposition failure
+if let logZ = try LinAlg.logmComplex(A) {
+    print(logZ)   // ComplexMatrix
+}
+
+// sqrtmComplex: same
+if let sqrtZ = try LinAlg.sqrtmComplex(A) {
+    print(sqrtZ)  // ComplexMatrix
+}
+```
+
+Use the complex overloads when you know the result may be complex or when you
+want to avoid `nil` for matrices with negative eigenvalues.
 
 ## Topics
 
@@ -157,6 +179,8 @@ if let sqrtA = LinAlg.sqrtm(A) {
 - ``LinAlg/expm(_:)``
 - ``LinAlg/logm(_:)``
 - ``LinAlg/sqrtm(_:)``
+- ``LinAlg/logmComplex(_:)``
+- ``LinAlg/sqrtmComplex(_:)``
 - ``LinAlg/funm(_:_:)``
 - ``LinAlg/MatrixFunction``
 

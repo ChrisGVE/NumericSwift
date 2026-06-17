@@ -59,81 +59,137 @@ print(z1.sqrt)       // Principal square root
 ### Statistical Functions
 
 ```swift
+import NumericSwift
+
 let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 
-print(mean(data))           // 5.5
-print(median(data))         // 5.5
-print(stddev(data))         // 3.028...
-print(percentile(data, 75)) // 7.75
+print(Stats.mean(data))           // 5.5
+print(Stats.median(data))         // 5.5
+print(Stats.stddev(data))         // 3.028...
+print(Stats.percentile(data, 75)) // 7.75
 
 // Probability distributions
 let norm = NormalDistribution(loc: 0, scale: 1)
-print(norm.pdf(0))          // 0.3989... (probability density)
-print(norm.cdf(1.96))       // 0.975 (cumulative distribution)
-print(norm.ppf(0.975))      // 1.96 (inverse CDF)
-print(norm.rvs(5))          // 5 random samples
+print(norm.pdf(0))     // 0.3989... (probability density)
+print(norm.cdf(1.96))  // 0.975 (cumulative distribution)
+print(norm.ppf(0.975)) // 1.96 (inverse CDF)
+print(norm.rvs(5))     // 5 random samples
 ```
 
 ### Numerical Integration
 
 ```swift
 // Adaptive quadrature
-let (result, error) = quad({ x in sin(x) }, 0, .pi)
-print(result)  // 2.0
+let result = quad({ x in sin(x) }, 0, .pi)
+print(result.value)  // 2.0
 
-// Solve ODE: dy/dt = -y, y(0) = 1
+// Non-stiff ODE: dy/dt = -y, y(0) = 1
 let solution = solveIVP(
-    f: { t, y in [-y[0]] },
+    { y, t in [-y[0]] },
     tSpan: (0, 5),
     y0: [1.0]
+)
+
+// Stiff ODE (implicit BDF method)
+let stiff = solveIVP(
+    { y, t in [1000 * (1 - y[0] * y[0]) * y[1] - y[0], y[1]] },
+    tSpan: (0, 3000),
+    y0: [2.0, 0.0],
+    method: .bdf
 )
 ```
 
 ### Linear Algebra
 
 ```swift
-let A = Matrix([[4, 3], [6, 3]])
-let b = Matrix([[1], [2]])
+let A = LinAlg.Matrix([[4, 3], [6, 3]])
+let b = LinAlg.Matrix([[1], [2]])
 
 // Solve Ax = b
-let x = solve(A, b)
+if let x = LinAlg.solve(A, b) {
+    print(x)
+}
 
 // Matrix decompositions
-let (L, U, P) = A.lu()
-let (Q, R) = A.qr()
-let eigenvalues = A.eigenvalues()
+let (L, U, P) = LinAlg.lu(A)
+let (Q, R) = LinAlg.qr(A)
+let (eigenvalues, _, _) = LinAlg.eig(A)
 ```
 
 ## Module Overview
 
-| Module | Description |
-|--------|-------------|
+| Module / Namespace | Description |
+|--------------------|-------------|
 | **Complex** | Complex number arithmetic with full operator support |
 | **Constants** | Mathematical and physical constants (CODATA 2018) |
-| **Distributions** | Probability distributions (Normal, T, Chi-squared, F, Gamma, Beta, etc.) |
-| **Integration** | Numerical integration (quad, romberg) and ODE solvers (RK4, RK45) |
-| **Interpolation** | Cubic spline, PCHIP, Akima interpolation |
-| **Optimization** | Root finding (bisect, newton, brent) and minimization (Nelder-Mead) |
-| **NumberTheory** | Primes, factorization, GCD, Euler's totient, and more |
-| **Series** | Polynomials, Taylor series, power series |
+| **Distributions** | Probability distributions (Normal, T, Chi-squared, F, Gamma, Beta, Poisson, Binomial, etc.) |
+| **Integration** | Numerical integration (`quad`, `romberg`) and ODE solvers (RK4, RK45, RK23, BDF for stiff systems) |
+| **IntegrationStiff** _(internal)_ | BDF-1 stiff solver driver; reached via `solveIVP(method: .bdf)` |
+| **Interpolation** | Cubic spline (natural, clamped, not-a-knot), PCHIP, Akima, barycentric |
+| **InterpolationND** | N-dimensional grid interpolation (`interpn`); multilinear and nearest methods |
+| **Optimization** | Root finding (`bisect`, `newton`, `brent`) and minimization (Nelder-Mead, BFGS, Levenberg-Marquardt) |
+| **NumberTheory** | Primes, factorization, GCD, Euler's totient, and more — via `NumberTheory.*` |
+| **Series** | Polynomials, Taylor series, power series — via `Series.*` |
 | **SpecialFunctions** | Error functions, Bessel, gamma, beta, elliptic integrals |
-| **Statistics** | Descriptive statistics, correlation, statistical tests |
+| **Stats** | Descriptive statistics, correlation, statistical tests — via `Stats.*` |
 | **LinAlg** | Matrix operations, decompositions (LU, QR, SVD, Cholesky), solvers |
-| **Cluster** | K-means, DBSCAN, hierarchical clustering |
-| **Spatial** | KDTree, Voronoi diagrams, Delaunay triangulation, distance metrics |
-| **Geometry** | 2D/3D geometry with SIMD vectors, coordinate transforms |
-| **Utilities** | vDSP-optimized array operations |
-| **MathExpr** | Mathematical expression parsing and evaluation |
+| **LinAlg+Arithmetic** | Element-wise and scalar matrix arithmetic |
+| **LinAlg+Complex** | Complex matrix arithmetic and decompositions |
+| **LinAlg+Decompositions** | LU, QR, SVD, Cholesky, eigendecomposition |
+| **LinAlg+MatrixFunctions** | `expm` (Higham 2005), `logm`, `sqrtm`, `logmComplex`, `sqrtmComplex`, `funm` |
+| **LinAlg+Solvers** | `solve`, `lstsq`, `solveTriangular`, `choSolve`, `luSolve` |
+| **Sparse** | COO and CSR sparse matrices; `spsolve`, `spmv`, `spmm` — via `Sparse.*` |
+| **Cluster** | K-means, DBSCAN, hierarchical clustering — via `Cluster.*` |
+| **Spatial** | KDTree, Voronoi, Delaunay, convex hull, distance metrics — via `Spatial.*` |
+| **Geometry** | 2D/3D geometry with SIMD vectors; coordinate transforms — via `Geometry.*` |
+| **ArrayOps** | vDSP-optimized array operations — via `ArrayOps.*` |
+| **MathExpr** | Mathematical expression parsing and evaluation (pure-Swift by default; LaTeX via MathLex opt-in) |
 | **Regression** | Linear/nonlinear regression, ARIMA time series (statsmodels-inspired) |
 | **NumericValue** | Unified numeric type tower (0.3.0) — discriminated union over scalar/complex/matrix/complexMatrix |
-| **NumericDispatch** | Unified dispatch surface (0.3.0) — routes (op, kind) pairs to typed results |
+| **NumericDispatch** | Unified dispatch surface (0.3.0) — routes (op, kind) pairs over all NumericValue combinations |
+| **UnifiedEvaluator** | Single-pass AST evaluator backing `MathExpr.evaluateUnified` |
 
 ## Ecosystem
 
 NumericSwift is part of a suite of Swift scientific computing libraries:
 
-- **ArraySwift** (optional) - N-dimensional array support with NumPy-style API
-- **PlotSwift** (planned) - Data visualization and plotting
+- **ArraySwift** (optional) — N-dimensional array support with NumPy-style API;
+  compile with `NUMERICSWIFT_INCLUDE_ARRAYSWIFT=1`
+- **PlotSwift** (optional) — data visualization and plotting;
+  compile with `NUMERICSWIFT_INCLUDE_PLOTSWIFT=1`
+- **MathLex** (optional Rust backend) — LaTeX parsing for `MathExpr`;
+  compile with `NUMERICSWIFT_INCLUDE_MATHLEX=1`
+
+### MathLex Integration (opt-in Rust backend)
+
+By default, `MathExpr.parse` uses a pure-Swift tokenizer + shunting-yard
+parser. This handles the full numeric expression language, including matrix
+operations via the `values:` dictionary.
+
+For LaTeX input and richer bracket-literal syntax, build with the MathLex
+Rust crate:
+
+```bash
+NUMERICSWIFT_INCLUDE_MATHLEX=1 swift build
+```
+
+With MathLex enabled:
+
+- `MathExpr.parseLatex(_:)` accepts LaTeX math strings and returns the same
+  `MathLexExpression` AST used by all evaluators.
+- Bracket-literal expressions like `[1, 2, 3]` or `[[1, 0], [0, 1]]` are
+  tokenized directly.
+
+Without MathLex (`NUMERICSWIFT_INCLUDE_MATHLEX=0`, the default):
+
+- `MathExpr.parseLatex(_:)` always throws
+  `MathExprError.parseError("LaTeX parsing requires the MathLex backend …")`.
+- Bracket-literal expressions throw `MathExprError.parseError`. Supply matrix
+  values via the `values:` dictionary instead.
+
+MathLex is a separate optional dependency and is never pulled in by default.
+Pure-Swift consumers (e.g. iOS/tvOS targets without a Rust toolchain in CI)
+work with no additional setup.
 
 ### ArraySwift Integration
 

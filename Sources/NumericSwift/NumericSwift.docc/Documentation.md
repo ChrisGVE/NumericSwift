@@ -55,6 +55,11 @@ NumericSwift brings the power of scientific computing to Swift with an API inspi
 
 - <doc:LinearAlgebra>
 
+### Sparse Linear Algebra
+
+- <doc:Sparse>
+- ``Sparse``
+
 ### Data Analysis
 
 - <doc:Cluster>

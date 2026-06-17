@@ -4,20 +4,43 @@ Descriptive statistics functions.
 
 ## Overview
 
-The Statistics module provides functions for computing descriptive statistics on arrays of numerical data.
+The `Statistics` module provides functions for computing descriptive statistics
+on arrays of numerical data.
+
+All functions live under the `Stats` namespace. The old top-level free
+functions (e.g. `mean`, `median`, `variance`) are still available as
+`@available(*, deprecated)` shims so existing code continues to compile with a
+deprecation warning. New code should use the namespaced forms.
+
+> Note: The namespace is `Stats` (not `Statistics`) to keep call sites concise
+> and avoid a name clash with the module itself.
+
+## Migration from Top-Level Functions
+
+```swift
+// Before (deprecated)
+mean(data)
+stddev(data, ddof: 1)
+percentile(data, 75)
+
+// After
+Stats.mean(data)
+Stats.stddev(data, ddof: 1)
+Stats.percentile(data, 75)
+```
 
 ## Central Tendency
 
 ```swift
 let data = [1.0, 2.0, 3.0, 4.0, 5.0]
 
-let avg = mean(data)     // 3.0
-let med = median(data)   // 3.0
-let mod = mode(data)     // Mode (most frequent value)
+let avg = Stats.mean(data)     // 3.0
+let med = Stats.median(data)   // 3.0
+let mod = Stats.mode(data)     // mode (smallest on tie, matching SciPy)
 
 // Geometric and harmonic means
-let gm = gmean(data)     // Geometric mean
-let hm = hmean(data)     // Harmonic mean
+let gm = Stats.gmean(data)     // geometric mean
+let hm = Stats.hmean(data)     // harmonic mean
 ```
 
 ## Dispersion
@@ -26,14 +49,14 @@ let hm = hmean(data)     // Harmonic mean
 let data = [1.0, 2.0, 3.0, 4.0, 5.0]
 
 // Variance (ddof = degrees of freedom adjustment)
-let v = variance(data, ddof: 0)  // Population variance
-let s2 = variance(data, ddof: 1) // Sample variance
+let v  = Stats.variance(data, ddof: 0)  // population variance
+let s2 = Stats.variance(data, ddof: 1)  // sample variance
 
 // Standard deviation
-let sd = stddev(data, ddof: 1)
+let sd = Stats.stddev(data, ddof: 1)
 
 // Range
-let range = ptp(data)  // Peak-to-peak (max - min)
+let range = Stats.ptp(data)  // peak-to-peak (max − min)
 ```
 
 ## Percentiles and Quantiles
@@ -41,9 +64,9 @@ let range = ptp(data)  // Peak-to-peak (max - min)
 ```swift
 let data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
 
-let p25 = percentile(data, 25)   // 25th percentile
-let p50 = percentile(data, 50)   // Median
-let p75 = percentile(data, 75)   // 75th percentile
+let p25 = Stats.percentile(data, 25)   // 25th percentile
+let p50 = Stats.percentile(data, 50)   // median
+let p75 = Stats.percentile(data, 75)   // 75th percentile
 ```
 
 ## Min/Max Functions
@@ -51,9 +74,9 @@ let p75 = percentile(data, 75)   // 75th percentile
 ```swift
 let data = [-2.0, 1.0, 3.0, -5.0, 4.0]
 
-let minimum = amin(data)   // -5.0
-let maximum = amax(data)   // 4.0
-let range = ptp(data)      // 9.0 (peak-to-peak)
+let minimum = Stats.amin(data)   // -5.0
+let maximum = Stats.amax(data)   // 4.0
+let range   = Stats.ptp(data)    // 9.0 (peak-to-peak)
 ```
 
 ## Cumulative Operations
@@ -61,22 +84,22 @@ let range = ptp(data)      // 9.0 (peak-to-peak)
 ```swift
 let data = [1.0, 2.0, 3.0, 4.0]
 
-let cs = cumsum(data)   // [1, 3, 6, 10]
-let cp = cumprod(data)  // [1, 2, 6, 24]
-let d = diff(data)      // [1, 1, 1] (differences)
+let cs = Stats.cumsum(data)   // [1, 3, 6, 10]
+let cp = Stats.cumprod(data)  // [1, 2, 6, 24]
+let d  = Stats.diff(data)     // [1, 1, 1] (first differences)
 ```
 
 ## Rounding and Clipping
 
 ```swift
 // Scalar operations
-let rounded = round(3.7, decimals: 0)  // 4.0
-let truncated = trunc(3.7)             // 3.0
-let s = sign(-5.0)                     // -1.0
-let clipped = clip(15.0, min: 0, max: 10)  // 10.0
+let rounded = Stats.round(3.7, decimals: 0)      // 4.0
+let truncated = Stats.trunc(3.7)                 // 3.0
+let s = Stats.sign(-5.0)                         // -1.0
+let clipped = Stats.clip(15.0, min: 0, max: 10)  // 10.0
 
-// Array operations
-let clippedArray = clip(values, min: 0, max: 1)
+// Array clipping
+let clippedArray = Stats.clip(values, min: 0, max: 1)
 ```
 
 ## Aggregation
@@ -84,48 +107,52 @@ let clippedArray = clip(values, min: 0, max: 1)
 ```swift
 let data = [1.0, 2.0, 3.0, 4.0, 5.0]
 
-let total = sum(data)  // 15.0
+let total = Stats.sum(data)  // 15.0
 ```
 
 ## Topics
 
+### Namespace
+
+- ``Stats``
+
 ### Central Tendency
 
-- ``mean(_:)``
-- ``median(_:)``
-- ``mode(_:)``
-- ``gmean(_:)``
-- ``hmean(_:)``
+- ``Stats/mean(_:)``
+- ``Stats/median(_:)``
+- ``Stats/mode(_:)``
+- ``Stats/gmean(_:)``
+- ``Stats/hmean(_:)``
 
 ### Dispersion
 
-- ``variance(_:ddof:)``
-- ``stddev(_:ddof:)``
-- ``ptp(_:)``
+- ``Stats/variance(_:ddof:)``
+- ``Stats/stddev(_:ddof:)``
+- ``Stats/ptp(_:)``
 
 ### Percentiles
 
-- ``percentile(_:_:)``
+- ``Stats/percentile(_:_:)``
 
 ### Min/Max
 
-- ``amin(_:)``
-- ``amax(_:)``
+- ``Stats/amin(_:)``
+- ``Stats/amax(_:)``
 
 ### Cumulative Operations
 
-- ``cumsum(_:)``
-- ``cumprod(_:)``
-- ``diff(_:)``
+- ``Stats/cumsum(_:)``
+- ``Stats/cumprod(_:)``
+- ``Stats/diff(_:)``
 
 ### Aggregation
 
-- ``sum(_:)``
+- ``Stats/sum(_:)``
 
 ### Rounding and Clipping
 
-- ``round(_:decimals:)``
-- ``trunc(_:)``
-- ``sign(_:)``
-- ``clip(_:min:max:)->Double``
-- ``clip(_:min:max:)->[Double]``
+- ``Stats/round(_:decimals:)``
+- ``Stats/trunc(_:)``
+- ``Stats/sign(_:)``
+- ``Stats/clip(_:min:max:)->Double``
+- ``Stats/clip(_:min:max:)->[Double]``
