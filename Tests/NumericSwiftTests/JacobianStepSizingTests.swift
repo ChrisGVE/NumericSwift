@@ -132,8 +132,8 @@ final class LeastSquaresJacobianTests: XCTestCase {
         }, x0: [1.0, 0.3])
 
         XCTAssertTrue(result.success, "leastSquares should converge for well-scaled exponential")
-        XCTAssertEqual(result.x[0], a, accuracy: 1e-4, "amplitude should be ≈ 2.0")
-        XCTAssertEqual(result.x[1], b, accuracy: 1e-4, "rate should be ≈ 0.5")
+        XCTAssertEqual(result.x[0], a, accuracy: 1e-8, "amplitude should be ≈ 2.0")
+        XCTAssertEqual(result.x[1], b, accuracy: 1e-8, "rate should be ≈ 0.5")
     }
 
     // MARK: Mixed-magnitude — EXPOSES old global-max-h bug
