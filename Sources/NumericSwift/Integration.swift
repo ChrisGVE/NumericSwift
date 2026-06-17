@@ -30,11 +30,24 @@ public struct QuadResult {
   public let error: Double
   /// Number of function evaluations
   public let neval: Int
+  /// Diagnostics produced during the integration.
+  ///
+  /// Empty when the integration completed within its accuracy envelope.
+  /// Populated by the workbench detection layer (wave 2) with entries such as
+  /// ``NumericDiagnostic/nonConvergence(method:reason:)`` when the adaptive
+  /// subdivider exhausts its limit without meeting the requested tolerance.
+  public let diagnostics: [NumericDiagnostic]
 
-  public init(value: Double, error: Double, neval: Int) {
+  public init(
+    value: Double,
+    error: Double,
+    neval: Int,
+    diagnostics: [NumericDiagnostic] = []
+  ) {
     self.value = value
     self.error = error
     self.neval = neval
+    self.diagnostics = diagnostics
   }
 }
 
@@ -50,13 +63,30 @@ public struct ODEResult {
   public let message: String
   /// Number of function evaluations
   public let nfev: Int
+  /// Diagnostics produced during the ODE integration.
+  ///
+  /// Empty when the solver completed within its accuracy envelope.
+  /// Populated by the workbench detection layer (wave 2) with entries such as
+  /// ``NumericDiagnostic/nonConvergence(method:reason:)`` when a step-size
+  /// adaptive solver exhausts its error budget, or
+  /// ``NumericDiagnostic/precisionDegraded(method:approxDigits:)`` for stiff
+  /// problems solved with explicit methods.
+  public let diagnostics: [NumericDiagnostic]
 
-  public init(t: [Double], y: [[Double]], success: Bool, message: String, nfev: Int) {
+  public init(
+    t: [Double],
+    y: [[Double]],
+    success: Bool,
+    message: String,
+    nfev: Int,
+    diagnostics: [NumericDiagnostic] = []
+  ) {
     self.t = t
     self.y = y
     self.success = success
     self.message = message
     self.nfev = nfev
+    self.diagnostics = diagnostics
   }
 }
 

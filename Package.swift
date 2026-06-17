@@ -119,5 +119,15 @@ let package = Package(
       dependencies: ["NumericSwift"],
       path: "Sources/NumericSwiftBench"
     ),
+    // E2E functional workbench — NOT part of the NumericSwift library product
+    // and therefore invisible to remote SPM consumers (e.g. LuaSwift).
+    // Build explicitly:  swift build --product NumericSwiftWorkbench
+    // Run:               .build/debug/NumericSwiftWorkbench [domain...]
+    // CI gate:           swift test --filter WorkbenchGateTests
+    .executableTarget(
+      name: "NumericSwiftWorkbench",
+      dependencies: ["NumericSwift"],
+      path: "Sources/NumericSwiftWorkbench"
+    ),
   ]
 )

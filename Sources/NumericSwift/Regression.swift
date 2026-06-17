@@ -89,6 +89,88 @@ public struct OLSResult {
   public let conditionNumber: Double
   /// Eigenvalues of X'X.
   public let eigenvalues: [Double]
+
+  /// Workbench diagnostics for this regression result.
+  ///
+  /// Empty by default. Populated by the workbench detection layer (wave 2) with
+  /// entries such as ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when
+  /// the design matrix is ill-conditioned beyond the declared envelope, or
+  /// ``NumericDiagnostic/precisionDegraded(method:approxDigits:)`` when
+  /// the OLS normal-equation solve loses significant digits.
+  public let diagnostics: [NumericDiagnostic]
+
+  // swiftlint:disable:next function_parameter_count
+  public init(
+    params: [Double],
+    bse: [Double],
+    tvalues: [Double],
+    pvalues: [Double],
+    confInt: [[Double]],
+    bseHC0: [Double],
+    bseHC1: [Double],
+    bseHC2: [Double],
+    bseHC3: [Double],
+    bseHC4: [Double],
+    bseHC5: [Double],
+    residuals: [Double],
+    fittedValues: [Double],
+    hatDiag: [Double],
+    studentizedResiduals: [Double],
+    cooksDistance: [Double],
+    dffits: [Double],
+    rsquared: Double,
+    rsquaredAdj: Double,
+    fvalue: Double,
+    fPvalue: Double,
+    llf: Double,
+    aic: Double,
+    bic: Double,
+    ssr: Double,
+    ess: Double,
+    mse: Double,
+    tss: Double,
+    nobs: Int,
+    dfModel: Int,
+    dfResid: Int,
+    conditionNumber: Double,
+    eigenvalues: [Double],
+    diagnostics: [NumericDiagnostic] = []
+  ) {
+    self.params = params
+    self.bse = bse
+    self.tvalues = tvalues
+    self.pvalues = pvalues
+    self.confInt = confInt
+    self.bseHC0 = bseHC0
+    self.bseHC1 = bseHC1
+    self.bseHC2 = bseHC2
+    self.bseHC3 = bseHC3
+    self.bseHC4 = bseHC4
+    self.bseHC5 = bseHC5
+    self.residuals = residuals
+    self.fittedValues = fittedValues
+    self.hatDiag = hatDiag
+    self.studentizedResiduals = studentizedResiduals
+    self.cooksDistance = cooksDistance
+    self.dffits = dffits
+    self.rsquared = rsquared
+    self.rsquaredAdj = rsquaredAdj
+    self.fvalue = fvalue
+    self.fPvalue = fPvalue
+    self.llf = llf
+    self.aic = aic
+    self.bic = bic
+    self.ssr = ssr
+    self.ess = ess
+    self.mse = mse
+    self.tss = tss
+    self.nobs = nobs
+    self.dfModel = dfModel
+    self.dfResid = dfResid
+    self.conditionNumber = conditionNumber
+    self.eigenvalues = eigenvalues
+    self.diagnostics = diagnostics
+  }
 }
 
 // MARK: - OLS/WLS Regression
@@ -572,6 +654,56 @@ public struct GLMResult {
   public let converged: Bool
   /// Number of iterations.
   public let iterations: Int
+  /// Workbench diagnostics for this GLM result.
+  ///
+  /// Empty by default. Populated by the workbench detection layer (wave 2) with
+  /// entries such as ``NumericDiagnostic/nonConvergence(method:reason:)`` when
+  /// IRLS exhausts its iteration budget, or
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` for inputs outside the
+  /// declared GLM family envelope.
+  public let diagnostics: [NumericDiagnostic]
+
+  public init(
+    params: [Double],
+    bse: [Double],
+    zvalues: [Double],
+    pvalues: [Double],
+    mu: [Double],
+    eta: [Double],
+    residResponse: [Double],
+    deviance: Double,
+    nullDeviance: Double,
+    pearsonChi2: Double,
+    llf: Double,
+    aic: Double,
+    bic: Double,
+    nobs: Int,
+    dfModel: Int,
+    dfResid: Int,
+    converged: Bool,
+    iterations: Int,
+    diagnostics: [NumericDiagnostic] = []
+  ) {
+    self.params = params
+    self.bse = bse
+    self.zvalues = zvalues
+    self.pvalues = pvalues
+    self.mu = mu
+    self.eta = eta
+    self.residResponse = residResponse
+    self.deviance = deviance
+    self.nullDeviance = nullDeviance
+    self.pearsonChi2 = pearsonChi2
+    self.llf = llf
+    self.aic = aic
+    self.bic = bic
+    self.nobs = nobs
+    self.dfModel = dfModel
+    self.dfResid = dfResid
+    self.converged = converged
+    self.iterations = iterations
+    self.diagnostics = diagnostics
+  }
 }
 
 /// Fit Generalized Linear Model using IRLS.
@@ -1104,6 +1236,52 @@ public struct ARIMAResult {
   public let original: [Double]
   /// Order (p, d, q).
   public let order: (p: Int, d: Int, q: Int)
+  /// Workbench diagnostics for this ARIMA result.
+  ///
+  /// Empty by default. Populated by the workbench detection layer (wave 2) with
+  /// entries such as ``NumericDiagnostic/nonConvergence(method:reason:)`` when CSS
+  /// estimation does not converge within `maxiter`, or
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the series is too
+  /// short relative to the requested (p, d, q) order.
+  public let diagnostics: [NumericDiagnostic]
+
+  public init(
+    arParams: [Double],
+    maParams: [Double],
+    arBse: [Double],
+    maBse: [Double],
+    residuals: [Double],
+    fittedValues: [Double],
+    yDiff: [Double],
+    sigma2: Double,
+    llf: Double,
+    aic: Double,
+    bic: Double,
+    nobs: Int,
+    converged: Bool,
+    iterations: Int,
+    original: [Double],
+    order: (p: Int, d: Int, q: Int),
+    diagnostics: [NumericDiagnostic] = []
+  ) {
+    self.arParams = arParams
+    self.maParams = maParams
+    self.arBse = arBse
+    self.maBse = maBse
+    self.residuals = residuals
+    self.fittedValues = fittedValues
+    self.yDiff = yDiff
+    self.sigma2 = sigma2
+    self.llf = llf
+    self.aic = aic
+    self.bic = bic
+    self.nobs = nobs
+    self.converged = converged
+    self.iterations = iterations
+    self.original = original
+    self.order = order
+    self.diagnostics = diagnostics
+  }
 }
 
 /// Fit ARIMA(p, d, q) model using CSS (Conditional Sum of Squares).
