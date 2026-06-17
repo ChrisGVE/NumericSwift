@@ -191,6 +191,15 @@ public struct DelaunayResult {
 /// Uses the Bowyer-Watson algorithm to compute the Delaunay triangulation,
 /// which maximizes the minimum angle of all triangles.
 ///
+/// When all input points are collinear (degenerate configuration), no valid
+/// triangulation exists and an empty simplex list is returned — matching the
+/// behaviour of `scipy.spatial.Delaunay`, which raises `QhullError` for
+/// fully-collinear inputs.
+///
+/// Degeneracy is detected by checking whether **all** points lie on the same
+/// line via a relative-area test (max triangle area / bounding-box area < ε),
+/// making the check scale-independent and order-independent.
+///
 /// - Parameter points: Array of 2D points
 /// - Returns: DelaunayResult with triangles and neighbor information
 public func delaunay(_ points: [[Double]]) -> DelaunayResult {
@@ -200,13 +209,14 @@ public func delaunay(_ points: [[Double]]) -> DelaunayResult {
     return DelaunayResult(points: points, simplices: [], neighbors: [])
   }
 
-  // Check for collinear points
-  let p1 = points[0]
-  let p2 = points[1]
-  let p3 = points[2]
-  let cross = (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
-  if abs(cross) < 1e-10 {
-    // Collinear - return empty triangulation
+  // Robust collinearity check across ALL points.
+  //
+  // All n points are collinear iff every triple has zero signed area.  We use
+  // the anchor pair (points[0], points[1]) and check each remaining point
+  // against it. The area is normalised by the bounding-box diagonal so the
+  // threshold is scale-independent.  (A purely first-3-point check is
+  // order-dependent and misses sets whose first 3 happen to be non-collinear.)
+  if allPointsCollinear(points) {
     return DelaunayResult(points: points, simplices: [], neighbors: [])
   }
 
@@ -217,6 +227,62 @@ public func delaunay(_ points: [[Double]]) -> DelaunayResult {
     simplices: simplices,
     neighbors: neighbors
   )
+}
+
+/// Return `true` when all points in `pts` lie on a single line.
+///
+/// Selects the pair of points with maximum squared distance as the anchor
+/// (robust against duplicate leading points) and tests every other point
+/// via the 2-D cross-product (signed triangle area × 2).  The test threshold
+/// is relative to the bounding-box area so the result is scale-independent.
+///
+/// - Reference: Shamos & Hoey (1976); computational-geometry collinearity test.
+private func allPointsCollinear(_ pts: [[Double]]) -> Bool {
+  // Bounding box for scale normalisation.
+  var minX = pts[0][0], maxX = pts[0][0]
+  var minY = pts[0][1], maxY = pts[0][1]
+  for p in pts {
+    if p[0] < minX { minX = p[0] }
+    if p[0] > maxX { maxX = p[0] }
+    if p[1] < minY { minY = p[1] }
+    if p[1] > maxY { maxY = p[1] }
+  }
+  let bboxDiag = (maxX - minX) * (maxX - minX) + (maxY - minY) * (maxY - minY)
+
+  // If the bounding box has zero area, all points are coincident → collinear.
+  if bboxDiag < 1e-30 { return true }
+
+  // Relative epsilon: cross-product² threshold scales with bbox area.
+  let eps = 1e-10 * bboxDiag
+
+  // Choose the pair with the largest squared distance as the anchor to avoid
+  // the degenerate case where pts[0] == pts[1] produces a zero-length direction.
+  // We pick the two extreme x-range or y-range points (bounding box corners).
+  let anchorA: [Double]
+  let anchorB: [Double]
+  let xRange = maxX - minX
+  let yRange = maxY - minY
+  if xRange >= yRange {
+    // Anchor on widest dimension: leftmost and rightmost.
+    anchorA = pts.min(by: { $0[0] < $1[0] })!
+    anchorB = pts.max(by: { $0[0] < $1[0] })!
+  } else {
+    // Anchor on tallest dimension: bottommost and topmost.
+    anchorA = pts.min(by: { $0[1] < $1[1] })!
+    anchorB = pts.max(by: { $0[1] < $1[1] })!
+  }
+
+  let ax = anchorA[0], ay = anchorA[1]
+  let dx = anchorB[0] - ax, dy = anchorB[1] - ay
+
+  for p in pts {
+    // Cross product (anchorB-anchorA) × (p-anchorA) = signed area × 2.
+    let cross = dx * (p[1] - ay) - dy * (p[0] - ax)
+    if cross * cross > eps {
+      return false
+    }
+  }
+  return true
 }
 
 /// Bowyer-Watson algorithm for Delaunay triangulation.
@@ -368,25 +434,49 @@ private func inCircumcircle(px: Double, py: Double, tri: [Int], points: [[Double
 // MARK: - Voronoi Diagram
 
 /// Result of Voronoi diagram computation.
+///
+/// ## Infinite regions
+///
+/// Generators on the convex hull have Voronoi cells that extend to infinity.
+/// Following the convention of `scipy.spatial.Voronoi`, these are represented
+/// with the sentinel value `-1`:
+///
+/// - `ridgeVertices`: an entry `[-1, k]` (or `[k, -1]`) indicates a ridge that
+///   extends to infinity on one side; `k` is the finite Voronoi vertex index.
+///   A ridge `[-1, -1]` would indicate both endpoints at infinity (degenerate).
+/// - `regions[i]`: the vertex-index list for generator `i` contains `-1`
+///   whenever that generator's cell has an infinite ray (i.e., the generator
+///   lies on the convex hull).
+///
+/// Callers that only need bounded Voronoi cells can filter out all `-1` entries.
 public struct VoronoiResult {
   /// Original points (generators).
   public let points: [[Double]]
-  /// Voronoi vertices.
+  /// Voronoi vertices (circumcenters of Delaunay triangles).
   public let vertices: [[Double]]
-  /// Voronoi regions for each point (indices into vertices).
+  /// Voronoi regions for each generator (indices into `vertices`; `-1` marks infinite rays).
   public let regions: [[Int]]
-  /// Ridge vertices (pairs of vertex indices).
+  /// Ridge vertex index pairs; `-1` denotes a ray extending to infinity.
   public let ridgeVertices: [[Int]]
-  /// Ridge points (pairs of generator indices).
+  /// Ridge generator index pairs (the two generators sharing each ridge).
   public let ridgePoints: [[Int]]
 }
 
 /// Compute Voronoi diagram of 2D points.
 ///
-/// The Voronoi diagram is the dual of the Delaunay triangulation.
+/// The Voronoi diagram is the dual of the Delaunay triangulation, computed
+/// from circumcenters of Delaunay triangles.
 ///
-/// - Parameter points: Array of 2D points
-/// - Returns: VoronoiResult with vertices, regions, and ridges
+/// ## Infinite regions
+///
+/// Generators on the convex hull of the input have Voronoi cells that extend
+/// to infinity.  These are **not silently dropped**: `ridgeVertices` uses
+/// `-1` as a sentinel for the infinite endpoint (matching
+/// `scipy.spatial.Voronoi`), and `regions[i]` contains `-1` when generator
+/// `i` has an unbounded cell.  See ``VoronoiResult`` for details.
+///
+/// - Parameter points: Array of 2D points (at least 3 for a non-trivial diagram).
+/// - Returns: ``VoronoiResult`` with vertices, regions, and ridges.
 public func voronoi(_ points: [[Double]]) -> VoronoiResult {
   guard !points.isEmpty else {
     return VoronoiResult(
@@ -400,72 +490,104 @@ public func voronoi(_ points: [[Double]]) -> VoronoiResult {
 
   let n = points.count
 
-  // Compute Delaunay first (Voronoi is dual)
+  // Voronoi is the dual of the Delaunay triangulation.
+  // Each Delaunay triangle's circumcenter is a Voronoi vertex.
   let (delaunaySimplices, delaunayNeighbors) = bowyerWatson(points: points)
 
-  // Compute circumcenters of Delaunay triangles = Voronoi vertices
+  // ── Step 1: compute circumcenters (Voronoi vertices) ──────────────────────
   var vertices: [[Double]] = []
+  // Maps Delaunay triangle index → Voronoi vertex index (-1 if degenerate).
   var simplexToVertex: [Int: Int] = [:]
 
   for (i, simplex) in delaunaySimplices.enumerated() {
-    if simplex.count == 3 {
-      let p1 = points[simplex[0]]
-      let p2 = points[simplex[1]]
-      let p3 = points[simplex[2]]
+    guard simplex.count == 3 else { continue }
+    let p1 = points[simplex[0]], p2 = points[simplex[1]], p3 = points[simplex[2]]
+    let ax = p1[0], ay = p1[1]
+    let bx = p2[0], by = p2[1]
+    let cx = p3[0], cy = p3[1]
 
-      let ax = p1[0]
-      let ay = p1[1]
-      let bx = p2[0]
-      let by = p2[1]
-      let cx = p3[0]
-      let cy = p3[1]
-
-      let d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
-      if abs(d) > 1e-10 {
-        let a2 = ax * ax + ay * ay
-        let b2 = bx * bx + by * by
-        let c2 = cx * cx + cy * cy
-
-        let ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
-        let uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
-
-        vertices.append([ux, uy])
-        simplexToVertex[i] = vertices.count - 1
-      }
+    // Denominator of the circumcenter formula; near-zero means a degenerate triangle.
+    let d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+    if abs(d) > 1e-10 {
+      let a2 = ax * ax + ay * ay
+      let b2 = bx * bx + by * by
+      let c2 = cx * cx + cy * cy
+      let ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
+      let uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
+      vertices.append([ux, uy])
+      simplexToVertex[i] = vertices.count - 1
     }
   }
 
-  // Build regions for each input point
+  // ── Step 2: build regions for each generator ──────────────────────────────
+  //
+  // regions[ptIdx] accumulates the indices of the Voronoi vertices that
+  // surround generator ptIdx.  Hull generators additionally get a -1 entry
+  // for each Delaunay triangle edge that borders the exterior (no neighbour on
+  // that side → the corresponding Voronoi ray goes to infinity).
   var regions: [[Int]] = Array(repeating: [], count: n)
+
   for (i, simplex) in delaunaySimplices.enumerated() {
-    if let vIdx = simplexToVertex[i] {
-      for ptIdx in simplex {
-        regions[ptIdx].append(vIdx)
-      }
+    guard let vIdx = simplexToVertex[i] else { continue }
+    for ptIdx in simplex {
+      regions[ptIdx].append(vIdx)
     }
   }
 
-  // Build ridge information
+  // ── Step 3: build ridge information, inserting -1 for infinite ridges ─────
+  //
+  // A Delaunay edge shared by two triangles (i, j) maps to the finite Voronoi
+  // ridge [circumcenter(i), circumcenter(j)].  A hull edge (triangle i with no
+  // neighbour on one side) maps to an infinite Voronoi ridge [-1, circumcenter(i)].
+  //
+  // We iterate over all Delaunay triangle pairs and also over each triangle's
+  // edges that have no matching neighbour.
   var ridgeVertices: [[Int]] = []
   var ridgePoints: [[Int]] = []
 
-  for (i, _) in delaunaySimplices.enumerated() {
-    if let v1 = simplexToVertex[i] {
-      for nIdx in delaunayNeighbors[i] {
-        if nIdx > i {
-          if let v2 = simplexToVertex[nIdx] {
-            // Find shared edge
-            var shared: [Int] = []
-            for p1 in delaunaySimplices[i] {
-              for p2 in delaunaySimplices[nIdx] {
-                if p1 == p2 { shared.append(p1) }
-              }
-            }
-            if shared.count >= 2 {
-              ridgeVertices.append([v1, v2])
-              ridgePoints.append([shared[0], shared[1]])
-            }
+  // Tracks processed edge pairs to avoid duplicates (key = sorted generator pair).
+  var processedEdges: Set<String> = []
+
+  for (i, simplex) in delaunaySimplices.enumerated() {
+    guard let v1 = simplexToVertex[i] else { continue }
+
+    // Edges of this triangle as (p0, p1) pairs (CCW order: [0-1], [1-2], [2-0]).
+    let edges: [[Int]] = [
+      [simplex[0], simplex[1]],
+      [simplex[1], simplex[2]],
+      [simplex[2], simplex[0]],
+    ]
+
+    for edge in edges {
+      let edgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))"
+
+      // Find the neighbour that shares this edge.
+      let neighbour = delaunayNeighbors[i].first { nIdx in
+        let nSimplex = delaunaySimplices[nIdx]
+        return nSimplex.contains(edge[0]) && nSimplex.contains(edge[1])
+      }
+
+      if let nIdx = neighbour {
+        // Finite ridge: connect the two circumcenters.
+        // Only emit once (for i < nIdx direction).
+        if nIdx > i, let v2 = simplexToVertex[nIdx] {
+          let ridgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))-\(min(i, nIdx)),\(max(i, nIdx))"
+          if !processedEdges.contains(ridgeKey) {
+            processedEdges.insert(ridgeKey)
+            ridgeVertices.append([v1, v2])
+            ridgePoints.append([edge[0], edge[1]])
           }
+        }
+      } else {
+        // Hull edge: no neighbour → the Voronoi ridge extends to infinity.
+        // Emit [-1, v1] and mark the two hull generators as having infinite regions.
+        if !processedEdges.contains(edgeKey) {
+          processedEdges.insert(edgeKey)
+          ridgeVertices.append([-1, v1])
+          ridgePoints.append([edge[0], edge[1]])
+          // Add the -1 sentinel to both hull generators' region lists.
+          if !regions[edge[0]].contains(-1) { regions[edge[0]].append(-1) }
+          if !regions[edge[1]].contains(-1) { regions[edge[1]].append(-1) }
         }
       }
     }

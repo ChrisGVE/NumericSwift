@@ -200,6 +200,59 @@ final class SpatialTests: XCTestCase {
         XCTAssertTrue(result.simplices.isEmpty)
     }
 
+    // MARK: - Delaunay Degeneracy Tests (Issue #12)
+
+    /// All four points collinear — Bowyer-Watson has no valid triangulation.
+    /// scipy.spatial.Delaunay raises QhullError; we return an empty simplex list.
+    /// Oracle: scipy.spatial.Delaunay([[0,0],[1,0],[2,0],[3,0]]) → QhullError
+    func testDelaunayFullyCollinear() {
+        let points = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]]
+        let result = delaunay(points)
+        XCTAssertTrue(
+            result.simplices.isEmpty,
+            "Fully collinear set must produce empty triangulation")
+    }
+
+    /// Later-collinear: first 3 points are NON-collinear (old check passes),
+    /// but 3 of the 4 points lie on a line. Bowyer-Watson handles this correctly;
+    /// scipy produces 2 triangles. Verifies robust collinearity detection doesn't
+    /// incorrectly reject a valid (non-fully-collinear) input.
+    /// Oracle: scipy.spatial.Delaunay([[0,1],[1,0],[2,0],[3,0]]) → [[2,3,0],[1,2,0]]
+    func testDelaunayLaterCollinearSubset() {
+        // First 3 points are non-collinear: [0,1],[1,0],[2,0] → cross ≠ 0
+        // Points [1,0],[2,0],[3,0] ARE collinear, but the full set is NOT fully collinear.
+        // Valid Delaunay triangulation exists (2 triangles).
+        let points = [[0.0, 1.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]]
+        let result = delaunay(points)
+        XCTAssertEqual(
+            result.simplices.count, 2,
+            "Partially-collinear (but not fully) set must produce 2 triangles")
+        // All 4 point indices must appear across the two triangles.
+        let allIndices = Set(result.simplices.flatMap { $0 })
+        XCTAssertEqual(allIndices, [0, 1, 2, 3])
+    }
+
+    /// Reordered collinear: points in an order where naive first-3 check
+    /// selects non-collinear triple while the full set IS fully collinear.
+    /// Geometrically impossible (any 3 of n collinear points are collinear),
+    /// so this test confirms the robust check still catches it.
+    /// Oracle: scipy.spatial.Delaunay([[0,0],[1,0],[2,0],[3,0]]) → QhullError (empty)
+    func testDelaunayCollinearAllOrders() {
+        // Permutations of fully-collinear set: any order should yield empty.
+        let base: [[Double]] = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]]
+        let permutations: [[[Double]]] = [
+            [base[2], base[0], base[1], base[3]],
+            [base[3], base[1], base[0], base[2]],
+            [base[1], base[3], base[2], base[0]],
+        ]
+        for perm in permutations {
+            let result = delaunay(perm)
+            XCTAssertTrue(
+                result.simplices.isEmpty,
+                "Fully collinear set (any ordering) must produce empty triangulation")
+        }
+    }
+
     // MARK: - Voronoi Tests
 
     func testVoronoiBasic() {
@@ -214,6 +267,117 @@ final class SpatialTests: XCTestCase {
     func testVoronoiEmpty() {
         let result = voronoi([])
         XCTAssertTrue(result.vertices.isEmpty)
+    }
+
+    // MARK: - Voronoi Infinite-Region Tests (Issue #12)
+
+    /// Three points form a triangle: ALL generators are on the convex hull and
+    /// have infinite Voronoi regions. The current implementation silently drops
+    /// the infinite-region markers, producing empty region lists for hull generators.
+    ///
+    /// scipy contract (scipy.spatial.Voronoi([[0,0],[1,0],[0.5,0.866]])):
+    ///   ridge_vertices: [[-1,0], [-1,0], [-1,0]]  (all ridges infinite)
+    ///   regions[generator]: each contains -1 (infinite vertex sentinel)
+    ///
+    /// Our contract: ridgeVertices entries contain -1 for ridges extending to infinity;
+    /// regions[i] contains -1 to mark that generator i has an infinite Voronoi region.
+    func testVoronoiThreePointsInfiniteRegions() {
+        // Triangle: all 3 generators on convex hull → all regions are infinite.
+        let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.866]]
+        let result = voronoi(points)
+
+        // Must produce exactly 1 Voronoi vertex (the circumcenter of the triangle).
+        XCTAssertEqual(result.vertices.count, 1, "Triangle Voronoi must have 1 circumcenter vertex")
+
+        // All 3 ridges must be infinite (contain -1).
+        XCTAssertEqual(result.ridgeVertices.count, 3, "Triangle Voronoi must have 3 ridges")
+        for ridge in result.ridgeVertices {
+            XCTAssertTrue(
+                ridge.contains(-1),
+                "Every ridge of a 3-point Voronoi must be infinite (contain -1)")
+        }
+
+        // Every generator's region must contain -1 (infinite region marker).
+        // regions has 3 entries, one per generator.
+        XCTAssertEqual(result.regions.count, 3)
+        for (i, region) in result.regions.enumerated() {
+            XCTAssertTrue(
+                region.contains(-1),
+                "Generator \(i) is on the convex hull and must have -1 in its region list")
+        }
+    }
+
+    /// Square: 4 hull generators sharing a single unique circumcenter at [0.5, 0.5].
+    ///
+    /// scipy contract (scipy.spatial.Voronoi([[0,0],[1,0],[1,1],[0,1]])):
+    ///   vertices: [[0.5, 0.5]]   (both Delaunay triangles share the same circumcenter;
+    ///                             scipy deduplicates and treats even the internal ridge as
+    ///                             infinite — an artifact of deduplication)
+    ///   ridge_vertices: [[-1,0],[-1,0],[-1,0],[-1,0]]
+    ///   regions[each generator]: contains -1
+    ///
+    /// Our contract: implementations that do not deduplicate vertices may produce a finite
+    /// internal ridge between the two (geometrically identical) circumcenters.  The key
+    /// invariant is that all 4 generators are hull generators and therefore each region
+    /// contains -1, and at least the 4 hull edges produce infinite ridges.
+    func testVoronoiFourPointsSquareInfiniteRegions() {
+        let points = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
+        let result = voronoi(points)
+
+        // Both Delaunay triangles of a square have circumcenter [0.5, 0.5].
+        // Implementations may emit 1 or 2 entries; all must be near [0.5, 0.5].
+        XCTAssertGreaterThan(result.vertices.count, 0, "Square Voronoi must have at least 1 vertex")
+        for v in result.vertices {
+            XCTAssertEqual(v[0], 0.5, accuracy: 1e-10)
+            XCTAssertEqual(v[1], 0.5, accuracy: 1e-10)
+        }
+
+        // At least some ridges must be infinite (the 4 hull edges).
+        // (Non-dedup implementations may also have a finite zero-length internal ridge.)
+        let infiniteRidges = result.ridgeVertices.filter { $0.contains(-1) }
+        XCTAssertGreaterThanOrEqual(
+            infiniteRidges.count, 4,
+            "Square must have at least 4 infinite ridges (one per hull edge)")
+
+        // All 4 generator regions must contain -1 (all are hull generators).
+        XCTAssertEqual(result.regions.count, 4)
+        for (i, region) in result.regions.enumerated() {
+            XCTAssertTrue(
+                region.contains(-1),
+                "Hull generator \(i) of square must have -1 in region list")
+        }
+    }
+
+    /// Five-point set with 3 Delaunay triangles (2 unique circumcenters after dedup)
+    /// and a mix of bounded/infinite ridges.
+    ///
+    /// scipy: pts5 = [[0,0],[4,0],[2,3],[0.5,2],[3.5,2]]
+    ///   vertices: [[2.0, 1.375], [2.0, 0.5625]]  (scipy deduplicates; impls may return 3)
+    ///   ridge_vertices include both finite pairs and -1 pairs
+    ///
+    /// Our contract: at least 2 vertices (the two unique circumcenters); implementations that
+    /// do not deduplicate may return 3.  The key correctness property is the presence of both
+    /// finite and infinite ridges.
+    func testVoronoiFivePointsMixedRegions() {
+        let points = [[0.0, 0.0], [4.0, 0.0], [2.0, 3.0], [0.5, 2.0], [3.5, 2.0]]
+        let result = voronoi(points)
+
+        // At least 2 distinct Voronoi vertices (scipy has 2 after dedup; non-dedup impls may have 3).
+        XCTAssertGreaterThanOrEqual(
+            result.vertices.count, 2, "5-point set must have at least 2 Voronoi vertices")
+
+        // At least some ridges must be infinite (the hull generators' ridges).
+        let infiniteRidges = result.ridgeVertices.filter { $0.contains(-1) }
+        XCTAssertGreaterThan(
+            infiniteRidges.count, 0, "5-point set must have some infinite ridges")
+
+        // At least some ridges must be finite (internal Voronoi edges).
+        let finiteRidges = result.ridgeVertices.filter { !$0.contains(-1) }
+        XCTAssertGreaterThan(
+            finiteRidges.count, 0, "5-point set must have some finite ridges")
+
+        // 5 regions, one per generator.
+        XCTAssertEqual(result.regions.count, 5)
     }
 
     // MARK: - Convex Hull Tests
