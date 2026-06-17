@@ -141,13 +141,30 @@ public struct Complex: Equatable, Hashable, Sendable {
         )
     }
 
-    /// Division: (a + bi)/(c + di) = [(ac + bd) + (bc - ad)i] / (c² + d²)
+    /// Division using Smith's algorithm for numerical stability.
+    ///
+    /// The naive formula `(ac+bd)/(c²+d²)` overflows to NaN when `c` or `d`
+    /// is near `Double.greatestFiniteMagnitude`, because `c²+d²` exceeds the
+    /// representable range. Smith's algorithm avoids squaring by branching on
+    /// the larger component and forming a scaled ratio.
+    ///
+    /// Algorithm (R.L. Smith 1962, "Algorithm 116: Complex division",
+    /// CACM 5(8):435; also C99 Annex G §G.5.1):
+    ///
+    ///     if |c| ≥ |d|: r = d/c,  den = c + d·r,  re = (a + b·r)/den,  im = (b − a·r)/den
+    ///     else:         r = c/d,  den = c·r + d,   re = (a·r + b)/den,  im = (b·r − a)/den
     public static func / (lhs: Complex, rhs: Complex) -> Complex {
-        let denom = rhs.re * rhs.re + rhs.im * rhs.im
-        return Complex(
-            re: (lhs.re * rhs.re + lhs.im * rhs.im) / denom,
-            im: (lhs.im * rhs.re - lhs.re * rhs.im) / denom
-        )
+        let a = lhs.re, b = lhs.im
+        let c = rhs.re, d = rhs.im
+        if Swift.abs(c) >= Swift.abs(d) {
+            let r   = d / c
+            let den = c + d * r
+            return Complex(re: (a + b * r) / den, im: (b - a * r) / den)
+        } else {
+            let r   = c / d
+            let den = c * r + d
+            return Complex(re: (a * r + b) / den, im: (b * r - a) / den)
+        }
     }
 
     // MARK: - Scalar Arithmetic
@@ -180,12 +197,20 @@ public struct Complex: Equatable, Hashable, Sendable {
         Complex(re: lhs.re / rhs, im: lhs.im / rhs)
     }
 
+    /// Scalar-divided-by-complex using Smith's algorithm (same overflow rationale as `/(_:_:)`).
     public static func / (lhs: Double, rhs: Complex) -> Complex {
-        let denom = rhs.re * rhs.re + rhs.im * rhs.im
-        return Complex(
-            re: lhs * rhs.re / denom,
-            im: -lhs * rhs.im / denom
-        )
+        // Treat lhs as Complex(re: lhs, im: 0) and apply Smith's algorithm directly.
+        let a = lhs,    b = 0.0
+        let c = rhs.re, d = rhs.im
+        if Swift.abs(c) >= Swift.abs(d) {
+            let r   = d / c
+            let den = c + d * r
+            return Complex(re: (a + b * r) / den, im: (b - a * r) / den)
+        } else {
+            let r   = c / d
+            let den = c * r + d
+            return Complex(re: (a * r + b) / den, im: (b * r - a) / den)
+        }
     }
 
     // MARK: - Compound Assignment
@@ -262,9 +287,11 @@ extension Complex {
     }
 
     /// Reciprocal: 1/z
+    ///
+    /// Delegates to the Smith's-algorithm division operator so large-magnitude
+    /// values stay finite (same overflow protection as `/`).
     public var reciprocal: Complex {
-        let denom = abs2
-        return Complex(re: re / denom, im: -im / denom)
+        1.0 / self
     }
 }
 
