@@ -173,6 +173,43 @@ public struct OLSResult {
   }
 }
 
+// MARK: - Regression limitation envelopes (self-awareness)
+
+/// The design-matrix condition-number ceiling beyond which a regression fit is
+/// declared *outside its accuracy envelope* (multicollinearity / ill-conditioning).
+///
+/// OLS/WLS/GLM all solve a system governed by the design matrix `X`. The
+/// estimated coefficients lose roughly `log10(cond(X))` significant digits to the
+/// conditioning of `X`. Near-perfect collinearity drives `cond(X)` toward
+/// infinity, so the coefficients become dominated by round-off and are no longer
+/// trustworthy — statsmodels surfaces the same regime through its
+/// `condition_number` diagnostic and a large-`cond` warning.
+///
+/// The threshold `1e10` sits inside the `1e10–1e12` band recommended for the
+/// design-matrix condition number (the *square root* of the `X'X` condition
+/// number ceiling used by the linear-system solvers, ``LinAlg/solveConditionEnvelope``):
+/// past it, fewer than ~6 of a `Double`'s ~16 significant digits survive. The
+/// reported `conditionNumber` field of ``OLSResult`` is `cond(X) = sqrt(cond(X'X))`,
+/// so the comparison is apples-to-apples.
+public let regressionConditionEnvelope: Double = 1e10
+
+/// Build the multicollinearity / ill-conditioning diagnostic for a design matrix
+/// whose condition number exceeds ``regressionConditionEnvelope``, or `nil` when
+/// the design is inside the envelope.
+///
+/// `conditionNumber` is `cond(X) = sqrt(cond(X'X))` as computed from the
+/// eigenvalues of `X'WX`; an exactly rank-deficient design yields `+inf` and
+/// trips the diagnostic.
+internal func collinearityDiagnostic(method: String, conditionNumber: Double) -> NumericDiagnostic? {
+  guard conditionNumber > regressionConditionEnvelope else { return nil }
+  return .outsideEnvelope(
+    method: method,
+    reason: "design matrix is ill-conditioned / multicollinear (cond ≈ \(conditionNumber)) "
+      + "— exceeds the cond ≤ \(regressionConditionEnvelope) accuracy envelope; "
+      + "the estimated coefficients may be dominated by round-off and unreliable"
+  )
+}
+
 // MARK: - OLS/WLS Regression
 
 /// Fit Ordinary Least Squares regression.
@@ -549,6 +586,15 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
     bseHC5 = computeHCStdErrors(omega: omegaHC5)
   }
 
+  // Self-awareness: an ill-conditioned / multicollinear design matrix is the
+  // OLS out-of-envelope regime (WORKBENCH.md §5). The diagnostic gate uses the
+  // robust SVD-based cond(X) (``designConditionNumber``) rather than the reported
+  // `conditionNumber` field — the latter's sqrt(cond(X'X)) estimate collapses for
+  // near-collinear designs once X'X squares the condition number past the
+  // eigen-solver's resolution.
+  let olsDiagnostics = collinearityDiagnostic(
+    method: "ols", conditionNumber: designConditionNumber(X)).map { [$0] } ?? []
+
   return OLSResult(
     params: params,
     bse: bse,
@@ -582,7 +628,8 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
     dfModel: dfModel,
     dfResid: dfResid,
     conditionNumber: conditionNumber,
-    eigenvalues: eigenvalues
+    eigenvalues: eigenvalues,
+    diagnostics: olsDiagnostics
   )
 }
 
@@ -862,6 +909,23 @@ public func glm(
   let aic = -2.0 * llf + 2.0 * Double(k)
   let bic = -2.0 * llf + Double(k) * Darwin.log(Double(n))
 
+  // Self-awareness (WORKBENCH.md §5). Two out-of-envelope regimes for GLM:
+  //   1. IRLS exhausted its iteration budget without converging — the returned
+  //      coefficients are the last (non-converged) iterate.
+  //   2. The design matrix is ill-conditioned / multicollinear beyond the
+  //      regression condition envelope.
+  var glmDiagnostics: [NumericDiagnostic] = []
+  if !converged {
+    glmDiagnostics.append(.nonConvergence(
+      method: "glm",
+      reason: "IRLS did not converge within maxiter=\(maxiter) iterations (\(family.rawValue) family); "
+        + "the returned coefficients are the last iterate"))
+  }
+  if let collinear = collinearityDiagnostic(
+    method: "glm", conditionNumber: designConditionNumber(X)) {
+    glmDiagnostics.append(collinear)
+  }
+
   return GLMResult(
     params: beta,
     bse: bse,
@@ -880,11 +944,38 @@ public func glm(
     dfModel: dfModel,
     dfResid: dfResid,
     converged: converged,
-    iterations: iterations
+    iterations: iterations,
+    diagnostics: glmDiagnostics
   )
 }
 
 // MARK: - Helper Functions
+
+/// The SVD-based 2-norm condition number `cond(X)` of a design matrix `X`.
+///
+/// This is the *robust* condition estimate used to drive the multicollinearity
+/// self-awareness check (the ``collinearityDiagnostic(method:conditionNumber:)``
+/// gate). It is computed directly from the singular values of `X` via
+/// ``LinAlg/cond(_:)`` (LAPACK `dgesvd`), NOT from the eigenvalues of `X'X`:
+/// forming `X'X` squares the condition number, so for a design with `cond(X)`
+/// already near `1e8` the smallest `X'X` eigenvalue underflows the eigen-solver's
+/// resolution and the `sqrt(cond(X'X))` estimate collapses to a spuriously small
+/// value. Working on `X` directly avoids that loss and returns `+inf` for an
+/// exactly rank-deficient design.
+///
+/// The reported `OLSResult.conditionNumber` field keeps its `sqrt(cond(X'X))`
+/// definition for statsmodels parity; this helper is only the diagnostic gate.
+internal func designConditionNumber(_ X: [[Double]]) -> Double {
+  let n = X.count
+  guard n > 0, let k = X.first?.count, k > 0 else { return .infinity }
+  var flat = [Double](repeating: 0.0, count: n * k)
+  for i in 0..<n {
+    let row = X[i]
+    guard row.count == k else { return .infinity }
+    for j in 0..<k { flat[i * k + j] = row[j] }
+  }
+  return LinAlg.cond(LinAlg.Matrix(rows: n, cols: k, data: flat))
+}
 
 /// Detect whether a design matrix contains a constant (intercept) column,
 /// following statsmodels' `k_constant` rule: a column whose entries are all
@@ -1431,6 +1522,30 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
     maBse[j] = baseSE
   }
 
+  // Self-awareness (WORKBENCH.md §5). Two out-of-envelope regimes for ARIMA:
+  //   1. The differenced series is too short relative to the requested order —
+  //      CSS estimation needs comfortably more effective observations than free
+  //      parameters. We require validCount ≥ 3·(p+q) + 1 (the conventional
+  //      "≥ a few times the parameter count" rule of thumb); below that, the
+  //      estimates are unidentified / dominated by noise even though a finite
+  //      value is returned.
+  //   2. CSS estimation did not converge within `maxiter`.
+  var arimaDiagnostics: [NumericDiagnostic] = []
+  let minEffectiveObs = 3 * (p + q) + 1
+  if validCount < minEffectiveObs {
+    arimaDiagnostics.append(.outsideEnvelope(
+      method: "arima",
+      reason: "series too short for ARIMA(\(p),\(d),\(q)): \(validCount) effective observation(s) "
+        + "after differencing for \(p + q) parameter(s) — need ≥ \(minEffectiveObs); "
+        + "the estimated coefficients are unidentified and unreliable"))
+  }
+  if !converged {
+    arimaDiagnostics.append(.nonConvergence(
+      method: "arima",
+      reason: "CSS estimation did not converge within maxiter=\(maxiter) iterations; "
+        + "the returned coefficients are the last iterate"))
+  }
+
   return ARIMAResult(
     arParams: arParams,
     maParams: maParams,
@@ -1447,7 +1562,8 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
     converged: converged,
     iterations: iterations,
     original: y,
-    order: (p, d, q)
+    order: (p, d, q),
+    diagnostics: arimaDiagnostics
   )
 }
 
