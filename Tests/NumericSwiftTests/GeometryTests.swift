@@ -140,6 +140,68 @@ final class GeometryTests: XCTestCase {
         XCTAssertEqual(s.r, free.r, accuracy: 1e-10)
         XCTAssertEqual(s.theta, free.theta, accuracy: 1e-10)
         XCTAssertEqual(s.phi, free.phi, accuracy: 1e-10)
+
+        // −x axis: theta = pi/2 (equatorial), phi = pi.
+        // atan2(0, −1) = π, which is the correct azimuthal for −x.
+        let negXAxis = Vec3(-1, 0, 0).spherical
+        XCTAssertEqual(negXAxis.r, 1, accuracy: 1e-10)
+        XCTAssertEqual(negXAxis.theta, .pi / 2, accuracy: 1e-10)
+        XCTAssertEqual(negXAxis.phi, .pi, accuracy: 1e-10)
+
+        // −z axis (south pole): polar angle theta = pi.
+        // phi is mathematically undefined at the poles; the implementation
+        // returns phi = atan2(0, 0) = 0 by convention.
+        let negZAxis = Vec3(0, 0, -1).spherical
+        XCTAssertEqual(negZAxis.r, 1, accuracy: 1e-10)
+        XCTAssertEqual(negZAxis.theta, .pi, accuracy: 1e-10)
+
+        // Origin: r = 0; both angles returned as 0 by guard.
+        let origin = Vec3(0, 0, 0).spherical
+        XCTAssertEqual(origin.r, 0, accuracy: 1e-12)
+        XCTAssertEqual(origin.theta, 0, accuracy: 1e-12)
+        XCTAssertEqual(origin.phi, 0, accuracy: 1e-12)
+    }
+
+    func testSphericalFreeRoundTrip() {
+        // cartToSpherical → sphericalToCart round-trip: exact for analytic axes.
+        let axes: [(x: Double, y: Double, z: Double, label: String)] = [
+            (1, 0, 0, "+x"), (-1, 0, 0, "-x"),
+            (0, 1, 0, "+y"), (0, -1, 0, "-y"),
+            (0, 0, 1, "+z"), (0, 0, -1, "-z"),
+        ]
+        for axis in axes {
+            let sph = cartToSpherical(x: axis.x, y: axis.y, z: axis.z)
+            let cart = sphericalToCart(r: sph.r, theta: sph.theta, phi: sph.phi)
+            XCTAssertEqual(cart.x, axis.x, accuracy: 1e-10, "\(axis.label) round-trip x")
+            XCTAssertEqual(cart.y, axis.y, accuracy: 1e-10, "\(axis.label) round-trip y")
+            XCTAssertEqual(cart.z, axis.z, accuracy: 1e-10, "\(axis.label) round-trip z")
+        }
+
+        // Off-axis point: both directions.
+        let q = (x: 1.5, y: -2.0, z: 3.0)
+        let sph2 = cartToSpherical(x: q.x, y: q.y, z: q.z)
+        let cart2 = sphericalToCart(r: sph2.r, theta: sph2.theta, phi: sph2.phi)
+        XCTAssertEqual(cart2.x, q.x, accuracy: 1e-10)
+        XCTAssertEqual(cart2.y, q.y, accuracy: 1e-10)
+        XCTAssertEqual(cart2.z, q.z, accuracy: 1e-10)
+
+        // sphericalToCart → cartToSpherical round-trip.
+        let r0 = 3.0, theta0 = 1.2, phi0 = -0.7
+        let cart3 = sphericalToCart(r: r0, theta: theta0, phi: phi0)
+        let sph3 = cartToSpherical(x: cart3.x, y: cart3.y, z: cart3.z)
+        XCTAssertEqual(sph3.r, r0, accuracy: 1e-10)
+        XCTAssertEqual(sph3.theta, theta0, accuracy: 1e-10)
+        XCTAssertEqual(sph3.phi, phi0, accuracy: 1e-10)
+
+        // Vec3.spherical and cartToSpherical must agree for all axis vectors.
+        for axis in axes {
+            let v = Vec3(axis.x, axis.y, axis.z)
+            let vSph = v.spherical
+            let fSph = cartToSpherical(x: axis.x, y: axis.y, z: axis.z)
+            XCTAssertEqual(vSph.r, fSph.r, accuracy: 1e-10, "\(axis.label) r parity")
+            XCTAssertEqual(vSph.theta, fSph.theta, accuracy: 1e-10, "\(axis.label) theta parity")
+            XCTAssertEqual(vSph.phi, fSph.phi, accuracy: 1e-10, "\(axis.label) phi parity")
+        }
     }
 
     func testVec3Cylindrical() {

@@ -100,10 +100,23 @@ extension Vec3 {
 
     /// Convert to spherical coordinates (r, theta, phi).
     ///
-    /// Physics / ISO 80000-2 convention (matches `sphericalToCart` /
-    /// `cartToSpherical`):
-    /// - theta: polar angle measured from the +z axis, in `[0, π]`
-    /// - phi: azimuthal angle in the xy-plane measured from +x, in `(-π, π]`
+    /// Uses the **physics / ISO 80000-2** convention:
+    /// - `r`: radial distance, `r ≥ 0`
+    /// - `theta`: polar angle measured from the +z axis, in `[0, π]`
+    /// - `phi`: azimuthal angle in the xy-plane measured from +x, in `(-π, π]`
+    ///
+    /// Formulas: `r = ‖self‖`, `theta = acos(z / r)`, `phi = atan2(y, x)`.
+    ///
+    /// The result is consistent with ``sphericalToCart(_:_:_:)`` and
+    /// ``cartToSpherical(_:_:_:)``. At the poles (theta = 0 or π) the azimuthal
+    /// angle phi is mathematically undefined; this implementation returns `phi = 0`.
+    /// At the origin (r = 0) both angles are returned as 0.
+    ///
+    /// > Breaking Change: Prior to this fix, `Vec3.spherical` used the **math**
+    /// > convention (theta = azimuthal in xy-plane, phi = polar from z). The
+    /// > return values of `.y` (theta) and `.z` (phi) are now swapped relative
+    /// > to that old convention. Code that read `vec.spherical.y` as the
+    /// > azimuthal angle must now read `vec.spherical.z` instead, and vice versa.
     public var spherical: (r: Double, theta: Double, phi: Double) {
         let r = simd_length(self)
         guard r > 0 else { return (0, 0, 0) }
@@ -112,8 +125,16 @@ extension Vec3 {
         return (r, theta, phi)
     }
 
-    /// Create from spherical coordinates (physics / ISO 80000-2 convention).
-    /// - theta: polar angle from the +z axis; phi: azimuthal angle from +x.
+    /// Create a `Vec3` from spherical coordinates (physics / ISO 80000-2 convention).
+    ///
+    /// - Parameters:
+    ///   - r: Radial distance (`r ≥ 0`).
+    ///   - theta: Polar angle from the +z axis, in `[0, π]`.
+    ///   - phi: Azimuthal angle in the xy-plane from +x, in `(-π, π]`.
+    ///
+    /// Formulas: `x = r·sin(θ)·cos(φ)`, `y = r·sin(θ)·sin(φ)`, `z = r·cos(θ)`.
+    ///
+    /// This is the inverse of ``spherical``.
     public static func fromSpherical(r: Double, theta: Double, phi: Double) -> Vec3 {
         let sinTheta = sin(theta)
         return Vec3(r * sinTheta * cos(phi), r * sinTheta * sin(phi), r * cos(theta))
