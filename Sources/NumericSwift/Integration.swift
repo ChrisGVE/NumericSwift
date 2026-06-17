@@ -220,7 +220,24 @@ public func quad(
 
 // MARK: - Double Integration
 
+// Error accumulator for nested quadrature — a reference type so that closures
+// passed as function arguments to `quad` can update the running maximum
+// without capturing inout bindings (which Swift closures do not support).
+private final class ErrorAccumulator {
+  var maxError: Double = 0.0
+
+  func update(_ err: Double) {
+    if err > maxError { maxError = err }
+  }
+}
+
 /// Double integration over a rectangular or non-rectangular region.
+///
+/// The reported error estimate is the maximum of all inner and outer quadrature
+/// error estimates, following the same composition rule as SciPy's `dblquad`
+/// (QUADPACK `_NQuad`: `abserr = max(self.abserr, abserr)`). This prevents the
+/// outer error from appearing optimistically small when inner integrals carry
+/// significant error (e.g. oscillatory or near-singular inner integrands).
 ///
 /// - Parameters:
 ///   - f: Function f(y, x) to integrate
@@ -230,7 +247,9 @@ public func quad(
 ///   - yb: Upper y limit as function of x
 ///   - epsabs: Absolute tolerance
 ///   - epsrel: Relative tolerance
-/// - Returns: QuadResult with value and error
+/// - Returns: QuadResult with the integral value, composed error estimate, and the
+///   outer evaluation count. `neval` reflects only the outer quadrature evaluations;
+///   inner evaluations are not counted (same behaviour as before the error fix).
 public func dblquad(
   _ f: @escaping (Double, Double) -> Double,
   xa: Double,
@@ -240,13 +259,22 @@ public func dblquad(
   epsabs: Double = quadDefaultEpsAbs,
   epsrel: Double = quadDefaultEpsRel
 ) -> QuadResult {
+  // Accumulate the max inner error across all x evaluation points.
+  let innerErrors = ErrorAccumulator()
+
   let inner: (Double) -> Double = { x in
     let yLower = ya(x)
     let yUpper = yb(x)
     let result = quad({ y in f(y, x) }, yLower, yUpper, epsabs: epsabs, epsrel: epsrel)
+    innerErrors.update(result.error)
     return result.value
   }
-  return quad(inner, xa, xb, epsabs: epsabs, epsrel: epsrel)
+
+  let outer = quad(inner, xa, xb, epsabs: epsabs, epsrel: epsrel)
+
+  // Compose inner and outer errors: take the maximum, matching SciPy's rule.
+  let composedError = max(outer.error, innerErrors.maxError)
+  return QuadResult(value: outer.value, error: composedError, neval: outer.neval)
 }
 
 /// Double integration over a rectangular region (constant limits).
@@ -266,6 +294,10 @@ public func dblquad(
 // MARK: - Triple Integration
 
 /// Triple integration.
+///
+/// Error composition follows the same max-accumulation rule as SciPy's
+/// `tplquad`: the reported error is the maximum of all z-, y-, and x-level
+/// quadrature error estimates. See `dblquad` for the two-level rationale.
 ///
 /// - Parameters:
 ///   - f: Function f(z, y, x) to integrate
@@ -288,13 +320,23 @@ public func tplquad(
   epsabs: Double = quadDefaultEpsAbs,
   epsrel: Double = quadDefaultEpsRel
 ) -> QuadResult {
+  // Accumulate the max z-level error across all (x, y) evaluation points.
+  let zErrors = ErrorAccumulator()
+
   let innerXY: (Double, Double) -> Double = { y, x in
     let zLower = za(x, y)
     let zUpper = zb(x, y)
     let result = quad({ z in f(z, y, x) }, zLower, zUpper, epsabs: epsabs, epsrel: epsrel)
+    zErrors.update(result.error)
     return result.value
   }
-  return dblquad(innerXY, xa: xa, xb: xb, ya: ya, yb: yb, epsabs: epsabs, epsrel: epsrel)
+
+  // dblquad already composes its own inner (y-level) and outer (x-level) errors.
+  let xyResult = dblquad(innerXY, xa: xa, xb: xb, ya: ya, yb: yb, epsabs: epsabs, epsrel: epsrel)
+
+  // Lift z-level max into the final composition.
+  let composedError = max(xyResult.error, zErrors.maxError)
+  return QuadResult(value: xyResult.value, error: composedError, neval: xyResult.neval)
 }
 
 /// Triple integration over rectangular region (constant limits).

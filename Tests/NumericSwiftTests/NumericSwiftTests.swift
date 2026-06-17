@@ -554,6 +554,85 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(result.value, 0.125, accuracy: 1e-6)
     }
 
+    // MARK: - dblquad/tplquad error-propagation tests (issue #5 / M11)
+    //
+    // SciPy's error model for nested quadrature: the reported abserr is the
+    // maximum of ALL inner and outer per-interval error estimates accumulated
+    // during the nested calls (_NQuad.abserr = max(self.abserr, abserr)).
+    // Before the fix the inner error was silently discarded, causing the
+    // outer error to be optimistically small. Oracle values: scipy 1.x.
+
+    func testDblquadErrorReflectsInnerContribution() {
+        // ∫₀¹ ∫₀¹ sin(10y) e^(-x) dydx
+        // Inner integrand is oscillatory — inner quadrature accumulates real error.
+        // SciPy oracle: value ≈ 1.16251492268549736e-01, error ≈ 9.899651e-13
+        // The broken implementation returns the outer GK error alone (~1e-15),
+        // far too small. A correct implementation must return error > 1e-13.
+        let result = dblquad(
+            { y, x in Darwin.sin(10 * y) * Darwin.exp(-x) },
+            xa: 0, xb: 1, ya: 0, yb: 1
+        )
+        XCTAssertEqual(result.value, 1.16251492268549736e-01, accuracy: 1e-8)
+        // Error must reflect the inner oscillatory contribution.
+        XCTAssertGreaterThan(result.error, 1e-13,
+            "dblquad error must include inner quadrature contribution (issue #5)")
+    }
+
+    func testDblquadErrorValueRectangle() {
+        // ∫₀¹ ∫₀¹ (x+y) dydx = 1.0 — smooth integrand, value accuracy check.
+        // SciPy oracle: value = 1.0, error ≈ 1.66e-14
+        let result = dblquad({ y, x in x + y }, xa: 0, xb: 1, ya: 0, yb: 1)
+        XCTAssertEqual(result.value, 1.0, accuracy: 1e-10)
+        // Error must be non-zero (propagated even if tiny).
+        XCTAssertGreaterThanOrEqual(result.error, 0.0)
+    }
+
+    func testDblquadErrorTriangleDomain() {
+        // ∫₀¹ ∫₀ˣ xy dydx = 1/8 on the triangular region y ∈ [0, x].
+        // SciPy oracle: value = 0.125, error ≈ 5.52e-15
+        let result = dblquad(
+            { y, x in x * y },
+            xa: 0, xb: 1,
+            ya: { _ in 0.0 },
+            yb: { x in x }
+        )
+        XCTAssertEqual(result.value, 0.125, accuracy: 1e-10)
+        XCTAssertGreaterThanOrEqual(result.error, 0.0)
+    }
+
+    func testDblquadErrorNearSingular() {
+        // ∫₀¹ ∫₀¹ 1/√(x+y+0.01) dydx — near-singular integrand.
+        // SciPy oracle: value ≈ 1.09412259621857211, error ≈ 2.13e-08
+        // Inner integrals close to the singularity carry larger errors that
+        // must be reflected in the outer result.
+        let result = dblquad(
+            { y, x in 1.0 / Darwin.sqrt(x + y + 0.01) },
+            xa: 0, xb: 1, ya: 0, yb: 1
+        )
+        XCTAssertEqual(result.value, 1.09412259621857211, accuracy: 1e-6)
+        // Error must be meaningful given the near-singular inner integrand.
+        XCTAssertGreaterThan(result.error, 1e-10,
+            "dblquad near-singular error must include inner contribution (issue #5)")
+    }
+
+    func testTplquadErrorOscillatoryInner() {
+        // ∫₀¹ ∫₀¹ ∫₀¹ sin(5z)·x·y dzdydx
+        // SciPy oracle: value ≈ 3.58168907268386696e-02
+        // Inner (z) integral is oscillatory; error must not be discarded.
+        let result = tplquad(
+            { z, y, x in Darwin.sin(5 * z) * x * y },
+            xa: 0, xb: 1, ya: 0, yb: 1, za: 0, zb: 1
+        )
+        XCTAssertEqual(result.value, 3.58168907268386696e-02, accuracy: 1e-8)
+        XCTAssertGreaterThanOrEqual(result.error, 0.0)
+    }
+
+    func testDblquadErrorIsNeverNegative() {
+        // Invariant: reported error is always non-negative.
+        let result = dblquad({ y, x in x * x * y * y }, xa: 0, xb: 2, ya: 0, yb: 3)
+        XCTAssertGreaterThanOrEqual(result.error, 0.0)
+    }
+
     func testFixedQuad() {
         // ∫₀¹ x² dx = 1/3
         let result = fixedQuad({ x in x * x }, 0, 1, n: 5)
