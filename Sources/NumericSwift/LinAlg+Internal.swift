@@ -180,6 +180,163 @@ extension LinAlg {
         return matmulInternal(VD, Vinv, n)
     }
 
+    // MARK: - Schur Decomposition (real, via LAPACK dgees)
+
+    /// Real Schur decomposition A = Q T Q^T via LAPACK dgees.
+    ///
+    /// Returns `(Q, T)` — orthogonal Q and quasi-upper-triangular real Schur form T —
+    /// where columns of Q are the Schur vectors and diagonal blocks of T are either
+    /// 1×1 (real eigenvalue) or 2×2 (complex-conjugate pair). Both Q and T are
+    /// row-major n×n arrays. Returns `nil` when LAPACK reports failure.
+    ///
+    /// Reference: LAPACK Users' Guide, 3rd ed., §2.4 "Real Schur Form".
+    static func realSchurDecomposition(
+        _ data: [Double], _ n: Int
+    ) -> (Q: [Double], T: [Double])? {
+        // dgees expects column-major input.
+        var a = [Double](repeating: 0, count: n * n)
+        for i in 0..<n {
+            for j in 0..<n { a[j * n + i] = data[i * n + j] }
+        }
+
+        var jobvs = Int8(UInt8(ascii: "V"))  // compute Schur vectors
+        var sort  = Int8(UInt8(ascii: "N"))  // no eigenvalue ordering
+        var n1    = __CLPK_integer(n)
+        var lda   = __CLPK_integer(n)
+        var sdim: __CLPK_integer = 0
+        var wr    = [Double](repeating: 0, count: n)
+        var wi    = [Double](repeating: 0, count: n)
+        var ldvs  = __CLPK_integer(n)
+        var vs    = [Double](repeating: 0, count: n * n)  // Schur vectors (column-major)
+        var info: __CLPK_integer = 0
+
+        // Phase 1: workspace size query.
+        var lwork: __CLPK_integer = -1
+        var work  = [Double](repeating: 0, count: 1)
+        // selectf is not used (sort = N) — pass nil.
+        dgees_(&jobvs, &sort, nil, &n1, &a, &lda, &sdim,
+               &wr, &wi, &vs, &ldvs, &work, &lwork, nil, &info)
+        lwork = __CLPK_integer(work[0])
+        work  = [Double](repeating: 0, count: Int(lwork))
+
+        // Phase 2: actual decomposition — restore column-major a first.
+        for i in 0..<n {
+            for j in 0..<n { a[j * n + i] = data[i * n + j] }
+        }
+        var n2  = __CLPK_integer(n)
+        var lda2 = __CLPK_integer(n)
+        dgees_(&jobvs, &sort, nil, &n2, &a, &lda2, &sdim,
+               &wr, &wi, &vs, &ldvs, &work, &lwork, nil, &info)
+
+        if info != 0 { return nil }
+
+        // Convert Q (column-major vs → row-major Q) and T (column-major a → row-major T).
+        var Q = [Double](repeating: 0, count: n * n)
+        var T = [Double](repeating: 0, count: n * n)
+        for i in 0..<n {
+            for j in 0..<n {
+                Q[i * n + j] = vs[j * n + i]
+                T[i * n + j] =  a[j * n + i]
+            }
+        }
+        return (Q, T)
+    }
+
+    // MARK: - Complex arithmetic helpers for Schur-Parlett
+
+    // Swift tuples (re, im): Double complex numbers used in Schur-Parlett recurrence.
+    // These are file-private helpers for the matrix-function algorithms; they avoid
+    // a dependency on the full Complex type while keeping the arithmetic readable.
+
+    typealias C2 = (re: Double, im: Double)
+
+    @inline(__always) static func cAdd(_ a: C2, _ b: C2) -> C2 { (a.re+b.re, a.im+b.im) }
+    @inline(__always) static func cSub(_ a: C2, _ b: C2) -> C2 { (a.re-b.re, a.im-b.im) }
+    @inline(__always) static func cMul(_ a: C2, _ b: C2) -> C2 {
+        (a.re*b.re - a.im*b.im, a.re*b.im + a.im*b.re)
+    }
+    @inline(__always) static func cDiv(_ a: C2, _ b: C2) -> C2 {
+        let denom = b.re*b.re + b.im*b.im
+        return ((a.re*b.re + a.im*b.im) / denom, (a.im*b.re - a.re*b.im) / denom)
+    }
+    @inline(__always) static func cAbs(_ a: C2) -> Double { sqrt(a.re*a.re + a.im*a.im) }
+
+    /// Complex logarithm (principal branch): log(re + i·im).
+    @inline(__always) static func cLog(_ a: C2) -> C2 {
+        (log(cAbs(a)), atan2(a.im, a.re))
+    }
+
+    /// Complex square root (principal branch): sqrt(re + i·im).
+    @inline(__always) static func cSqrt(_ a: C2) -> C2 {
+        let r     = cAbs(a)
+        let theta = atan2(a.im, a.re)
+        let sr    = sqrt(r)
+        return (sr * cos(theta / 2), sr * sin(theta / 2))
+    }
+
+    /// Apply a scalar complex function to a complex number.
+    @inline(__always) static func applyComplexFunction(
+        _ fn: LinAlg.MatrixFunction, _ z: C2
+    ) -> C2? {
+        switch fn {
+        case .exp:  return (exp(z.re) * cos(z.im), exp(z.re) * sin(z.im))
+        case .log:  return cLog(z)
+        case .sqrt: return cSqrt(z)
+        case .sin:
+            // sin(x+iy) = sin(x)cosh(y) + i cos(x)sinh(y)
+            return (sin(z.re)*cosh(z.im), cos(z.re)*sinh(z.im))
+        case .cos:
+            return (cos(z.re)*cosh(z.im), -sin(z.re)*sinh(z.im))
+        case .sinh:
+            return (sinh(z.re)*cos(z.im), cosh(z.re)*sin(z.im))
+        case .cosh:
+            return (cosh(z.re)*cos(z.im), sinh(z.re)*sin(z.im))
+        case .tanh:
+            let num = (sinh(z.re)*cos(z.im), cosh(z.re)*sin(z.im))
+            let den = (cosh(z.re)*cos(z.im), sinh(z.re)*sin(z.im))
+            return cDiv(num, den)
+        case .abs:
+            return (cAbs(z), 0.0)
+        }
+    }
+
+    /// First derivative f'(z) for the Parlett repeated-eigenvalue limit case.
+    ///
+    /// When two diagonal Schur eigenvalues coincide, the divided-difference in
+    /// the Parlett recurrence has a 0/0 form that resolves to the limit f'(λ)
+    /// (Higham 2008, "Functions of Matrices" SIAM, §4.2, eq. 4.6). Exact analytic
+    /// derivatives avoid the cancellation errors of finite-difference approximations.
+    @inline(__always) static func applyComplexDerivative(
+        _ fn: LinAlg.MatrixFunction, _ z: C2
+    ) -> C2? {
+        switch fn {
+        case .exp:  return applyComplexFunction(.exp, z)           // (e^z)' = e^z
+        case .log:  return cDiv((1.0, 0.0), z)                     // (ln z)' = 1/z
+        case .sqrt:
+            // (√z)' = 1/(2√z)
+            let sq = cSqrt(z)
+            return cDiv((1.0, 0.0), cMul((2.0, 0.0), sq))
+        case .sin:
+            return applyComplexFunction(.cos, z)                   // (sin z)' = cos z
+        case .cos:
+            guard let sv = applyComplexFunction(.sin, z) else { return nil }
+            return (-sv.re, -sv.im)                                // (cos z)' = -sin z
+        case .sinh:
+            return applyComplexFunction(.cosh, z)                  // (sinh z)' = cosh z
+        case .cosh:
+            return applyComplexFunction(.sinh, z)                  // (cosh z)' = sinh z
+        case .tanh:
+            // (tanh z)' = sech²z = 1 - tanh²z
+            guard let tv = applyComplexFunction(.tanh, z) else { return nil }
+            return cSub((1.0, 0.0), cMul(tv, tv))
+        case .abs:
+            // (|z|)' = z/|z| for non-zero z (not holomorphic; real sign for real axis)
+            let r = cAbs(z)
+            guard r > 1e-300 else { return nil }
+            return (z.re / r, z.im / r)
+        }
+    }
+
     /// Invert an n×n row-major matrix using LAPACK LU decomposition.
     ///
     /// Returns the original matrix unchanged on failure (singular input).
