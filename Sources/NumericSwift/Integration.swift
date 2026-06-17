@@ -738,12 +738,19 @@ private func rk4Step(
 }
 
 /// Single Dormand-Prince RK45 step
+///
+/// Returns the 5th-order solution and error estimate.  The stage derivatives
+/// `k[0..6]` are also returned so that the caller can build the dense-output
+/// quartic interpolant without additional function evaluations.
+///
+/// Reference: Dormand & Prince, "A family of embedded Runge-Kutta formulae",
+/// J. Comput. Appl. Math. 6(1), 1980.
 private func rk45Step(
   _ f: ([Double], Double) -> [Double],
   _ t: Double,
   _ y: [Double],
   _ h: Double
-) -> (yNew: [Double], error: [Double]) {
+) -> (yNew: [Double], error: [Double], stages: [[Double]]) {
   let n = y.count
   var k: [[Double]] = []
 
@@ -783,16 +790,23 @@ private func rk45Step(
     err[i] = sum
   }
 
-  return (yNew, err)
+  return (yNew, err, k)
 }
 
 /// Single Bogacki-Shampine RK23 step
+///
+/// Returns the 3rd-order solution and error estimate.  The stage derivatives
+/// `k[0..3]` are also returned so that the caller can build the dense-output
+/// cubic Hermite interpolant without additional function evaluations.
+///
+/// Reference: Bogacki & Shampine, "A 3(2) pair of Runge-Kutta formulas",
+/// Appl. Math. Lett. 2(4), 1989.
 private func rk23Step(
   _ f: ([Double], Double) -> [Double],
   _ t: Double,
   _ y: [Double],
   _ h: Double
-) -> (yNew: [Double], error: [Double]) {
+) -> (yNew: [Double], error: [Double], stages: [[Double]]) {
   let n = y.count
   var k: [[Double]] = []
 
@@ -832,7 +846,159 @@ private func rk23Step(
     err[i] = sum
   }
 
-  return (yNew, err)
+  return (yNew, err, k)
+}
+
+// MARK: - Dense-output interpolants
+
+/// One accepted solver step recorded for dense-output evaluation.
+///
+/// `tStart` and `tEnd` bracket the step, `yStart` is the state at `tStart`,
+/// `stages` are the per-component stage derivatives used by the interpolant,
+/// and `h` is the (signed) step size `tEnd − tStart`.
+private struct DenseStep {
+  let tStart: Double
+  let tEnd: Double
+  let yStart: [Double]
+  let yEnd: [Double]
+  let stages: [[Double]]  // k[0..6] for RK45 or k[0..3] for RK23
+  let h: Double
+}
+
+/// Dormand-Prince RK45 quartic (4th-order) dense-output interpolant.
+///
+/// The continuous extension evaluates the 4th-order polynomial
+///
+///   y(t) = y₀ + h · (Kᵀ · P) · [s, s², s³, s⁴]
+///
+/// where s = (t − t₀) / h and P is the coefficient matrix from SciPy's
+/// `RK45.dense_output` implementation (scipy/integrate/_ivp/rk.py, constant
+/// `P`).  Using the quartic gives O(h⁵) error — the same order as the
+/// 5th-order solver — far better than the O(h²) of linear interpolation.
+///
+/// P matrix columns (one per power of s, rows = stages k[0]..k[6]):
+/// ```
+/// P = [
+///   [ 1,  -8048581381/2820520608,   8663915743/2820520608, -12715105075/11282082432],
+///   [ 0,   0,                        0,                       0                   ],
+///   [ 0,   131558114200/32700410799, -68118460800/10900136933, 87487479700/32700410799],
+///   [ 0,  -1754552775/470086768,     14199869525/1410260304, -10690763975/1880347072 ],
+///   [ 0,   127303824393/49829197408, -318862633509/49829197408, 701980252875/199316789632],
+///   [ 0,  -282668133/205662961,      2019193451/616988883,   -1453857185/822651844  ],
+///   [ 0,   40617522/29380423,       -110615467/29380423,      69997945/29380423     ]
+/// ]
+/// ```
+///
+/// Reference: Dormand & Prince (1980); SciPy scipy.integrate._ivp.rk.RK45.
+private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
+  // Normalised parameter s ∈ [0, 1] across the step
+  let s = (t - step.tStart) / step.h
+
+  // Horner-form evaluation of the 4th-degree polynomial in s:
+  //   c₁·s + c₂·s² + c₃·s³ + c₄·s⁴
+  // where c₁..c₄ are the stage-weighted column sums of P.
+  // We evaluate as s·(c₁ + s·(c₂ + s·(c₃ + s·c₄))).
+
+  // P column 0 (coefficient of s):
+  let p0: [Double] = [
+    1, 0, 0, 0, 0, 0, 0,
+  ]
+  // P column 1 (coefficient of s²):
+  let p1: [Double] = [
+    -8048581381.0 / 2820520608.0,
+    0,
+    131558114200.0 / 32700410799.0,
+    -1754552775.0 / 470086768.0,
+    127303824393.0 / 49829197408.0,
+    -282668133.0 / 205662961.0,
+    40617522.0 / 29380423.0,
+  ]
+  // P column 2 (coefficient of s³):
+  let p2: [Double] = [
+    8663915743.0 / 2820520608.0,
+    0,
+    -68118460800.0 / 10900136933.0,
+    14199869525.0 / 1410260304.0,
+    -318862633509.0 / 49829197408.0,
+    2019193451.0 / 616988883.0,
+    -110615467.0 / 29380423.0,
+  ]
+  // P column 3 (coefficient of s⁴):
+  let p3: [Double] = [
+    -12715105075.0 / 11282082432.0,
+    0,
+    87487479700.0 / 32700410799.0,
+    -10690763975.0 / 1880347072.0,
+    701980252875.0 / 199316789632.0,
+    -1453857185.0 / 822651844.0,
+    69997945.0 / 29380423.0,
+  ]
+
+  let n = step.yStart.count
+  var y = [Double](repeating: 0, count: n)
+
+  for i in 0..<n {
+    // Compute c₁[i], c₂[i], c₃[i], c₄[i] = dot products of K column i with P columns
+    var c0 = 0.0, c1 = 0.0, c2 = 0.0, c3 = 0.0
+    for j in 0..<7 {
+      let kji = step.stages[j][i]
+      c0 += p0[j] * kji
+      c1 += p1[j] * kji
+      c2 += p2[j] * kji
+      c3 += p3[j] * kji
+    }
+    // Horner: s*(c0 + s*(c1 + s*(c2 + s*c3)))
+    let poly = s * (c0 + s * (c1 + s * (c2 + s * c3)))
+    y[i] = step.yStart[i] + step.h * poly
+  }
+
+  return y
+}
+
+/// Bogacki-Shampine RK23 cubic Hermite dense-output interpolant.
+///
+/// Uses the standard four-term cubic Hermite polynomial whose basis
+/// functions are defined by matching values and first derivatives at
+/// the two step endpoints.  Let s = (t − t₀)/h ∈ [0, 1]:
+///
+///   h₀₀(s) = 2s³ − 3s² + 1        (value blending at tStart)
+///   h₁₀(s) = s³ − 2s² + s = s(s−1)²  (slope at tStart)
+///   h₀₁(s) = −2s³ + 3s²           (value blending at tEnd)
+///   h₁₁(s) = s³ − s² = s²(s−1)    (slope at tEnd)
+///
+///   y(t) = h₀₀(s)·y₀ + h₁₀(s)·h·f₀ + h₀₁(s)·y₁ + h₁₁(s)·h·f₁
+///
+/// where f₀ = k[0] = f(y₀, t₀) and f₁ = k[3] = f(y₁, t₁).
+/// Boundary conditions are exact: y(t₀)=y₀ and y(t₁)=y₁.
+/// This gives O(h⁴) interpolation accuracy inside the step.
+///
+/// Reference: De Boor, C., "A Practical Guide to Splines", Springer (1978),
+/// Ch. IV §1 (Hermite interpolation).  Applied to RK23 dense output:
+/// Bogacki & Shampine (1989); SciPy scipy.integrate._ivp.rk.RK23.
+private func rk23DenseOutput(step: DenseStep, at t: Double) -> [Double] {
+  let s = (t - step.tStart) / step.h
+  let s2 = s * s
+  let s3 = s2 * s
+
+  // Standard cubic Hermite basis polynomials
+  let h00 = 2.0 * s3 - 3.0 * s2 + 1.0   // value at tStart
+  let h10 = s3 - 2.0 * s2 + s            // slope at tStart  (= s(s-1)²)
+  let h01 = -2.0 * s3 + 3.0 * s2         // value at tEnd
+  let h11 = s3 - s2                       // slope at tEnd    (= s²(s-1))
+
+  let n = step.yStart.count
+  var y = [Double](repeating: 0, count: n)
+
+  for i in 0..<n {
+    let f0 = step.stages[0][i]  // k[0] = f(y₀, t₀)
+    let f1 = step.stages[3][i]  // k[3] = f(y₁, t₁), available via FSAL property
+    y[i] = h00 * step.yStart[i]
+          + h10 * step.h * f0
+          + h01 * step.yEnd[i]
+          + h11 * step.h * f1
+  }
+
+  return y
 }
 
 /// ODE solver method
@@ -844,12 +1010,19 @@ public enum ODEMethod: String {
 
 /// Solve initial value problem for ODE system.
 ///
+/// When `tEval` is supplied, the output is computed using a higher-order
+/// continuous-extension dense-output interpolant — the quartic polynomial for
+/// RK45 (Dormand-Prince) and the cubic Hermite for RK23 (Bogacki-Shampine).
+/// These give O(h⁵) and O(h⁴) interpolation accuracy respectively, far
+/// better than the O(h²) of simple linear interpolation.
+///
 /// - Parameters:
 ///   - fun: Function(y, t) returning dy/dt
 ///   - tSpan: (t0, tf) initial and final time
 ///   - y0: Initial state
 ///   - method: ODE method (RK45, RK23, RK4)
-///   - tEval: Optional specific times for output
+///   - tEval: Optional specific times for output; dense-output interpolation
+///     is used for adaptive methods so accuracy is independent of step size
 ///   - maxStep: Maximum step size
 ///   - rtol: Relative tolerance
 ///   - atol: Absolute tolerance
@@ -875,6 +1048,9 @@ public func solveIVP(
   var y = y0
   var tList = [t0]
   var yList = [y0]
+  // Dense steps are recorded for every accepted adaptive step so tEval can
+  // use higher-order interpolation between solver step boundaries.
+  var denseSteps: [DenseStep] = []
   var nfev = 0
 
   // Initial step size estimation
@@ -903,16 +1079,32 @@ public func solveIVP(
     }
 
     if method == .rk4 {
+      let tOld = t
+      let yOld = y
       y = rk4Step(fun, t, y, h)
       nfev += 4
       t += h
       tList.append(t)
       yList.append(y)
+      // RK4 has no built-in dense output; record a trivial step (tEval
+      // falls back to linear interpolation for this method only).
+      let f0 = fun(yOld, tOld)
+      let f1 = fun(y, t)
+      nfev += 2
+      denseSteps.append(DenseStep(
+        tStart: tOld, tEnd: t,
+        yStart: yOld, yEnd: y,
+        stages: [f0, f1],   // Only endpoints available; signals linear fallback
+        h: h
+      ))
     } else {
-      let (yNew, err) =
+      let stepResult =
         method == .rk23
         ? rk23Step(fun, t, y, h)
         : rk45Step(fun, t, y, h)
+      let yNew = stepResult.yNew
+      let err = stepResult.error
+      let stages = stepResult.stages
       nfev += method == .rk23 ? 4 : 7
 
       // Error control
@@ -924,10 +1116,20 @@ public func solveIVP(
       errNorm = sqrt(errNorm / Double(n))
 
       if errNorm <= 1 {
+        let tOld = t
+        let yOld = y
         t += h
         y = yNew
         tList.append(t)
         yList.append(y)
+
+        // Record the accepted step for dense-output evaluation
+        denseSteps.append(DenseStep(
+          tStart: tOld, tEnd: t,
+          yStart: yOld, yEnd: y,
+          stages: stages,
+          h: h
+        ))
 
         // Increase step size
         if errNorm > 0 {
@@ -944,32 +1146,74 @@ public func solveIVP(
     }
   }
 
-  // Interpolate to tEval if specified
+  // Build output at requested tEval points using dense-output interpolation,
+  // or return all solver steps when tEval is nil.
   var resultT: [Double]
   var resultY: [[Double]]
 
   if let evalTimes = tEval {
     resultT = evalTimes
     resultY = []
+
     for tE in evalTimes {
-      // Find bracketing interval
-      var idx = 0
-      for j in 0..<(tList.count - 1) {
-        if (tList[j] <= tE && tE <= tList[j + 1]) || (tList[j] >= tE && tE >= tList[j + 1]) {
-          idx = j
+      // Find the dense step whose interval brackets tE.
+      // A point at exactly t0 maps to index 0 even though no dense step
+      // covers it; handle that boundary first.
+      if abs(tE - t0) < 1e-15 * max(1, abs(t0)) {
+        resultY.append(y0)
+        continue
+      }
+
+      // Search for the step containing tE (handles forward and backward integration).
+      var bestStep: DenseStep? = nil
+      for step in denseSteps {
+        let inInterval =
+          direction > 0
+          ? (step.tStart <= tE + 1e-14 && tE <= step.tEnd + 1e-14)
+          : (step.tEnd - 1e-14 <= tE && tE <= step.tStart + 1e-14)
+        if inInterval {
+          bestStep = step
           break
         }
       }
 
-      // Linear interpolation
-      let t1 = tList[idx]
-      let t2 = tList[min(idx + 1, tList.count - 1)]
-      let frac = abs(t2 - t1) > 1e-15 ? (tE - t1) / (t2 - t1) : 0
+      guard let step = bestStep else {
+        // tE is outside the integration range — clamp to nearest endpoint.
+        let yFallback = direction > 0
+          ? (tE <= t0 ? y0 : yList.last ?? y0)
+          : (tE >= t0 ? y0 : yList.last ?? y0)
+        resultY.append(yFallback)
+        continue
+      }
 
-      var yInterp = [Double](repeating: 0, count: n)
-      for i in 0..<n {
-        yInterp[i] =
-          yList[idx][i] + frac * (yList[min(idx + 1, yList.count - 1)][i] - yList[idx][i])
+      // Snap to exact endpoints to avoid floating-point drift at boundaries.
+      // The interpolant at s=0 gives yStart and at s=1 gives yEnd exactly
+      // in exact arithmetic, but floating-point rounding can introduce tiny
+      // errors; returning the stored values directly is both faster and exact.
+      let eps = 1e-12 * max(1.0, abs(step.h))
+      if abs(tE - step.tStart) < eps {
+        resultY.append(step.yStart)
+        continue
+      }
+      if abs(tE - step.tEnd) < eps {
+        resultY.append(step.yEnd)
+        continue
+      }
+
+      // Choose the interpolant appropriate for the current method.
+      let yInterp: [Double]
+      switch method {
+      case .rk45:
+        yInterp = rk45DenseOutput(step: step, at: tE)
+      case .rk23:
+        yInterp = rk23DenseOutput(step: step, at: tE)
+      case .rk4:
+        // RK4 records only two stages (endpoint derivatives); use linear
+        // interpolation between the solver's output values for this step.
+        let frac = abs(step.h) > 1e-15 ? (tE - step.tStart) / step.h : 0
+        yInterp = (0..<n).map { i in
+          step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])
+        }
       }
       resultY.append(yInterp)
     }
@@ -991,10 +1235,19 @@ public func solveIVP(
 
 /// odeint-style ODE integration (scipy.integrate.odeint compatible).
 ///
+/// Integrates the ODE in a single continuous pass from `t[0]` to `t[last]`
+/// and evaluates the dense-output interpolant at each requested time point.
+/// This avoids per-interval solver restarts and the accuracy loss and overhead
+/// they introduce: the solver step-size controller never has to re-estimate an
+/// initial step, and the FSAL (first-same-as-last) property of RK45 is
+/// preserved across the full interval.
+///
 /// - Parameters:
 ///   - func_: Function(y, t) returning dy/dt (note: y first, then t)
 ///   - y0: Initial state
-///   - t: Array of times at which to compute solution
+///   - t: Monotone array of times at which to evaluate the solution; must
+///     have at least 1 element (the initial condition is returned for a
+///     single-element array)
 ///   - rtol: Relative tolerance
 ///   - atol: Absolute tolerance
 /// - Returns: Array of solutions y[time_index][component_index]
@@ -1007,21 +1260,21 @@ public func odeint(
 ) -> [[Double]] {
   guard t.count >= 2 else { return [y0] }
 
-  var result: [[Double]] = [y0]
-  var currentY = y0
+  // Single solver run over the full time span with dense-output tEval.
+  // solveIVP evaluates the continuous-extension interpolant at each
+  // requested time, so no per-interval restart occurs.
+  let sol = solveIVP(
+    { y, tVal in func_(y, tVal) },
+    tSpan: (t.first!, t.last!),
+    y0: y0,
+    method: .rk45,
+    tEval: t,
+    rtol: rtol,
+    atol: atol
+  )
 
-  for j in 0..<(t.count - 1) {
-    let sol = solveIVP(
-      { y, tVal in func_(y, tVal) },
-      tSpan: (t[j], t[j + 1]),
-      y0: currentY,
-      method: .rk45,
-      rtol: rtol,
-      atol: atol
-    )
-    currentY = sol.y.last ?? currentY
-    result.append(currentY)
-  }
-
-  return result
+  // sol.y is already indexed by t; return it directly.
+  // If the solve failed we still return whatever was computed so the caller
+  // gets partial results rather than an empty array.
+  return sol.y.isEmpty ? [y0] : sol.y
 }
