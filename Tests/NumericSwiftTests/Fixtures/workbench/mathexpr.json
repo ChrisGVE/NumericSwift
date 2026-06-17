@@ -1,0 +1,2092 @@
+[
+  {
+    "id": "mathexpr.trivial.arith_0",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "1 + 2 * 3",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_1",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "(1 + 2) * 3",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 9.0,
+      "bits": "0x4022000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_2",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "10 - 4 - 3",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_3",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "2 * 3 + 4 * 5",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 26.0,
+      "bits": "0x403A000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_4",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "-5 + 3",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -2.0,
+      "bits": "0xC000000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_5",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "-(2 + 3)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -5.0,
+      "bits": "0xC014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_6",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "100 / 4 / 5",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_7",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "2 ^ 10",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1024.0,
+      "bits": "0x4090000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_8",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "3 + 4 * 2 - 1",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 10.0,
+      "bits": "0x4024000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.trivial.arith_9",
+    "tier": "trivial",
+    "inputs": {
+      "expr": "(8 - 3) * (2 + 1)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 15.0,
+      "bits": "0x402E000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.sin_0",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sin(0.7)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.644217687237691,
+      "bits": "0x3FE49D6E694619B8"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.cos_1",
+    "tier": "hard",
+    "inputs": {
+      "expr": "cos(1.3)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.26749882862458735,
+      "bits": "0x3FD11EB3682A4C5F"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.tan_2",
+    "tier": "hard",
+    "inputs": {
+      "expr": "tan(0.5)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.5463024898437905,
+      "bits": "0x3FE17B4F5BF3474A"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.exp_3",
+    "tier": "hard",
+    "inputs": {
+      "expr": "exp(1.5)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 4.4816890703380645,
+      "bits": "0x4011ED3FE64FC541"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.log_4",
+    "tier": "hard",
+    "inputs": {
+      "expr": "log(3.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.sqrt_5",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sqrt(2.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.4142135623730951,
+      "bits": "0x3FF6A09E667F3BCD"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.sinh_6",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sinh(0.9)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0265167257081753,
+      "bits": "0x3FF06C9CCD5B6AF8"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.cosh_7",
+    "tier": "hard",
+    "inputs": {
+      "expr": "cosh(0.4)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0810723718384547,
+      "bits": "0x3FF14C128B1A7C2B"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.tanh_8",
+    "tier": "hard",
+    "inputs": {
+      "expr": "tanh(1.1)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.8004990217606297,
+      "bits": "0x3FE99DB01FDE2405"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.asin_9",
+    "tier": "hard",
+    "inputs": {
+      "expr": "asin(0.3)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.30469265401539747,
+      "bits": "0x3FD380159E14F6FE"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.acos_10",
+    "tier": "hard",
+    "inputs": {
+      "expr": "acos(0.6)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.9272952180016123,
+      "bits": "0x3FEDAC670561BB50"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.atan_11",
+    "tier": "hard",
+    "inputs": {
+      "expr": "atan(2.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.1071487177940906,
+      "bits": "0x3FF1B6E192EBBE45"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.log10_12",
+    "tier": "hard",
+    "inputs": {
+      "expr": "log10(50.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.6989700043360187,
+      "bits": "0x3FFB2EFB2BD82180"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.log2_13",
+    "tier": "hard",
+    "inputs": {
+      "expr": "log2(12.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.584962500721156,
+      "bits": "0x400CAE00D1CFDEB4"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.cbrt_14",
+    "tier": "hard",
+    "inputs": {
+      "expr": "cbrt(27.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.abs_15",
+    "tier": "hard",
+    "inputs": {
+      "expr": "abs(-4.25)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 4.25,
+      "bits": "0x4011000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.floor_16",
+    "tier": "hard",
+    "inputs": {
+      "expr": "floor(3.7)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.ceil_17",
+    "tier": "hard",
+    "inputs": {
+      "expr": "ceil(3.2)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 4.0,
+      "bits": "0x4010000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.trunc_18",
+    "tier": "hard",
+    "inputs": {
+      "expr": "trunc(-3.7)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -3.0,
+      "bits": "0xC008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.sign_19",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sign(-8.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.rad_20",
+    "tier": "hard",
+    "inputs": {
+      "expr": "rad(90.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.5707963267948966,
+      "bits": "0x3FF921FB54442D18"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.deg_21",
+    "tier": "hard",
+    "inputs": {
+      "expr": "deg(1.0471975511965976)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 59.99999999999999,
+      "bits": "0x404DFFFFFFFFFFFF"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.asinh_22",
+    "tier": "hard",
+    "inputs": {
+      "expr": "asinh(1.5)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.1947632172871094,
+      "bits": "0x3FF31DC0090B63D9"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.atanh_23",
+    "tier": "hard",
+    "inputs": {
+      "expr": "atanh(0.4)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.42364893019360184,
+      "bits": "0x3FDB1D10670AAE9A"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.pow2_24",
+    "tier": "hard",
+    "inputs": {
+      "expr": "pow(2.0, 8.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 256.0,
+      "bits": "0x4070000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.hypot2_25",
+    "tier": "hard",
+    "inputs": {
+      "expr": "hypot(3.0, 4.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.atan22_26",
+    "tier": "hard",
+    "inputs": {
+      "expr": "atan2(1.0, 1.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.7853981633974483,
+      "bits": "0x3FE921FB54442D18"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.min2_27",
+    "tier": "hard",
+    "inputs": {
+      "expr": "min(5.0, 2.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 2.0,
+      "bits": "0x4000000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.max2_28",
+    "tier": "hard",
+    "inputs": {
+      "expr": "max(5.0, 2.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.pow2_29",
+    "tier": "hard",
+    "inputs": {
+      "expr": "pow(9.0, 0.5)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.hypot2_30",
+    "tier": "hard",
+    "inputs": {
+      "expr": "hypot(5.0, 12.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 13.0,
+      "bits": "0x402A000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.atan22_31",
+    "tier": "hard",
+    "inputs": {
+      "expr": "atan2(-1.0, 2.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -0.4636476090008061,
+      "bits": "0xBFDDAC670561BB4F"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.clamp3_32",
+    "tier": "hard",
+    "inputs": {
+      "expr": "clamp(5.0, 0.0, 3.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.clamp3_33",
+    "tier": "hard",
+    "inputs": {
+      "expr": "clamp(-2.0, 0.0, 3.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.clamp3_34",
+    "tier": "hard",
+    "inputs": {
+      "expr": "clamp(1.5, 0.0, 3.0)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.5,
+      "bits": "0x3FF8000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.hard.lerp3_35",
+    "tier": "hard",
+    "inputs": {
+      "expr": "lerp(0.0, 10.0, 0.25)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 2.5,
+      "bits": "0x4004000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.lerp3_36",
+    "tier": "hard",
+    "inputs": {
+      "expr": "lerp(2.0, 8.0, 0.5)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.lerp3_37",
+    "tier": "hard",
+    "inputs": {
+      "expr": "lerp(-4.0, 4.0, 0.75)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 2.0,
+      "bits": "0x4000000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_38",
+    "tier": "hard",
+    "inputs": {
+      "expr": "2 * pi",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 6.283185307179586,
+      "bits": "0x401921FB54442D18"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_39",
+    "tier": "hard",
+    "inputs": {
+      "expr": "pi / 4",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.7853981633974483,
+      "bits": "0x3FE921FB54442D18"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_40",
+    "tier": "hard",
+    "inputs": {
+      "expr": "e ^ 2",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 7.3890560989306495,
+      "bits": "0x401D8E64B8D4DDAD"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_41",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sin(pi / 6)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.49999999999999994,
+      "bits": "0x3FDFFFFFFFFFFFFF"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_42",
+    "tier": "hard",
+    "inputs": {
+      "expr": "cos(pi)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_43",
+    "tier": "hard",
+    "inputs": {
+      "expr": "log(e)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_44",
+    "tier": "hard",
+    "inputs": {
+      "expr": "exp(1) - e",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.const_45",
+    "tier": "hard",
+    "inputs": {
+      "expr": "pi * 2 + e",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 9.00146713563863,
+      "bits": "0x402200C04CE72C66"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_46",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sin(cos(0.5))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.7691963548410085,
+      "bits": "0x3FE89D41AC87D34B"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_47",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sqrt(exp(2))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_48",
+    "tier": "hard",
+    "inputs": {
+      "expr": "log(exp(3.5))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.5,
+      "bits": "0x400C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_49",
+    "tier": "hard",
+    "inputs": {
+      "expr": "abs(sin(2) - cos(2))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.325444263372824,
+      "bits": "0x3FF535050B3DB6A4"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_50",
+    "tier": "hard",
+    "inputs": {
+      "expr": "exp(log(5) + log(2))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 9.999999999999998,
+      "bits": "0x4023FFFFFFFFFFFF"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_51",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sqrt(pow(3, 2) + pow(4, 2))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_52",
+    "tier": "hard",
+    "inputs": {
+      "expr": "max(sin(1), cos(1))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.8414709848078965,
+      "bits": "0x3FEAED548F090CEE"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_53",
+    "tier": "hard",
+    "inputs": {
+      "expr": "clamp(sqrt(50), 0, 7)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_54",
+    "tier": "hard",
+    "inputs": {
+      "expr": "hypot(sin(1), cos(1))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.nested_55",
+    "tier": "hard",
+    "inputs": {
+      "expr": "floor(exp(2)) + ceil(log(10))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 10.0,
+      "bits": "0x4024000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_56",
+    "tier": "hard",
+    "inputs": {
+      "expr": "1 + 2 * 3 - 4 / 2 + 5 * 6 - 7",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 28.0,
+      "bits": "0x403C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_57",
+    "tier": "hard",
+    "inputs": {
+      "expr": "2 ^ 3 ^ 1 + 1",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 9.0,
+      "bits": "0x4022000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_58",
+    "tier": "hard",
+    "inputs": {
+      "expr": "(1 + 2) * (3 + 4) / (5 - 2)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_59",
+    "tier": "hard",
+    "inputs": {
+      "expr": "10 % 3 + 2",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_60",
+    "tier": "hard",
+    "inputs": {
+      "expr": "17 % 5",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 2.0,
+      "bits": "0x4000000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_61",
+    "tier": "hard",
+    "inputs": {
+      "expr": "2 * 3 + 4 * 5 + 6 * 7 + 8 * 9",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 140.0,
+      "bits": "0x4061800000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_62",
+    "tier": "hard",
+    "inputs": {
+      "expr": "100 / 5 / 2 / 2",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_63",
+    "tier": "hard",
+    "inputs": {
+      "expr": "-2 ^ 2 + 3",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_64",
+    "tier": "hard",
+    "inputs": {
+      "expr": "4 !",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 24.0,
+      "bits": "0x4038000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.chain_65",
+    "tier": "hard",
+    "inputs": {
+      "expr": "3 ! + 2 !",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 8.0,
+      "bits": "0x4020000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var0_66",
+    "tier": "hard",
+    "inputs": {
+      "expr": "x + y",
+      "varNames": [
+        "x",
+        "y"
+      ],
+      "varValues": [
+        3.0,
+        4.0
+      ]
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var1_67",
+    "tier": "hard",
+    "inputs": {
+      "expr": "x * y - z",
+      "varNames": [
+        "x",
+        "y",
+        "z"
+      ],
+      "varValues": [
+        2.0,
+        5.0,
+        3.0
+      ]
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var2_68",
+    "tier": "hard",
+    "inputs": {
+      "expr": "a ^ 2 + b ^ 2",
+      "varNames": [
+        "a",
+        "b"
+      ],
+      "varValues": [
+        3.0,
+        4.0
+      ]
+    },
+    "oracle": {
+      "value": 25.0,
+      "bits": "0x4039000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var3_69",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sin(theta) * r",
+      "varNames": [
+        "r",
+        "theta"
+      ],
+      "varValues": [
+        10.0,
+        0.6
+      ]
+    },
+    "oracle": {
+      "value": 5.6464247339503535,
+      "bits": "0x401695F05D8E91AF"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var4_70",
+    "tier": "hard",
+    "inputs": {
+      "expr": "(x + y) / (x - y)",
+      "varNames": [
+        "x",
+        "y"
+      ],
+      "varValues": [
+        7.0,
+        2.0
+      ]
+    },
+    "oracle": {
+      "value": 1.8,
+      "bits": "0x3FFCCCCCCCCCCCCD"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var5_71",
+    "tier": "hard",
+    "inputs": {
+      "expr": "sqrt(x * x + y * y)",
+      "varNames": [
+        "x",
+        "y"
+      ],
+      "varValues": [
+        5.0,
+        12.0
+      ]
+    },
+    "oracle": {
+      "value": 13.0,
+      "bits": "0x402A000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var6_72",
+    "tier": "hard",
+    "inputs": {
+      "expr": "exp(-k * t)",
+      "varNames": [
+        "k",
+        "t"
+      ],
+      "varValues": [
+        0.5,
+        2.0
+      ]
+    },
+    "oracle": {
+      "value": 0.36787944117144233,
+      "bits": "0x3FD78B56362CEF38"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var7_73",
+    "tier": "hard",
+    "inputs": {
+      "expr": "m * x + b",
+      "varNames": [
+        "b",
+        "m",
+        "x"
+      ],
+      "varValues": [
+        1.0,
+        2.5,
+        4.0
+      ]
+    },
+    "oracle": {
+      "value": 11.0,
+      "bits": "0x4026000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var8_74",
+    "tier": "hard",
+    "inputs": {
+      "expr": "log(p / q)",
+      "varNames": [
+        "p",
+        "q"
+      ],
+      "varValues": [
+        8.0,
+        2.0
+      ]
+    },
+    "oracle": {
+      "value": 1.3862943611198906,
+      "bits": "0x3FF62E42FEFA39EF"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var9_75",
+    "tier": "hard",
+    "inputs": {
+      "expr": "clamp(v, lo, hi)",
+      "varNames": [
+        "hi",
+        "lo",
+        "v"
+      ],
+      "varValues": [
+        10.0,
+        0.0,
+        12.0
+      ]
+    },
+    "oracle": {
+      "value": 10.0,
+      "bits": "0x4024000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var10_76",
+    "tier": "hard",
+    "inputs": {
+      "expr": "hypot(dx, dy)",
+      "varNames": [
+        "dx",
+        "dy"
+      ],
+      "varValues": [
+        8.0,
+        15.0
+      ]
+    },
+    "oracle": {
+      "value": 17.0,
+      "bits": "0x4031000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var11_77",
+    "tier": "hard",
+    "inputs": {
+      "expr": "a * sin(w * t + phi)",
+      "varNames": [
+        "a",
+        "phi",
+        "t",
+        "w"
+      ],
+      "varValues": [
+        3.0,
+        0.3,
+        1.5,
+        2.0
+      ]
+    },
+    "oracle": {
+      "value": -0.4732370824297446,
+      "bits": "0xBFDE4984301292CA"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var12_78",
+    "tier": "hard",
+    "inputs": {
+      "expr": "n * (n + 1) / 2",
+      "varNames": [
+        "n"
+      ],
+      "varValues": [
+        100.0
+      ]
+    },
+    "oracle": {
+      "value": 5050.0,
+      "bits": "0x40B3BA0000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.hard.var13_79",
+    "tier": "hard",
+    "inputs": {
+      "expr": "x ^ 3 - 2 * x + 1",
+      "varNames": [
+        "x"
+      ],
+      "varValues": [
+        1.7
+      ]
+    },
+    "oracle": {
+      "value": 2.5129999999999995,
+      "bits": "0x40041A9FBE76C8B3"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.edge.deep_nest_0",
+    "tier": "edge",
+    "inputs": {
+      "expr": "sin(cos(sin(cos(sin(0.5)))))",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 0.6549980927450547,
+      "bits": "0x3FE4F5BE8F69094C"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-09
+    }
+  },
+  {
+    "id": "mathexpr.edge.deep_paren_1",
+    "tier": "edge",
+    "inputs": {
+      "expr": "((((1 + 2) * 3) - 4) / 5)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.edge.large_mag_2",
+    "tier": "edge",
+    "inputs": {
+      "expr": "exp(700)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.0142320547350045e+304,
+      "bits": "0x7F0D945DF4F8EC8E"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e+295
+    }
+  },
+  {
+    "id": "mathexpr.edge.small_mag_3",
+    "tier": "edge",
+    "inputs": {
+      "expr": "exp(-700)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 9.85967654375977e-305,
+      "bits": "0x00D14F2B0FB9307F"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-310
+    }
+  },
+  {
+    "id": "mathexpr.edge.big_pow_4",
+    "tier": "edge",
+    "inputs": {
+      "expr": "10 ^ 308",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1e+308,
+      "bits": "0x7FE1CCF385EBC8A0"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e+299
+    }
+  },
+  {
+    "id": "mathexpr.edge.tiny_diff_5",
+    "tier": "edge",
+    "inputs": {
+      "expr": "1e-15 + 1",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": 1.000000000000001,
+      "bits": "0x3FF0000000000005"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-16
+    }
+  },
+  {
+    "id": "mathexpr.edge.sqrt_neg_nan_6",
+    "tier": "edge",
+    "inputs": {
+      "expr": "sqrt(-1)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": null,
+      "bits": "0x7FF8000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.edge.log_neg_nan_7",
+    "tier": "edge",
+    "inputs": {
+      "expr": "log(-2)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": null,
+      "bits": "0x7FF8000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.edge.pos_inf_8",
+    "tier": "edge",
+    "inputs": {
+      "expr": "inf",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": null,
+      "bits": "0x7FF0000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  },
+  {
+    "id": "mathexpr.edge.acos_domain_nan_9",
+    "tier": "edge",
+    "inputs": {
+      "expr": "acos(2)",
+      "varNames": [],
+      "varValues": []
+    },
+    "oracle": {
+      "value": null,
+      "bits": "0x7FF8000000000000"
+    },
+    "source": "python math (CPython 3.14 eval)",
+    "strategies": [
+      "eval"
+    ],
+    "tol": {
+      "eval": 1e-12
+    }
+  }
+]
