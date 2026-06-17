@@ -1177,18 +1177,18 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
     // joint OLS backfitting.
 
     // Step 1: fit a long auxiliary AR to get approximate innovations.
-    let mAux = min(n / 4, max(p, q) + 10)
+    let auxiliaryAROrder = min(n / 4, max(p, q) + 10)
     let auxResid: [Double]
-    if mAux > 0, let auxAR = estimateARParams(y: yDiff, p: mAux) {
+    if auxiliaryAROrder > 0, let auxAR = estimateARParams(y: yDiff, p: auxiliaryAROrder) {
       auxResid = computeARMAResiduals(y: yDiff, ar: auxAR, ma: [])
     } else {
       auxResid = [Double](repeating: 0.0, count: n)
     }
 
     // Step 2: joint OLS of y on [lagged y, lagged aux-residuals].
-    if let init_ = estimateARMAParamsJointOLS(y: yDiff, auxResid: auxResid, p: p, q: q) {
-      arParams = Array(init_[0..<p])
-      maParams = Array(init_[p..<(p + q)])
+    if let initialParams = estimateARMAParamsJointOLS(y: yDiff, auxResid: auxResid, p: p, q: q) {
+      arParams = Array(initialParams[0..<p])
+      maParams = Array(initialParams[p..<(p + q)])
     }
 
     // Step 3: iterate — recompute innovations, re-run joint OLS.

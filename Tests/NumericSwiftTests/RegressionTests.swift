@@ -521,10 +521,22 @@ final class RegressionTests: XCTestCase {
         guard let r = result else { return }
 
         // Oracle: statsmodels 0.14.6, SARIMAX(order=(1,0,1), trend='n').fit() on 200 obs.
-        // AR(1) ≈ 0.4935, MA(1) ≈ 0.4197. Tolerance ±0.15 for CSS vs innovations-MLE.
+        // AR(1) = 0.4935, MA(1) = 0.4197.
+        //
+        // Pre-fix symptom: estimating AR on raw y without MA contribution inflates
+        // AR toward ρ(1)—the lag-1 autocorrelation—which for ARMA(1,1)(φ=0.6, θ=0.4)
+        // is ≈ 0.694 (old AR OLS on this series: 0.6940). The tighter tolerance of
+        // ±0.05 below is narrow enough to exclude 0.694 while accepting the
+        // Hannan-Rissanen estimate (≈ 0.4941, δ ≈ 0.0006 from oracle).
         let arOracle = 0.4935
         let maOracle = 0.4197
-        let tol = 0.15
+        let tol = 0.05
+
+        // Discriminating guard: the pre-fix symptom is AR inflated toward 1.
+        // Old biased estimate on this series: AR ≈ 0.694. The fixed estimate ≈ 0.494.
+        XCTAssertLessThan(r.arParams[0], 0.65,
+            "AR(1) must be below 0.65; old AR-only estimator gives ≈ 0.694 on this series, " +
+            "indicating MA contribution is being ignored.")
 
         XCTAssertEqual(r.arParams[0], arOracle, accuracy: tol,
             "AR(1) should be near oracle \(arOracle) (±\(tol)); got \(r.arParams[0]). " +
@@ -653,10 +665,21 @@ final class RegressionTests: XCTestCase {
         guard let r = result else { return }
 
         // Oracle: statsmodels 0.14.6, SARIMAX(order=(1,1,1), trend='n').fit() on 200 obs.
-        // AR(1) ≈ 0.6900, MA(1) ≈ 0.2817. Tolerance ±0.20 for CSS vs innovations-MLE.
+        // AR(1) = 0.6900, MA(1) = 0.2817.
+        //
+        // Pre-fix symptom: old AR-only OLS on the differenced series gives AR ≈ 0.787
+        // (the lag-1 autocorrelation of the differenced ARIMA(1,1,1) process).
+        // The fixed Hannan-Rissanen estimate gives AR ≈ 0.694 (δ ≈ 0.004 from oracle).
+        // Tolerance ±0.05 is narrow enough to exclude 0.787 while accepting 0.694.
         let arOracle = 0.6900
         let maOracle = 0.2817
-        let tol = 0.20
+        let tol = 0.05
+
+        // Discriminating guard: the pre-fix symptom is AR inflated toward 1.
+        // Old biased estimate on this differenced series: AR ≈ 0.787. Fixed ≈ 0.694.
+        XCTAssertLessThan(r.arParams[0], 0.75,
+            "AR(1) must be below 0.75; old AR-only estimator gives ≈ 0.787 on this series, " +
+            "indicating MA contribution is being ignored in the differenced series.")
 
         XCTAssertEqual(r.arParams[0], arOracle, accuracy: tol,
             "ARIMA(1,1,1) AR(1) should be near oracle \(arOracle) (±\(tol)); got \(r.arParams[0]).")
