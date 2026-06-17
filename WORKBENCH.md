@@ -22,15 +22,16 @@ Two consumers:
 Neither is part of the library product → remote SPM consumers (LuaSwift) are
 unaffected, exactly like `NumericSwiftBench`.
 
-## 2. Difficulty taxonomy — 10 / 80 / 10 per domain
+## 2. Difficulty taxonomy — 100 cases/domain, 10 / 80 / 10
 
-Every domain's case set is partitioned:
+**Target volume: 100 cases per domain** (owner decision), partitioned 10/80/10
+→ ~10 trivial, ~80 hard, ~10 edge. Across ~16 domains ≈ **1,600 cases total**.
 
-| Tier | Share | Definition |
-|------|-------|-----------|
-| `trivial` | ~10% | Textbook smoke cases; closed-form answers; sanity floor. |
-| `hard` | ~80% | Realistic, non-degenerate problems — the bulk. Cases are lifted from the **SciPy / statsmodels own test suites** wherever they exist (FP1), plus representative applied problems. |
-| `edge` | ~10% | Very difficult / degenerate: extreme tails, ill-conditioning, near-singular, stiff, collinear, empty/1-element, IEEE inf/nan/signed-zero, branch cuts. |
+| Tier | Count/domain | Definition |
+|------|-------------|-----------|
+| `trivial` | ~10 | Textbook smoke cases; closed-form answers; sanity floor. |
+| `hard` | ~80 | Realistic, non-degenerate problems — the bulk. Cases are lifted from the **SciPy / statsmodels own test suites** wherever they exist (FP1), plus representative applied problems. |
+| `edge` | ~10 | Very difficult / degenerate: extreme tails, ill-conditioning, near-singular, stiff, collinear, empty/1-element, IEEE inf/nan/signed-zero, branch cuts. |
 
 The generator enforces the proportions (±a few cases) and `log()`s the actual
 counts so a thin tier is never silently shipped.
@@ -85,25 +86,68 @@ One suite per module. Multi-strategy domains (run ALL, compare):
 Single-strategy domains (correctness vs oracle only): Complex, Constants,
 Distributions, NumberTheory, Series, SpecialFunctions, Statistics, MathExpr.
 
-## 5. Limitation envelopes & cross-strategy comparison
+## 5. Limitation envelopes & the self-awareness gate (owner reframing)
 
 Each strategy declares a **documented limitation** (from CLAUDE.md Known
 Limitations + SciPy docs + the audit), encoded as the per-tier `tol`. The
 workbench, per case:
 
 1. Runs every applicable strategy.
-2. Asserts each result is within its declared `tol` of the oracle → **envelope
-   check** (a strategy must meet its claimed accuracy).
+2. Records each result's error vs the oracle.
 3. Ranks strategies by error and emits a comparison row.
-4. **Flags** two failure modes: (a) a strategy **exceeds** its envelope (worse
-   than claimed) — a real regression/bug; (b) a strategy is **unexpectedly
-   better** across the board, signalling a stale/too-loose declared limitation to
-   tighten.
+
+**The gate is NOT "is the result within tol".** Per the owner: when a strategy is
+applied *outside its valid envelope*, the dangerous outcome is the library
+**silently returning a plausible-but-wrong answer with no signal**. So the real
+test is the library's **self-awareness**:
+
+> For every case that lies outside a strategy's declared limitation envelope, the
+> library MUST surface an appropriate **warning — or, better, a recoverable
+> error/diagnostic** — telling the caller "this result may be unreliable here."
+> **The test FAILS when the library gives a wrong (or even a right) answer in an
+> out-of-envelope regime WITHOUT emitting that signal.** A numeric deviation
+> alone is not the failure; the *missing diagnostic* is.
+
+So each fixture case is tagged `inEnvelope: true|false` per strategy. The
+workbench asserts:
+- in-envelope → result within `tol` AND no spurious limitation-diagnostic;
+- out-of-envelope → the library emitted the expected limitation-diagnostic
+  (a recoverable error or a warning), regardless of the numeric value.
+
+This requires a **limitation-diagnostics mechanism in the library** (§5b) — the
+single new piece of public surface this workbench introduces. Cross-strategy, the
+report still flags a strategy that is **unexpectedly better** than its declared
+envelope (a stale/too-loose limitation to tighten).
 
 Example declared envelopes: `simps` exact to deg≤2 on non-uniform grids; T-dist
-`ppf` ~5 digits for |p|>0.9999 (known limitation); matrix `logm/sqrtm` valid only
-for diagonalizable inputs (until #7 lands); `expm` full double precision
-(post-CR-D1).
+`ppf` ~5 digits for |p|>0.9999; `logm/sqrtm` defective/complex-eigenvalue support
+(post-#7); `expm` full double precision (post-CR-D1); BDF-1 stiff only / O(√rtol)
+(post-#15).
+
+## 5b. Limitation-diagnostics mechanism (NEW public surface — needs owner sign-off)
+
+Swift has no runtime "warning". Candidate mechanisms (one decision, library-wide):
+
+1. **Recoverable-error / Result channel (owner's stated preference "or better, a
+   recoverable error").** Fallible/limited entry points return a value PLUS an
+   optional `[NumericDiagnostic]`, e.g. a `Diagnosed<T>` wrapper
+   `{ value: T, diagnostics: [NumericDiagnostic] }`, or throw a recoverable
+   `NumericDiagnostic.outsideEnvelope(...)` the caller can catch and still read a
+   value from. Explicit, testable, no global state. Cost: touches many signatures
+   (mitigated by additive overloads + deprecation of the bare ones).
+2. **Diagnostics context/handler.** A `NumericDiagnostics.withHandler { ... }`
+   scope (or a settable sink) the library calls when entering a degraded regime;
+   the workbench installs a collecting handler. Minimal signature churn; relies on
+   scoped/thread state.
+3. **Result-type field.** Only the result-struct-returning APIs (QuadResult,
+   ODEResult, OLSResult, …) gain a `diagnostics: [NumericDiagnostic]` field. Clean
+   for those; doesn't cover bare-value functions (simps, ppf, …).
+
+**Proposed:** a hybrid — `NumericDiagnostic` enum + a `Diagnosed<T>` return on the
+specific entry points that have known envelopes (additive overloads; bare ones
+kept + deprecated), and the existing result structs gain a `diagnostics` field.
+This is an architecture-level addition → **awaiting owner pick of mechanism**
+before the workbench build proceeds past the harness skeleton.
 
 ## 6. Swift structure
 
@@ -125,8 +169,13 @@ Tests/NumericSwiftTests/
 ## 7. Reporting
 
 Executable output per domain: a table `case | tier | strategy | error | tol |
-status`, a per-domain rollup, and a final `N domains, M cases, K violations`.
-Nonzero exit on any violation. The XCTest gate asserts `K == 0`.
+inEnvelope | diagnostic? | status`, a per-domain rollup, and a final
+`N domains, M cases, K self-awareness failures`. A **self-awareness failure** =
+an out-of-envelope case where the library emitted NO limitation-diagnostic (the
+gated condition, §5). A numeric `tol` miss while in-envelope is a separate
+regression flag. The XCTest gate (`WorkbenchGateTests`) asserts zero
+self-awareness failures; envelope/accuracy stats are reported, and (per the owner)
+a missing diagnostic is the hard failure, not the deviation itself.
 
 ## 8. Build / run
 
@@ -138,12 +187,15 @@ swift test --filter WorkbenchGateTests        # CI gate
 NUMERICSWIFT_REGENERATE_WORKBENCH=1 ...        # regen fixtures (offline, scipy)
 ```
 
-## 9. Open decisions for Chris
+## 9. Decisions
 
-1. **Gate strictness:** should an envelope violation fail CI hard (XCTest), or
-   only warn in the executable for the first iteration while envelopes settle?
-   (Proposed: hard gate, with envelopes tuned during Phase 2.)
-2. **Case volume per domain:** target count (e.g. 30–60 cases/domain →
-   ~500–900 total)? Affects fixture size + generation time.
-3. **Tracking:** commit WORKBENCH.md + generators + fixtures to the repo
-   (proposed yes — shipped, reviewable infra).
+- ✅ **Case volume:** 100/domain (10/80/10) ≈ 1,600 total. (Owner.)
+- ✅ **Gate semantics:** the gate tests the library's *self-awareness* of its
+  limitations — a missing limitation-diagnostic on an out-of-envelope case is the
+  hard failure; numeric deviation alone is only a reported flag. (Owner, §5.)
+- ✅ **Tracking:** commit WORKBENCH.md + generators + fixtures + the workbench
+  target to the repo (shipped, reviewable infra).
+- ⏳ **OPEN — diagnostics mechanism (§5b):** which mechanism the library uses to
+  surface a limitation-diagnostic (recoverable `Diagnosed<T>` / context-handler /
+  result-struct field / hybrid). This is new public API surface and gates the
+  workbench build past the skeleton. **Owner pick needed.**

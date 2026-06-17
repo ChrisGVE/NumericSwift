@@ -485,9 +485,9 @@ final class SpatialTests: XCTestCase {
         let p2 = [4.0, 5.0, 6.0]
 
         // Test via enum
-        let eucDist = distanceFunction(for: .euclidean)(p1, p2)
-        let manDist = distanceFunction(for: .manhattan)(p1, p2)
-        let cheDist = distanceFunction(for: .chebyshev)(p1, p2)
+        let eucDist = Spatial.distanceFunction(for: .euclidean)(p1, p2)
+        let manDist = Spatial.distanceFunction(for: .manhattan)(p1, p2)
+        let cheDist = Spatial.distanceFunction(for: .chebyshev)(p1, p2)
 
         XCTAssertEqual(eucDist, Spatial.euclideanDistance(p1, p2), accuracy: 1e-10)
         XCTAssertEqual(manDist, Spatial.manhattanDistance(p1, p2), accuracy: 1e-10)

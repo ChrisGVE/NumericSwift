@@ -166,10 +166,10 @@ final class NumericSwiftTests: XCTestCase {
     }
 
     func testClip() {
-        XCTAssertEqual(clip(5, min: 0, max: 10), 5)
-        XCTAssertEqual(clip(-5, min: 0, max: 10), 0)
-        XCTAssertEqual(clip(15, min: 0, max: 10), 10)
-        XCTAssertEqual(clip([1, 5, 10, 15], min: 3, max: 12), [3, 5, 10, 12])
+        XCTAssertEqual(Stats.clip(5, min: 0, max: 10), 5)
+        XCTAssertEqual(Stats.clip(-5, min: 0, max: 10), 0)
+        XCTAssertEqual(Stats.clip(15, min: 0, max: 10), 10)
+        XCTAssertEqual(Stats.clip([1, 5, 10, 15], min: 3, max: 12), [3, 5, 10, 12])
     }
 
     // MARK: - Number Theory Tests
@@ -1132,8 +1132,8 @@ final class NumericSwiftTests: XCTestCase {
     func testRandomNormal() {
         // Generate many samples and check mean/std
         let samples = randomNormal(1000)
-        let sampleMean = NumericSwift.mean(samples)
-        let sampleStd = NumericSwift.stddev(samples, ddof: 1)
+        let sampleMean = Stats.mean(samples)
+        let sampleStd = Stats.stddev(samples, ddof: 1)
 
         // Should be close to standard normal (within reasonable tolerance)
         XCTAssertEqual(sampleMean, 0, accuracy: 0.1)
@@ -1147,7 +1147,7 @@ final class NumericSwiftTests: XCTestCase {
         for _ in 0..<1000 {
             samples.append(randomGamma(shape))
         }
-        let sampleMean = NumericSwift.mean(samples)
+        let sampleMean = Stats.mean(samples)
 
         // Mean should be close to shape
         XCTAssertEqual(sampleMean, shape, accuracy: 0.3)
@@ -1239,11 +1239,11 @@ final class NumericSwiftTests: XCTestCase {
         XCTAssertEqual(z.count, 5)
 
         // Mean of z-scores should be 0
-        let zMean = NumericSwift.mean(z)
+        let zMean = Stats.mean(z)
         XCTAssertEqual(zMean, 0, accuracy: 1e-10)
 
         // Standard deviation (population) should be 1
-        let zStd = NumericSwift.stddev(z, ddof: 0)
+        let zStd = Stats.stddev(z, ddof: 0)
         XCTAssertEqual(zStd, 1, accuracy: 1e-10)
     }
 

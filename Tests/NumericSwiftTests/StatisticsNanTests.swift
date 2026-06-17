@@ -212,7 +212,7 @@ struct NanSumTests {
   @Test("no NaN matches sum")
   func noNaN() {
     let data = [1.0, 2.0, 3.0]
-    #expect(Stats.nansum(data) == sum(data))
+    #expect(Stats.nansum(data) == Stats.sum(data))
   }
 
   @Test("some NaN values ignored")

@@ -118,14 +118,14 @@ final class SpatialDistanceTests: XCTestCase {
   func testJaccardSymmetry() {
     let a = [1.0, 0.0, 1.0]
     let b = [0.0, 1.0, 1.0]
-    assertSymmetry(jaccardDistance, a, b)
+    assertSymmetry(Spatial.jaccardDistance,a, b)
   }
 
   func testJaccardTriangleInequality() {
     let a = [1.0, 0.0, 0.0]
     let b = [1.0, 1.0, 0.0]
     let c = [0.0, 1.0, 1.0]
-    assertTriangleInequality(jaccardDistance, a, b, c)
+    assertTriangleInequality(Spatial.jaccardDistance,a, b, c)
   }
 
   func testJaccardUnitVectors() {
@@ -157,14 +157,14 @@ final class SpatialDistanceTests: XCTestCase {
   func testHammingSymmetry() {
     let a = [1.0, 2.0, 3.0]
     let b = [1.0, 5.0, 3.0]
-    assertSymmetry(hammingDistance, a, b)
+    assertSymmetry(Spatial.hammingDistance,a, b)
   }
 
   func testHammingTriangleInequality() {
     let a = [1.0, 0.0, 0.0, 0.0]
     let b = [1.0, 1.0, 0.0, 0.0]
     let c = [1.0, 1.0, 1.0, 0.0]
-    assertTriangleInequality(hammingDistance, a, b, c)
+    assertTriangleInequality(Spatial.hammingDistance,a, b, c)
   }
 
   func testHammingZeroVectors() {
@@ -206,14 +206,14 @@ final class SpatialDistanceTests: XCTestCase {
   func testCanberraSymmetry() {
     let a = [1.0, 3.0, 5.0]
     let b = [2.0, 4.0, 6.0]
-    assertSymmetry(canberraDistance, a, b)
+    assertSymmetry(Spatial.canberraDistance,a, b)
   }
 
   func testCanberraTriangleInequality() {
     let a = [1.0, 2.0, 3.0]
     let b = [2.0, 3.0, 4.0]
     let c = [4.0, 5.0, 6.0]
-    assertTriangleInequality(canberraDistance, a, b, c)
+    assertTriangleInequality(Spatial.canberraDistance,a, b, c)
   }
 
   func testCanberraZeroVector() {
@@ -247,14 +247,14 @@ final class SpatialDistanceTests: XCTestCase {
   func testBrayCurtisSymmetry() {
     let a = [2.0, 4.0, 6.0]
     let b = [1.0, 3.0, 5.0]
-    assertSymmetry(braycurtisDistance, a, b)
+    assertSymmetry(Spatial.braycurtisDistance,a, b)
   }
 
   func testBrayCurtisTriangleInequality() {
     let a = [1.0, 0.0, 0.0]
     let b = [0.5, 0.5, 0.0]
     let c = [0.0, 1.0, 0.0]
-    assertTriangleInequality(braycurtisDistance, a, b, c)
+    assertTriangleInequality(Spatial.braycurtisDistance,a, b, c)
   }
 
   func testBrayCurtisRangeIsZeroToOne() {
