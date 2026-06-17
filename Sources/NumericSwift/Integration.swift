@@ -1277,6 +1277,13 @@ public func solveIVP(
         yInterp = (0..<n).map { i in
           step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])
         }
+      case .bdf:
+        // Unreachable: `.bdf` is delegated to `bdfSolveIVP` before this loop.
+        // Fall back to linear interpolation to satisfy exhaustiveness.
+        let frac = abs(step.h) > 1e-15 ? (tE - step.tStart) / step.h : 0
+        yInterp = (0..<n).map { i in
+          step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])
+        }
       }
       resultY.append(yInterp)
     }
