@@ -201,6 +201,73 @@ public enum Series {
         return polyval(coeffs, at: x)
     }
 
+    // MARK: - Taylor Series (diagnosed)
+
+    /// Maximum number of Taylor coefficients each generator can supply *exactly*.
+    ///
+    /// Most generators in ``knownTaylorSeries`` are closed-form and supply an
+    /// exact coefficient for every index, so they have no finite limit. The
+    /// `"tan"` generator is the documented exception: its coefficients are a
+    /// hard-coded table covering only indices `0...11` (12 terms). Requesting
+    /// more terms silently returns `0` for every index beyond `11` — including
+    /// the genuinely non-zero `x¹³` coefficient (`21844/6081075`) and beyond — so
+    /// the resulting evaluation is materially wrong near the radius of
+    /// convergence `x = ±π/2`. See CLAUDE.md "Code Review Findings → Series.swift".
+    ///
+    /// A generator absent from this table is unbounded (closed-form).
+    public static let taylorSupportedTermLimit: [String: Int] = [
+        "tan": 12
+    ]
+
+    /// ``taylorCoefficients(for:terms:)`` with a recoverable limitation diagnostic.
+    ///
+    /// Identical to ``taylorCoefficients(for:terms:)`` except the result is wrapped
+    /// in a ``Diagnosed`` so the caller can detect an out-of-envelope request. For
+    /// generators with a finite support limit (see ``taylorSupportedTermLimit`` —
+    /// currently only `"tan"`), requesting more than the supported number of terms
+    /// attaches an ``NumericDiagnostic/outsideEnvelope(method:reason:)`` diagnostic,
+    /// because the surplus coefficients are silently returned as `0` rather than
+    /// their true (possibly non-zero) value. The value itself is unchanged — it is
+    /// the same best-effort array the bare overload returns.
+    ///
+    /// - Parameters:
+    ///   - function: Name of the function.
+    ///   - terms: Number of terms to generate.
+    /// - Returns: A ``Diagnosed`` array of coefficients, or `nil` if the function
+    ///   is unknown.
+    public static func taylorCoefficientsDiagnosed(for function: String, terms: Int) -> Diagnosed<[Double]>? {
+        guard let coeffs = taylorCoefficients(for: function, terms: terms) else { return nil }
+        var diagnostics: [NumericDiagnostic] = []
+        if let limit = taylorSupportedTermLimit[function], terms > limit {
+            diagnostics.append(.outsideEnvelope(
+                method: "Series.taylor[\(function)]",
+                reason: "requested \(terms) terms but the \(function) generator only supplies "
+                    + "\(limit) exact coefficients (indices 0...\(limit - 1)); surplus terms are "
+                    + "silently zero, so the series is unreliable beyond its support"))
+        }
+        return Diagnosed(coeffs, diagnostics: diagnostics)
+    }
+
+    /// ``taylorEval(_:at:terms:)`` with a recoverable limitation diagnostic.
+    ///
+    /// Identical to ``taylorEval(_:at:terms:)`` except the result is wrapped in a
+    /// ``Diagnosed``. When `function` has a finite support limit (see
+    /// ``taylorSupportedTermLimit`` — currently only `"tan"`) and `terms` exceeds
+    /// it, the result carries an ``NumericDiagnostic/outsideEnvelope(method:reason:)``
+    /// diagnostic: the truncated series silently drops genuinely non-zero
+    /// higher-order coefficients and is therefore unreliable, especially near the
+    /// radius of convergence. The numeric value matches the bare overload exactly.
+    ///
+    /// - Parameters:
+    ///   - function: Name of the function (sin, cos, exp, etc.).
+    ///   - x: Point to evaluate at.
+    ///   - terms: Number of terms to use (default 20).
+    /// - Returns: A ``Diagnosed`` value, or `nil` if the function is unknown.
+    public static func taylorEvalDiagnosed(_ function: String, at x: Double, terms: Int = 20) -> Diagnosed<Double>? {
+        guard let diagnosedCoeffs = taylorCoefficientsDiagnosed(for: function, terms: terms) else { return nil }
+        return diagnosedCoeffs.map { polyval($0, at: x) }
+    }
+
     // MARK: - Numerical Differentiation Helpers
 
     /// Chebyshev-like point distribution for numerical approximation.

@@ -91,6 +91,7 @@ public enum Workbench {
         complexSuite,
         constantsSuite,
         numbertheorySuite,
+        seriesSuite,
     ]
 
     /// Look up a suite by domain name.
