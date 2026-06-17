@@ -140,6 +140,8 @@ private func bdfNewtonSolve(
       normRes += (residual[i] / sc) * (residual[i] / sc)
     }
     normRes = (normRes / Double(n)).squareRoot()
+    // Convergence threshold 0.1: simplified Newton is declared converged when
+    // the WRMS residual drops below 0.1, following Hairer & Wanner §III.8.
     if normRes < 0.1 {
       return NewtonResult(y: yNew, fNew: lastFNew, nfev: nfev, converged: true)
     }
@@ -160,6 +162,8 @@ private func bdfNewtonSolve(
     normFinal += (res / sc) * (res / sc)
   }
   normFinal = (normFinal / Double(n)).squareRoot()
+  // Acceptance threshold 1.0: after exhausting iterations, accept if WRMS
+  // residual < 1.0 (one scaled unit), following Shampine & Reichelt (1997) §2.
   return NewtonResult(y: yNew, fNew: fFinal, nfev: nfev, converged: normFinal < 1.0)
 }
 
@@ -288,6 +292,9 @@ private func bdfAttemptStep(
 /// (as in MATLAB ODE15S and SciPy BDF) is required for stiff-stable high-order
 /// error estimation across variable step sizes; implementing it is deferred.
 /// BDF-1 is A-stable, L-stable, and sufficient for all test cases in the suite.
+///
+/// Visibility: `internal` (not `private`) because it is called from
+/// `Integration.swift`.  It is not part of the public API.
 func bdfSolveIVP(
   _ f: @escaping ([Double], Double) -> [Double],
   tSpan: (Double, Double),

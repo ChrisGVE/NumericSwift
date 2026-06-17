@@ -116,15 +116,18 @@ final class ODEDenseOutputTests: XCTestCase {
     XCTAssertLessThan(err, 1e-4, "RK23 dense output relative error \(err) too large (linear interp would be ~3e-4)")
   }
 
-  // MARK: - Continuity at solver step boundaries
+  // MARK: - Continuity at solver step boundaries and interior points
 
-  /// Dense-output at solver step boundaries must match the solver's own
-  /// quadrature output — not a separately-seeded run.  We achieve this by
-  /// running once without tEval to get the step-node values, then running
-  /// again with those same times as tEval and comparing both outputs against
-  /// the analytic solution.  The two sets must agree with each other to 1e-9.
+  /// Dense-output at interior (mid-step) points must match the analytic oracle
+  /// to a tolerance that linear interpolation CANNOT achieve on a coarse adaptive
+  /// step.  For y'=y at rtol=1e-6 the RK45 solver takes steps of h≈0.25; linear
+  /// interpolation at the step midpoint introduces ~7e-3 absolute error, while the
+  /// quartic dense-output interpolant achieves <1e-5 absolute error (measured vs
+  /// exp(t)).  A threshold of 1e-5 therefore discriminates dense-output from linear
+  /// interpolation: dense output passes, linear interpolation fails by ~3 orders of
+  /// magnitude.
   func testRK45DenseOutput_ContinuousAtStepBoundary() {
-    // First run: capture internal solver step times and values.
+    // Step 1: capture the adaptive solver's step-boundary times.
     let baseResult = solveIVP(
       { y, _ in [y[0]] },
       tSpan: (0, 1),
@@ -134,9 +137,47 @@ final class ODEDenseOutputTests: XCTestCase {
       atol: 1e-9
     )
     let stepTimes = baseResult.t
+    XCTAssertGreaterThan(stepTimes.count, 2, "Solver must take at least 2 steps")
 
-    // Second run: use dense-output at the same time points.
+    // Step 2: build midpoints between consecutive step boundaries.
+    // Interior points are where the interpolant — not just the quadrature node —
+    // is exercised.  Linear interpolation over h≈0.25 gives ~7e-3 error here;
+    // the quartic dense-output gives <1e-5.
+    var midTimes: [Double] = []
+    for i in 0..<(stepTimes.count - 1) {
+      midTimes.append((stepTimes[i] + stepTimes[i + 1]) / 2.0)
+    }
+
+    // Step 3: evaluate the dense-output interpolant at those midpoints.
     let denseResult = solveIVP(
+      { y, _ in [y[0]] },
+      tSpan: (0, 1),
+      y0: [1.0],
+      method: .rk45,
+      tEval: midTimes,
+      rtol: 1e-6,
+      atol: 1e-9
+    )
+
+    XCTAssertEqual(denseResult.t.count, midTimes.count, "Output count mismatch")
+
+    // Step 4: compare every interior-point output to the analytic oracle exp(t).
+    // Threshold 1e-5: quartic dense-output achieves <1e-5, linear interp ~7e-3.
+    // This proves the quartic dense-output is used, not linear interpolation.
+    for (i, tMid) in midTimes.enumerated() {
+      let exact = Darwin.exp(tMid)
+      XCTAssertEqual(
+        denseResult.y[i][0], exact,
+        accuracy: 1e-5,
+        "Dense output at interior t=\(tMid): got \(denseResult.y[i][0]), exact \(exact). " +
+        "Linear interpolation would give ~7e-3 error here; this failure means the " +
+        "quartic dense-output interpolant is not being used."
+      )
+    }
+
+    // Step 5: also verify step-boundary continuity — the dense-output value at
+    // a step-node time must match the solver's own stored endpoint to 1e-9.
+    let boundaryResult = solveIVP(
       { y, _ in [y[0]] },
       tSpan: (0, 1),
       y0: [1.0],
@@ -145,26 +186,12 @@ final class ODEDenseOutputTests: XCTestCase {
       rtol: 1e-6,
       atol: 1e-9
     )
-
-    XCTAssertEqual(denseResult.t.count, stepTimes.count, "Boundary count mismatch")
-
-    // Both outputs must be accurate against the analytic e^t and match each other.
+    XCTAssertEqual(boundaryResult.t.count, stepTimes.count, "Boundary count mismatch")
     for (i, t) in stepTimes.enumerated() {
-      let exact = Darwin.exp(t)
-
-      // Each run must be close to the analytic solution.
-      XCTAssertEqual(baseResult.y[i][0], exact, accuracy: 1e-5,
-        "Base result at t=\(t) outside analytic tolerance")
-      XCTAssertEqual(denseResult.y[i][0], exact, accuracy: 1e-5,
-        "Dense result at t=\(t) outside analytic tolerance")
-
-      // The two runs must agree with each other (both use the same tolerances
-      // so their step-endpoint values should be numerically identical for the
-      // same starting conditions and tolerances).
       XCTAssertEqual(
-        denseResult.y[i][0], baseResult.y[i][0],
+        boundaryResult.y[i][0], baseResult.y[i][0],
         accuracy: 1e-9,
-        "Dense output at step boundary t=\(t) disagrees with base solver output by more than 1e-9"
+        "Dense output at step boundary t=\(t) disagrees with stored solver output"
       )
     }
   }

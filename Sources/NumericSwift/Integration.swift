@@ -936,14 +936,14 @@ private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
   // Normalised parameter s ∈ [0, 1] across the step
   let s = (t - step.tStart) / step.h
 
-  // Horner-form evaluation of the 4th-degree polynomial in s:
-  //   c₀·s + c₁·s² + c₂·s³ + c₃·s⁴
-  // where cⱼ = dot(P[:,j], K[:,i]) for each state component i.
-  // P column 0 = [1,0,...,0] so c₀ = k[0][i] directly (no dot product needed).
-  // P row 1 = [0,0,0,0] so stage k[1] never contributes; the j-loop skips it.
+  // Polynomial: y(t) = yStart + h · [cs0·s + cs1·s² + cs2·s³ + cs3·s⁴]
+  // where csK = dot(pColK, stages[:,i]) for each state component i.
+  // pCol0 = [1,0,…,0] so cs0 = stages[0][i] directly.
+  // P row 1 is all zeros so stage k[1] never contributes; the stage loop skips it.
+  // Horner form: s · (cs0 + s · (cs1 + s · (cs2 + s · cs3)))
 
-  // P column 1 (coefficient of s²):
-  let p1: [Double] = [
+  // pCol1: P-matrix column 1 (weights of each stage for the s² term)
+  let pCol1: [Double] = [
     -8048581381.0 / 2820520608.0,
     0,
     131558114200.0 / 32700410799.0,
@@ -952,8 +952,8 @@ private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
     -282668133.0 / 205662961.0,
     40617522.0 / 29380423.0,
   ]
-  // P column 2 (coefficient of s³):
-  let p2: [Double] = [
+  // pCol2: P-matrix column 2 (weights of each stage for the s³ term)
+  let pCol2: [Double] = [
     8663915743.0 / 2820520608.0,
     0,
     -68118460800.0 / 10900136933.0,
@@ -962,8 +962,8 @@ private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
     2019193451.0 / 616988883.0,
     -110615467.0 / 29380423.0,
   ]
-  // P column 3 (coefficient of s⁴):
-  let p3: [Double] = [
+  // pCol3: P-matrix column 3 (weights of each stage for the s⁴ term)
+  let pCol3: [Double] = [
     -12715105075.0 / 11282082432.0,
     0,
     87487479700.0 / 32700410799.0,
@@ -977,21 +977,21 @@ private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
   var y = [Double](repeating: 0, count: n)
 
   for i in 0..<n {
-    // c0 = dot(P[:,0], K[:,i]).  P[:,0] = [1,0,0,0,0,0,0] so c0 = k[0][i].
-    let c0 = step.stages[0][i]
+    // cs0: pCol0 = [1,0,…,0] so the dot product collapses to stages[0][i].
+    let cs0 = step.stages[0][i]
 
-    // c1..c3 = dot products of K column i with P columns 1..3.
-    // Start from j=2 because P[1,:] = 0 for all columns (row for stage k[1]).
-    var c1 = 0.0, c2 = 0.0, c3 = 0.0
+    // cs1..cs3: dot products of pCol1..pCol3 with stages column i.
+    // Stage index 1 is skipped because P row 1 is all zeros.
+    var cs1 = 0.0, cs2 = 0.0, cs3 = 0.0
     for j in [0, 2, 3, 4, 5, 6] {
       let kji = step.stages[j][i]
-      c1 += p1[j] * kji
-      c2 += p2[j] * kji
-      c3 += p3[j] * kji
+      cs1 += pCol1[j] * kji
+      cs2 += pCol2[j] * kji
+      cs3 += pCol3[j] * kji
     }
 
-    // Horner evaluation: s·(c0 + s·(c1 + s·(c2 + s·c3)))
-    let poly = s * (c0 + s * (c1 + s * (c2 + s * c3)))
+    // Horner: s · (cs0 + s · (cs1 + s · (cs2 + s · cs3)))
+    let poly = s * (cs0 + s * (cs1 + s * (cs2 + s * cs3)))
     y[i] = step.yStart[i] + step.h * poly
   }
 
@@ -1049,7 +1049,11 @@ public enum ODEMethod: String {
   case rk45 = "RK45"
   case rk23 = "RK23"
   case rk4 = "RK4"
-  /// Variable-order (1–5) Backward Differentiation Formula — for stiff systems.
+  /// Fixed-order BDF-1 (implicit Euler) — for stiff systems.
+  ///
+  /// Global error is O(h) ≈ O(√rtol); variable-order BDF to order 5
+  /// (as in SciPy's `BDF` method) requires the Nordsieck divided-difference
+  /// framework and is deferred to a future milestone.
   case bdf = "BDF"
 }
 
@@ -1059,7 +1063,7 @@ public enum ODEMethod: String {
 /// - `.rk45` — Dormand-Prince explicit RK45 (default; non-stiff problems)
 /// - `.rk23` — Bogacki-Shampine explicit RK23 (lower order)
 /// - `.rk4`  — Classical 4th-order Runge-Kutta (fixed-step)
-/// - `.bdf`  — Backward Differentiation Formula (implicit; stiff problems)
+/// - `.bdf`  — Fixed-order BDF-1 / implicit Euler (implicit; stiff problems; global error O(√rtol))
 ///
 /// When `tEval` is supplied for an adaptive explicit method, the output is
 /// computed using a higher-order continuous-extension dense-output interpolant —
@@ -1278,8 +1282,11 @@ public func solveIVP(
           step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])
         }
       case .bdf:
-        // Unreachable: `.bdf` is delegated to `bdfSolveIVP` before this loop.
-        // Fall back to linear interpolation to satisfy exhaustiveness.
+        // This branch is unreachable: `.bdf` is dispatched to `bdfSolveIVP`
+        // before entering this dense-output loop.  Fail fast in debug so a
+        // future refactor cannot silently route BDF here; provide a safe
+        // linear-interpolation fallback in release builds.
+        assertionFailure("BDF handled by bdfSolveIVP before this point — this case should never execute")
         let frac = abs(step.h) > 1e-15 ? (tE - step.tStart) / step.h : 0
         yInterp = (0..<n).map { i in
           step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])

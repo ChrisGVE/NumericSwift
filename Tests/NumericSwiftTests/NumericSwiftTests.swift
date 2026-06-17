@@ -580,16 +580,26 @@ final class NumericSwiftTests: XCTestCase {
 
     func testDblquadErrorValueRectangle() {
         // ∫₀¹ ∫₀¹ (x+y) dydx = 1.0 — smooth integrand, value accuracy check.
-        // SciPy oracle: value = 1.0, error ≈ 1.66e-14
+        // SciPy oracle (scipy 1.x): value = 1.0, error ≈ 1.66e-14.
+        // The two-sided error bound verifies that inner error is propagated:
+        //   lower: 1e-16 (well above zero — a stuck-at-zero channel would fail)
+        //   upper: 1e-10 (smooth integrand; no inner oscillation, so error is tiny)
+        // The zero-propagation bug (issue #5 / M11) would return error ≈ 0,
+        // which fails the lower bound.
         let result = dblquad({ y, x in x + y }, xa: 0, xb: 1, ya: 0, yb: 1)
         XCTAssertEqual(result.value, 1.0, accuracy: 1e-10)
-        // Error must be non-zero (propagated even if tiny).
-        XCTAssertGreaterThanOrEqual(result.error, 0.0)
+        XCTAssertGreaterThan(result.error, 1e-16,
+            "dblquad rectangle error must be > 1e-16 (SciPy oracle ≈ 1.66e-14); " +
+            "zero would indicate inner error discarded (issue #5)")
+        XCTAssertLessThan(result.error, 1e-10,
+            "dblquad rectangle error must be < 1e-10 for a smooth integrand")
     }
 
     func testDblquadErrorTriangleDomain() {
         // ∫₀¹ ∫₀ˣ xy dydx = 1/8 on the triangular region y ∈ [0, x].
-        // SciPy oracle: value = 0.125, error ≈ 5.52e-15
+        // SciPy oracle (scipy 1.x): value = 0.125, error ≈ 5.52e-15.
+        // Two-sided bound: inner error is non-zero and is propagated outward.
+        // A zero-propagation bug would return error ≈ 0, failing the lower bound.
         let result = dblquad(
             { y, x in x * y },
             xa: 0, xb: 1,
@@ -597,7 +607,11 @@ final class NumericSwiftTests: XCTestCase {
             yb: { x in x }
         )
         XCTAssertEqual(result.value, 0.125, accuracy: 1e-10)
-        XCTAssertGreaterThanOrEqual(result.error, 0.0)
+        XCTAssertGreaterThan(result.error, 1e-16,
+            "dblquad triangle error must be > 1e-16 (SciPy oracle ≈ 5.52e-15); " +
+            "zero would indicate inner error discarded (issue #5)")
+        XCTAssertLessThan(result.error, 1e-10,
+            "dblquad triangle error must be < 1e-10 for a smooth integrand")
     }
 
     func testDblquadErrorNearSingular() {
