@@ -69,7 +69,7 @@ private let bdfErrorConst: [Double] = [
 ///
 /// Step size δ_j = √ε_machine · max(1, |y_j|); consistent with
 /// `Optimization.swift` curveFit Jacobian.
-func bdfJacobian(
+private func bdfJacobian(
   _ f: ([Double], Double) -> [Double],
   y: [Double],
   t: Double,
