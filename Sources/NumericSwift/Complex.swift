@@ -262,11 +262,12 @@ extension Complex {
     ///
     /// | Input (re, im) | Output (re, im) |
     /// |---|---|
-    /// | (±∞, NaN) | (+∞, NaN) |
-    /// | (∞, y) for finite y | (+∞, 0) |
+    /// | (+∞, NaN) | (+∞, NaN) |
+    /// | (-∞, NaN) | (+∞, NaN) |
+    /// | (+∞, y) for finite y | (+∞, 0) |
     /// | (-∞, y) for finite y | (0, +∞) |
-    /// | (x, ∞) for any x including ±∞ | (+∞, +∞) |
-    /// | (NaN, …) or (…, NaN) | (NaN, NaN) |
+    /// | (x, ±∞) for any x including ±∞ | (+∞, +∞) |
+    /// | (NaN, …) or (finite, NaN) | (NaN, NaN) |
     ///
     /// For the general finite case the standard polar formula is used.
     /// Oracle: numpy.complex128 principal square root, C99 cmath sqrtf.
@@ -274,17 +275,19 @@ extension Complex {
         let x = re, y = im
 
         // C99 Annex G.6.4.2 — handle exceptional operands first.
-        // Any infinite imaginary part → (+∞, +∞) regardless of real part.
+        // Any infinite imaginary part → (+∞, +∞) regardless of real part (including NaN real).
         if y.isInfinite {
             return Complex(re: .infinity, im: .infinity)
         }
-        // +∞ real, finite imaginary → (+∞, 0)
+        // +∞ real, finite im → (+∞, 0).  +∞ real, NaN im → (+∞, NaN).
         if x == .infinity {
-            return Complex(re: .infinity, im: 0.0)
+            return Complex(re: .infinity, im: y.isNaN ? .nan : 0.0)
         }
-        // -∞ real, finite imaginary → (0, +∞)
+        // -∞ real, NaN im → (+∞, NaN) per C99 Annex G.6.4.2.
+        // -∞ real, finite im → (0, +∞).
         if x == -.infinity {
-            return Complex(re: 0.0, im: .infinity)
+            return y.isNaN ? Complex(re: .infinity, im: .nan)
+                           : Complex(re: 0.0, im: .infinity)
         }
         // NaN in either component — propagate as (NaN, NaN).
         if x.isNaN || y.isNaN {

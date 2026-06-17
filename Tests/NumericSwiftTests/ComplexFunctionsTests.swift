@@ -1198,10 +1198,31 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testSqrt_finiteReal_withNanIm() {
+        // C99 Annex G.6.4.2: sqrt(x + NaN*i) = NaN + NaN*i  for finite x
         // np.sqrt(complex(1.0, float('nan'))) → (nan+nanj)
         let z = Complex(re: 1.0, im: .nan).sqrt
         XCTAssertTrue(z.re.isNaN || z.im.isNaN,
                       "sqrt(1+NaN*i) must have at least one NaN component")
+    }
+
+    func testSqrt_positiveInfReal_withNanIm() {
+        // C99 Annex G.6.4.2: sqrt(+∞ + NaN*i) = +∞ + NaN*i
+        // np.sqrt(complex(float('inf'), float('nan'))) = (inf+nanj)
+        let z = Complex(re: .infinity, im: .nan).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(+inf+NaN*i) real must be +inf per C99 Annex G.6.4.2")
+        XCTAssertTrue(z.im.isNaN,
+                      "sqrt(+inf+NaN*i) imaginary must be NaN per C99 Annex G.6.4.2")
+    }
+
+    func testSqrt_negativeInfReal_withNanIm() {
+        // C99 Annex G.6.4.2: sqrt(-∞ + NaN*i) = +∞ + NaN*i
+        // np.sqrt(complex(float('-inf'), float('nan'))) = (inf+nanj)
+        let z = Complex(re: -.infinity, im: .nan).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(-inf+NaN*i) real must be +inf per C99 Annex G.6.4.2")
+        XCTAssertTrue(z.im.isNaN,
+                      "sqrt(-inf+NaN*i) imaginary must be NaN per C99 Annex G.6.4.2")
     }
 
     func testLog_zero() {
