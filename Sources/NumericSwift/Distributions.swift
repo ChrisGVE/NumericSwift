@@ -399,6 +399,44 @@ public struct TDistribution {
     return loc + scale * x
   }
 
+  /// Percent point function paired with a limitation diagnostic.
+  ///
+  /// This is the **self-aware** overload of ``ppf(_:)``. It returns the same
+  /// best-effort quantile, but wrapped in a ``Diagnosed`` so the caller can tell
+  /// whether the input lies inside the method's accuracy envelope.
+  ///
+  /// Per the documented limitation (CLAUDE.md *Known Limitations §1*), the
+  /// Student-t `ppf` achieves only ~5 significant digits in the **extreme
+  /// tails** (`p < 1e-4` or `p > 1 - 1e-4`, i.e. `|p|` beyond `0.9999`); the
+  /// central and near-tail regions reach full double precision. When `p` is in
+  /// the extreme tail this overload attaches an
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` diagnostic; otherwise
+  /// the returned ``Diagnosed/diagnostics`` array is empty.
+  ///
+  /// The bare ``ppf(_:)`` is unchanged and remains the right entry point when a
+  /// caller does not need the envelope signal.
+  ///
+  /// - Parameter p: Requested probability in `[0, 1]`.
+  /// - Returns: A ``Diagnosed`` wrapping the quantile and any diagnostic.
+  public func ppfDiagnosed(_ p: Double) -> Diagnosed<Double> {
+    let value = ppf(p)
+    // Extreme-tail envelope: |p| beyond 0.9999, equivalently p < 1e-4 or p > 1 - 1e-4.
+    // Only flag finite, in-domain probabilities — out-of-domain p is the bare
+    // ppf's NaN contract, not an accuracy-envelope concern.
+    if p >= 0, p <= 1, p < 1e-4 || p > 1.0 - 1e-4 {
+      return Diagnosed(
+        value,
+        diagnostics: [
+          .outsideEnvelope(
+            method: "TDistribution.ppf",
+            reason: "|p| > 0.9999 (p=\(p)) — extreme-tail precision is ~5 digits, not full double"
+          )
+        ]
+      )
+    }
+    return Diagnosed(value)
+  }
+
   /// Random variate sampling using ratio of normal and chi-squared.
   public func rvs() -> Double {
     let z = randomNormal()
