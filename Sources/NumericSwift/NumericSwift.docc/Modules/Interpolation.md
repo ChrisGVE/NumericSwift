@@ -32,6 +32,31 @@ let integral = integrateCubicSpline(x: x, coeffs: coeffs, a: 0, b: 4)
 - `.clamped(dStart:dEnd:)` - User-supplied first derivatives at each end; matches SciPy `CubicSpline(bc_type=((1, d0), (1, d1)))`
 - `.notAKnot` - Not-a-knot condition (default; requires ≥ 4 points)
 
+### RawRepresentable (string serialisation)
+
+`SplineBoundaryCondition` conforms to `RawRepresentable` with `RawValue == String`.
+These raw strings are frozen as part of the published 0.2.x API contract:
+
+| Case                     | `rawValue`     |
+|--------------------------|----------------|
+| `.natural`               | `"natural"`    |
+| `.clamped(dStart:dEnd:)` | `"clamped"`    |
+| `.notAKnot`              | `"not-a-knot"` |
+
+```swift
+// Serialise
+let raw = SplineBoundaryCondition.notAKnot.rawValue  // "not-a-knot"
+
+// Deserialise — "clamped" always restores the zero-slope default
+let bc = SplineBoundaryCondition(rawValue: "clamped")  // .clamped(dStart: 0, dEnd: 0)
+```
+
+Because the raw value identifies the *kind* of boundary condition (not the
+derivative values), `init?(rawValue: "clamped")` always returns
+`.clamped(dStart: 0, dEnd: 0)` — the historic zero-slope default.  Callers
+that need to persist a specific derivative pair must serialise those values
+separately alongside the raw string.
+
 ## PCHIP Interpolation
 
 Monotonicity-preserving interpolation that avoids overshoots:

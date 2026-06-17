@@ -64,6 +64,23 @@ public enum InterpolationKind: String {
 
 /// Boundary condition types for cubic splines.
 ///
+/// ## Raw-value mapping (published 0.2.x surface, restored)
+///
+/// `SplineBoundaryCondition` conforms to `RawRepresentable` with `RawValue == String`.
+/// The raw strings are frozen as part of the public API and must not be changed:
+///
+/// | Case                    | `rawValue`    |
+/// |-------------------------|---------------|
+/// | `.natural`              | `"natural"`   |
+/// | `.clamped(dStart:dEnd:)`| `"clamped"`   |
+/// | `.notAKnot`             | `"not-a-knot"`|
+///
+/// `init?(rawValue: "clamped")` returns `.clamped(dStart: 0, dEnd: 0)` — the
+/// historic zero-slope default — because the raw value names the *kind* of
+/// boundary condition, not the derivative values.
+///
+/// ## Clamped boundary — user-specified endpoint derivatives
+///
 /// The `.clamped` case accepts explicit first-derivative values at the start
 /// and end of the data domain, matching SciPy's
 /// `CubicSpline(bc_type=((1, dStart), (1, dEnd)))`.
@@ -86,6 +103,54 @@ public enum SplineBoundaryCondition {
   /// without any change; it is equivalent to `.clamped(dStart: 0, dEnd: 0)`.
   public static var clamped: SplineBoundaryCondition {
     .clamped(dStart: 0.0, dEnd: 0.0)
+  }
+}
+
+// MARK: - RawRepresentable
+
+/// Manual `RawRepresentable` conformance required because the enum has an
+/// associated-value case (`clamped(dStart:dEnd:)`), which prevents the
+/// compiler from synthesising the `: String` raw-value conformance.
+///
+/// The raw strings are identical to the 0.2.x synthesised values so that
+/// existing call sites using `.rawValue` or `init?(rawValue:)` continue to
+/// compile and behave identically after this additive change.
+extension SplineBoundaryCondition: RawRepresentable {
+  public typealias RawValue = String
+
+  /// The raw string for this boundary condition kind.
+  ///
+  /// `.clamped(dStart:dEnd:)` always returns `"clamped"` regardless of the
+  /// derivative values — the raw value identifies the *kind*, not the parameters.
+  public var rawValue: String {
+    switch self {
+    case .natural:
+      return "natural"
+    case .clamped:
+      return "clamped"
+    case .notAKnot:
+      return "not-a-knot"
+    }
+  }
+
+  /// Construct a boundary condition from its raw string.
+  ///
+  /// `init?(rawValue: "clamped")` returns `.clamped(dStart: 0, dEnd: 0)`,
+  /// preserving the historic zero-slope default for callers that round-trip
+  /// through the raw value without carrying derivative state.
+  ///
+  /// Returns `nil` for unrecognised strings.
+  public init?(rawValue: String) {
+    switch rawValue {
+    case "natural":
+      self = .natural
+    case "clamped":
+      self = .clamped(dStart: 0.0, dEnd: 0.0)
+    case "not-a-knot":
+      self = .notAKnot
+    default:
+      return nil
+    }
   }
 }
 
