@@ -657,12 +657,146 @@ public enum Geometry {
         public let center: Vec2
         public let radius: Double
         public let residuals: [Double]
+
+        /// Diagnostics emitted while fitting (e.g. an
+        /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the input
+        /// points are collinear or fewer than three, making the circle ill-posed).
+        ///
+        /// Empty for a well-posed fit. The associated `center`/`radius` are still
+        /// a best-effort answer when a diagnostic is present, but a caller should
+        /// treat a non-empty `diagnostics` (specifically an `outsideEnvelope`
+        /// entry) as a signal that the result may be unreliable.
+        public let diagnostics: [NumericDiagnostic]
+
+        /// Create a circle-fit result.
+        ///
+        /// - Parameter diagnostics: Diagnostics emitted while fitting; defaults
+        ///   to empty so existing call sites remain source-compatible.
+        public init(
+            center: Vec2,
+            radius: Double,
+            residuals: [Double],
+            diagnostics: [NumericDiagnostic] = []
+        ) {
+            self.center = center
+            self.radius = radius
+            self.residuals = residuals
+            self.diagnostics = diagnostics
+        }
+    }
+
+    /// Relative collinearity threshold for circle fitting.
+    ///
+    /// The fit is flagged ill-posed when the points' deviation from their
+    /// best-fit line, measured by the smaller spread eigenvalue normalised by the
+    /// overall scatter, drops below this value. A unique circle is undetermined
+    /// when the points lie on (or arbitrarily close to) a single line.
+    private static let circleFitCollinearityThreshold = 1e-9
+
+    /// Detect a degenerate circle-fit configuration (collinear or fewer than 3
+    /// points) and, if found, return the ``NumericDiagnostic`` the fitters emit.
+    ///
+    /// Collinearity is measured scale-independently: the points' 2×2 scatter
+    /// (covariance) matrix is formed about the centroid and its two eigenvalues
+    /// λ₁ ≥ λ₂ ≥ 0 are computed in closed form. The ratio λ₂ / λ₁ is the relative
+    /// transverse spread; it is ~0 for points on a line and O(1) for points
+    /// scattered around a circle. Below ``circleFitCollinearityThreshold`` the
+    /// circle is ill-posed (no unique solution / huge condition number).
+    ///
+    /// - Returns: `nil` for a well-posed configuration; otherwise the
+    ///   `outsideEnvelope` diagnostic the fit should surface (named by `method`).
+    private static func circleFitEnvelopeDiagnostic(
+        _ points: [Vec2],
+        method: String
+    ) -> NumericDiagnostic? {
+        let n = points.count
+        if n < 3 {
+            return .outsideEnvelope(
+                method: method,
+                reason: "fewer than 3 points (\(n)) — a circle is undetermined"
+            )
+        }
+
+        // Centroid-relative scatter matrix [[sxx, sxy], [sxy, syy]].
+        var meanX = 0.0, meanY = 0.0
+        for p in points { meanX += p.x; meanY += p.y }
+        meanX /= Double(n); meanY /= Double(n)
+
+        var sxx = 0.0, syy = 0.0, sxy = 0.0
+        for p in points {
+            let dx = p.x - meanX, dy = p.y - meanY
+            sxx += dx * dx
+            syy += dy * dy
+            sxy += dx * dy
+        }
+
+        let trace = sxx + syy
+        // All points coincide → no spread at all.
+        guard trace > 0 else {
+            return .outsideEnvelope(
+                method: method,
+                reason: "all points coincide — a circle is undetermined"
+            )
+        }
+
+        // Eigenvalues of a symmetric 2×2: (trace ± sqrt(trace² − 4·det)) / 2.
+        let det = sxx * syy - sxy * sxy
+        let disc = max(0.0, trace * trace - 4.0 * det)
+        let root = sqrt(disc)
+        let lambdaMax = (trace + root) / 2.0
+        let lambdaMin = (trace - root) / 2.0
+        let relativeTransverseSpread = lambdaMin / lambdaMax
+
+        if relativeTransverseSpread < circleFitCollinearityThreshold {
+            return .outsideEnvelope(
+                method: method,
+                reason: "points are collinear or near-collinear "
+                    + "(relative transverse spread \(relativeTransverseSpread) < "
+                    + "\(circleFitCollinearityThreshold)) — a circle is undetermined"
+            )
+        }
+        return nil
+    }
+
+    /// Build a degenerate best-effort ``CircleFitResult`` for an ill-posed input.
+    ///
+    /// The centre is the point centroid (or the origin when there are no points)
+    /// and the radius is `0`; the supplied `diagnostic` is the signal that this is
+    /// not a real fit. Used by the fitters when the input is too small or
+    /// collinear to determine a circle.
+    private static func degenerateCircleFit(
+        _ points: [Vec2],
+        diagnostic: NumericDiagnostic
+    ) -> CircleFitResult {
+        var cx = 0.0, cy = 0.0
+        for p in points { cx += p.x; cy += p.y }
+        let n = Double(max(points.count, 1))
+        return CircleFitResult(
+            center: Vec2(cx / n, cy / n),
+            radius: 0,
+            residuals: [],
+            diagnostics: [diagnostic]
+        )
     }
 
     /// Fit circle to points using algebraic method (Kasa).
+    ///
+    /// When the input is ill-posed — fewer than three points, or points that lie
+    /// on (or arbitrarily close to) a single line — the returned
+    /// ``CircleFitResult/diagnostics`` carries an
+    /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` entry. The numeric
+    /// `center`/`radius` are still computed best-effort where the linear system
+    /// remains solvable; the diagnostic is the signal that they may be unreliable.
     public static func circleFitAlgebraic(_ points: [Vec2]) -> CircleFitResult? {
         let n = points.count
-        guard n >= 3 else { return nil }
+        let envelopeDiag = circleFitEnvelopeDiagnostic(points, method: "circleFitAlgebraic")
+        guard n >= 3 else {
+            // Insufficient data — a circle is undetermined. Surface the diagnostic
+            // on a degenerate best-effort result (centroid, zero radius) rather
+            // than a bare nil so the signal reaches the caller.
+            guard let diag = envelopeDiag else { return nil }
+            return degenerateCircleFit(points, diagnostic: diag)
+        }
 
         // Build matrices for Ax = b
         // Equation: x² + y² = 2*cx*x + 2*cy*y + (r² - cx² - cy²)
@@ -695,7 +829,21 @@ public enum Geometry {
 
         // Cramer's rule
         let det = a11 * (a22 * a33 - a23 * a32) - a12 * (a21 * a33 - a23 * a31) + a13 * (a21 * a32 - a22 * a31)
-        guard abs(det) > 1e-10 else { return nil }
+        guard abs(det) > 1e-10 else {
+            // Singular normal equations. If this is the known ill-posed regime
+            // (collinear / near-collinear), surface a degenerate best-effort
+            // result carrying the diagnostic rather than a bare nil, so the
+            // signal reaches the caller.
+            if let diag = envelopeDiag {
+                return CircleFitResult(
+                    center: Vec2(sumX / nd, sumY / nd),
+                    radius: 0,
+                    residuals: [],
+                    diagnostics: [diag]
+                )
+            }
+            return nil
+        }
 
         let detA = b1 * (a22 * a33 - a23 * a32) - a12 * (b2 * a33 - a23 * b3) + a13 * (b2 * a32 - a22 * b3)
         let detB = a11 * (b2 * a33 - a23 * b3) - b1 * (a21 * a33 - a23 * a31) + a13 * (a21 * b3 - b2 * a31)
@@ -718,13 +866,31 @@ public enum Geometry {
             residuals.append(dist - radius)
         }
 
-        return CircleFitResult(center: center, radius: radius, residuals: residuals)
+        return CircleFitResult(
+            center: center,
+            radius: radius,
+            residuals: residuals,
+            diagnostics: envelopeDiag.map { [$0] } ?? []
+        )
     }
 
     /// Fit circle using Taubin method (more robust).
+    ///
+    /// When the input is ill-posed — fewer than three points, or points that lie
+    /// on (or arbitrarily close to) a single line — the returned
+    /// ``CircleFitResult/diagnostics`` carries an
+    /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` entry. The numeric
+    /// `center`/`radius` are still computed best-effort where the eigenproblem
+    /// remains solvable; the diagnostic is the signal that they may be unreliable.
     public static func circleFitTaubin(_ points: [Vec2]) -> CircleFitResult? {
         let n = points.count
-        guard n >= 3 else { return nil }
+        let envelopeDiag = circleFitEnvelopeDiagnostic(points, method: "circleFitTaubin")
+        guard n >= 3 else {
+            // Insufficient data — a circle is undetermined. Surface the diagnostic
+            // on a degenerate best-effort result rather than a bare nil.
+            guard let diag = envelopeDiag else { return nil }
+            return degenerateCircleFit(points, diagnostic: diag)
+        }
 
         // Center data
         var meanX = 0.0, meanY = 0.0
@@ -783,7 +949,20 @@ public enum Geometry {
 
         // Compute parameters
         let det = x * x - x * Mz + Cov_xy
-        guard abs(det) > 1e-10 else { return nil }
+        guard abs(det) > 1e-10 else {
+            // Degenerate eigenproblem. For the known ill-posed regime (collinear
+            // / near-collinear) surface a best-effort centroid result carrying the
+            // diagnostic rather than a bare nil, so the signal reaches the caller.
+            if let diag = envelopeDiag {
+                return CircleFitResult(
+                    center: Vec2(meanX, meanY),
+                    radius: 0,
+                    residuals: [],
+                    diagnostics: [diag]
+                )
+            }
+            return nil
+        }
 
         let cx = (Mxz * (Myy - x) - Myz * Mxy) / det / 2.0 + meanX
         let cy = (Myz * (Mxx - x) - Mxz * Mxy) / det / 2.0 + meanY
@@ -798,7 +977,12 @@ public enum Geometry {
             residuals.append(dist - radius)
         }
 
-        return CircleFitResult(center: center, radius: radius, residuals: residuals)
+        return CircleFitResult(
+            center: center,
+            radius: radius,
+            residuals: residuals,
+            diagnostics: envelopeDiag.map { [$0] } ?? []
+        )
     }
 
     // MARK: - Sphere Fitting
