@@ -482,11 +482,19 @@ public struct DBSCANResult {
 /// Finds clusters based on density. Points in dense regions are grouped together,
 /// sparse points are marked as noise (-1).
 ///
+/// This implementation uses a `KDTree` (from `Spatial.swift`) for O(n log n) average-case
+/// neighbourhood queries instead of an O(n²) pairwise scan, and an index-pointer idiom
+/// for the BFS queue to avoid the O(n) `Array.removeFirst()` overhead.
+///
+/// Reference: Ester et al., "A Density-Based Algorithm for Discovering Clusters in Large
+/// Spatial Databases with Noise", KDD 1996.
+///
 /// - Parameters:
-///   - data: Array of data points
-///   - eps: Maximum distance for neighborhood (default 0.5)
-///   - minSamples: Minimum points to form a dense region (default 5)
-/// - Returns: DBSCANResult with labels, core samples, and cluster count
+///   - data: Array of data points; all points must have the same dimensionality.
+///   - eps: Maximum distance for neighbourhood (default 0.5).
+///   - minSamples: Minimum points (including the point itself) to form a dense region
+///     (default 5).
+/// - Returns: `DBSCANResult` with per-point labels, core-sample indices, and cluster count.
 public func dbscan(
     _ data: [[Double]],
     eps: Double = 0.5,
@@ -497,55 +505,60 @@ public func dbscan(
         return DBSCANResult(labels: [], coreSamples: [], nClusters: 0)
     }
 
-    // Find neighbors for each point
-    var neighborsCache: [[Int]] = []
+    // Build a KDTree so neighbourhood queries run in O(log n) average time
+    // instead of the O(n) linear scan of the previous O(n²) precompute loop.
+    let tree = KDTree(data)
+
+    // Determine each point's neighbourhood using the KDTree radius search and
+    // whether it qualifies as a core point (≥ minSamples neighbours within eps,
+    // including the point itself).
+    var neighboursCache: [[Int]] = Array(repeating: [], count: n)
     var isCore = [Bool](repeating: false, count: n)
 
     for i in 0..<n {
-        var neighbors: [Int] = []
-        for j in 0..<n {
-            if euclideanDistance(data[i], data[j]) <= eps {
-                neighbors.append(j)
-            }
-        }
-        neighborsCache.append(neighbors)
-        isCore[i] = neighbors.count >= minSamples
+        let (indices, _) = tree.queryRadius(data[i], radius: eps)
+        neighboursCache[i] = indices
+        isCore[i] = indices.count >= minSamples
     }
 
-    // Assign clusters
-    var labels = [Int](repeating: -2, count: n)  // -2 = unvisited
+    // Assign cluster labels via BFS.  -2 means "not yet visited"; -1 means noise.
+    var labels = [Int](repeating: -2, count: n)
     var currentCluster = -1
     var coreSamples: [Int] = []
 
     for i in 0..<n {
         if labels[i] != -2 {
-            continue
+            continue  // Already assigned
         }
         if !isCore[i] {
-            labels[i] = -1  // Noise
+            labels[i] = -1  // Noise (may be promoted to border later)
             continue
         }
 
-        // Start new cluster
+        // Seed a new cluster from this core point.
         currentCluster += 1
         coreSamples.append(i)
-
-        // BFS expansion
-        var queue = [i]
         labels[i] = currentCluster
 
-        while !queue.isEmpty {
-            let current = queue.removeFirst()
+        // BFS expansion using an index pointer instead of removeFirst() so that
+        // each pop is O(1) rather than O(queue length).
+        var queue = [i]
+        var queueStart = 0
 
-            for neighbor in neighborsCache[current] {
-                if labels[neighbor] == -1 {
-                    // Was noise, now border point
-                    labels[neighbor] = currentCluster
-                } else if labels[neighbor] == -2 {
-                    labels[neighbor] = currentCluster
-                    if isCore[neighbor] {
-                        queue.append(neighbor)
-                        coreSamples.append(neighbor)
+        while queueStart < queue.count {
+            let current = queue[queueStart]
+            queueStart += 1
+
+            for neighbour in neighboursCache[current] {
+                if labels[neighbour] == -1 {
+                    // Previously marked noise — promote to border point of this cluster.
+                    labels[neighbour] = currentCluster
+                } else if labels[neighbour] == -2 {
+                    // Unvisited — assign to cluster and, if core, enqueue for expansion.
+                    labels[neighbour] = currentCluster
+                    if isCore[neighbour] {
+                        queue.append(neighbour)
+                        coreSamples.append(neighbour)
                     }
                 }
             }
