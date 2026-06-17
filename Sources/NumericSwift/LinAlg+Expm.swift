@@ -167,6 +167,9 @@ extension LinAlg {
                 identityCoeff: b[0], [(b[8], A8), (b[6], A6), (b[4], A4), (b[2], A2)], n)
             return (U, V)
         default:  // degree 13
+            // b[k] are the Padé coefficients for degree 13, indexed k = 0..13.
+            // Source: Higham (2005), "The Scaling and Squaring Method for the
+            // Matrix Exponential Revisited", Table 10.4.
             let b: [Double] = [
                 64764752532480000, 32382376266240000, 7771770303897600,
                 1187353796428800, 129060195264000, 10559470521600, 670442572800,

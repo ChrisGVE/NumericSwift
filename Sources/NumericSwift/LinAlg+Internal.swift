@@ -245,8 +245,10 @@ extension LinAlg {
     // MARK: - Complex arithmetic helpers for Schur-Parlett
 
     // Swift tuples (re, im): Double complex numbers used in Schur-Parlett recurrence.
-    // These are file-private helpers for the matrix-function algorithms; they avoid
-    // a dependency on the full Complex type while keeping the arithmetic readable.
+    // These are module-internal helpers (no explicit access modifier → `internal`):
+    // LinAlg+MatrixFunctions.swift calls them across file boundaries, so `fileprivate`
+    // would not compile.  They are intentionally unexported — callers outside this
+    // module should use the public Complex type.
 
     typealias C2 = (re: Double, im: Double)
 
@@ -337,48 +339,53 @@ extension LinAlg {
         }
     }
 
-    /// Invert an n×n row-major matrix using LAPACK LU decomposition.
+    /// Invert an n×n row-major matrix using LAPACK LU decomposition (dgetrf + dgetri).
     ///
     /// Returns the original matrix unchanged on failure (singular input).
+    ///
+    /// LAPACK two-phase mutable-pointer workaround: LAPACK routines require separate
+    /// `__CLPK_integer` variables even when the same logical value (e.g. `n`) appears
+    /// in multiple positions, because each parameter is passed as a distinct `inout`
+    /// pointer.  Swift will not pass the same var twice as distinct `inout` bindings,
+    /// so we declare separate variables (`rowsLU`, `colsLU`, `ldaLU`, `rowsInv`,
+    /// `ldaInv`, `rowsInvFinal`, `ldaInvFinal`) mirroring the same pattern used in
+    /// `dgeevCall` above.
     static func invertMatrixInternal(_ M: [Double], _ n: Int) -> [Double] {
+        // Convert row-major input to the column-major layout expected by LAPACK.
         var a = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
-            for j in 0..<n {
-                a[j * n + i] = M[i * n + j]
-            }
+            for j in 0..<n { a[j * n + i] = M[i * n + j] }
         }
 
-        var n1 = __CLPK_integer(n)
-        var n1b = __CLPK_integer(n)
-        var lda = __CLPK_integer(n)
-        var ipiv = [__CLPK_integer](repeating: 0, count: n)
+        // Phase 1: LU factorisation via dgetrf.
+        var rowsLU = __CLPK_integer(n)
+        var colsLU = __CLPK_integer(n)
+        var ldaLU  = __CLPK_integer(n)
+        var ipiv   = [__CLPK_integer](repeating: 0, count: n)
         var info: __CLPK_integer = 0
 
-        dgetrf_(&n1, &n1b, &a, &lda, &ipiv, &info)
-
+        dgetrf_(&rowsLU, &colsLU, &a, &ldaLU, &ipiv, &info)
         if info != 0 { return M }
 
+        // Phase 2a: workspace query for dgetri (lwork = -1).
         var lwork: __CLPK_integer = -1
-        var work = [Double](repeating: 0, count: 1)
-        var n2 = __CLPK_integer(n)
-        var lda2 = __CLPK_integer(n)
-
-        dgetri_(&n2, &a, &lda2, &ipiv, &work, &lwork, &info)
-
+        var work   = [Double](repeating: 0, count: 1)
+        var rowsInv = __CLPK_integer(n)
+        var ldaInv  = __CLPK_integer(n)
+        dgetri_(&rowsInv, &a, &ldaInv, &ipiv, &work, &lwork, &info)
         lwork = __CLPK_integer(work[0])
-        work = [Double](repeating: 0, count: Int(lwork))
+        work  = [Double](repeating: 0, count: Int(lwork))
 
-        var n3 = __CLPK_integer(n)
-        var lda3 = __CLPK_integer(n)
-        dgetri_(&n3, &a, &lda3, &ipiv, &work, &lwork, &info)
+        // Phase 2b: actual inversion.
+        var rowsInvFinal = __CLPK_integer(n)
+        var ldaInvFinal  = __CLPK_integer(n)
+        dgetri_(&rowsInvFinal, &a, &ldaInvFinal, &ipiv, &work, &lwork, &info)
 
+        // Convert column-major result back to row-major.
         var result = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
-            for j in 0..<n {
-                result[i * n + j] = a[j * n + i]
-            }
+            for j in 0..<n { result[i * n + j] = a[j * n + i] }
         }
-
         return result
     }
 }

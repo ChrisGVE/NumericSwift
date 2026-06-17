@@ -38,18 +38,21 @@ extension LinAlg {
 
     /// Matrix logarithm (principal branch).
     ///
-    /// Uses the Schur-Parlett algorithm (Higham, "Functions of Matrices", SIAM
-    /// 2008, Ch. 4): the real Schur form A = Q T Qᵀ is computed via LAPACK
-    /// `dgees`; the logarithm is applied to the quasi-triangular T using the
-    /// complex Parlett recurrence; the result is back-transformed as Q f(T) Qᵀ.
+    /// Uses the block Schur-Parlett algorithm (Higham, "Functions of Matrices",
+    /// SIAM 2008, Ch. 4): the real Schur form A = Q T Qᵀ is computed via LAPACK
+    /// `dgees`; the logarithm is applied to T block-by-block using the complex
+    /// Parlett recurrence; the result is back-transformed as Q f(T) Qᵀ.
     ///
     /// Handles matrices with complex-conjugate eigenvalue pairs (e.g. rotation
-    /// matrices) and defective (non-diagonalizable) matrices that the former
-    /// real-eigendecomposition approach could not process.
+    /// matrices) and non-diagonalizable matrices.
     ///
-    /// - Returns: `Matrix` when all eigenvalues have positive real part and the
-    ///   result is numerically real (imaginary part ≤ 1e-9); `nil` when
-    ///   eigenvalues are non-positive (result is complex — use ``logmComplex(_:)``).
+    /// - Returns: `Matrix` when the result is numerically real (imaginary parts
+    ///   ≤ 1e-9 element-wise); `nil` for **either** of these two reasons:
+    ///   1. The Schur decomposition failed (LAPACK reported an error).
+    ///   2. The result is genuinely complex (e.g. matrix has eigenvalues with
+    ///      non-positive real part) — call ``logmComplex(_:)`` instead.
+    ///   The two cases are indistinguishable from a `nil` return; if the matrix
+    ///   is expected to have complex logarithm, always prefer `logmComplex`.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
     public static func logm(_ m: Matrix) throws -> Matrix? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
@@ -63,9 +66,12 @@ extension LinAlg {
     ///
     /// Identical algorithm to ``logm(_:)`` but always returns a `ComplexMatrix`,
     /// so it succeeds even when the result has non-negligible imaginary parts —
-    /// for example, when `m` has negative real eigenvalues.
+    /// for example, when `m` has eigenvalues with non-positive real part.
     ///
-    /// - Returns: `ComplexMatrix?`, or `nil` when the Schur decomposition fails.
+    /// - Returns: `ComplexMatrix` on success; `nil` **only** when the Schur
+    ///   decomposition itself fails (LAPACK error, e.g. non-convergence).
+    ///   A complex result is never a reason for `nil` here — use this overload
+    ///   whenever ``logm(_:)`` returns `nil` and the matrix is well-conditioned.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
     public static func logmComplex(_ m: Matrix) throws -> ComplexMatrix? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
@@ -75,12 +81,16 @@ extension LinAlg {
 
     /// Matrix square root (principal branch).
     ///
-    /// Uses the same Schur-Parlett algorithm as ``logm(_:)``. Returns a real
-    /// `Matrix` when the result is numerically real; returns `nil` when the
-    /// result is genuinely complex (e.g. matrix with negative eigenvalues) —
-    /// use ``sqrtmComplex(_:)`` in that case.
+    /// Uses the same block Schur-Parlett algorithm as ``logm(_:)``. Returns a
+    /// real `Matrix` when the result is numerically real.
     ///
-    /// - Returns: `Matrix` when the result is numerically real; `nil` otherwise.
+    /// - Returns: `Matrix` when the result is numerically real (imaginary parts
+    ///   ≤ 1e-9); `nil` for **either** of these two reasons:
+    ///   1. The Schur decomposition failed (LAPACK error).
+    ///   2. The result is genuinely complex (e.g. matrix has negative
+    ///      eigenvalues) — call ``sqrtmComplex(_:)`` instead.
+    ///   Callers that expect a complex result should always use `sqrtmComplex`
+    ///   directly rather than interpreting a `nil` return.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
     public static func sqrtm(_ m: Matrix) throws -> Matrix? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
@@ -95,7 +105,10 @@ extension LinAlg {
     /// Always returns a `ComplexMatrix`, so it succeeds for matrices with
     /// negative eigenvalues whose square root is purely imaginary.
     ///
-    /// - Returns: `ComplexMatrix?`, or `nil` when the Schur decomposition fails.
+    /// - Returns: `ComplexMatrix` on success; `nil` **only** when the Schur
+    ///   decomposition itself fails (LAPACK error).  A complex result is never
+    ///   a reason for `nil` here — prefer this overload over ``sqrtm(_:)`` when
+    ///   negative or complex eigenvalues are possible.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
     public static func sqrtmComplex(_ m: Matrix) throws -> ComplexMatrix? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
@@ -103,26 +116,24 @@ extension LinAlg {
         return ComplexMatrix(rows: m.rows, cols: m.rows, real: re, imag: im)
     }
 
-    /// General matrix function via the Schur-Parlett algorithm.
+    /// General matrix function via the block Schur-Parlett algorithm.
     ///
-    /// For functions whose result is real for real-eigenvalue matrices (sin, cos,
-    /// exp, sinh, cosh, tanh, abs) this returns a real `Matrix`. For log and sqrt
-    /// with complex-eigenvalue matrices the result will be real if the imaginary
-    /// parts are negligible; otherwise returns `nil`.
+    /// For functions whose result is real on real spectra (sin, cos, exp, sinh,
+    /// cosh, tanh, abs) this returns a real `Matrix`.  For log and sqrt, the
+    /// result is real when imaginary parts are negligible.
     ///
-    /// **Limitation on defective matrices**: the Schur-Parlett diagonal recurrence
-    /// applies the function to each eigenvalue independently. For truly defective
-    /// matrices (repeated eigenvalues with non-trivial Jordan structure), the
-    /// derivative correction terms are not applied, so the off-diagonal result
-    /// may be inaccurate — consistent with `scipy.linalg.funm`'s documented
-    /// behaviour ("funm result may be inaccurate"). Use ``logm(_:)`` or
-    /// ``sqrtm(_:)`` for those specific functions on defective matrices.
+    /// **Limitation on defective matrices**: repeated eigenvalues with non-trivial
+    /// Jordan structure are approximated by the diagonal term only (derivative
+    /// correction not applied) — consistent with `scipy.linalg.funm`'s documented
+    /// behaviour.  Use ``logm(_:)`` or ``sqrtm(_:)`` for those specific functions.
     ///
     /// - Parameters:
     ///   - m: Square matrix.
-    ///   - function: Scalar function to apply element-wise to the eigenvalues.
-    /// - Returns: f(A), or `nil` when the Schur decomposition fails or the result
-    ///   is complex (imaginary part > 1e-9) for functions that should be real.
+    ///   - function: Scalar function to apply via the Schur-Parlett recurrence.
+    /// - Returns: f(A), or `nil` for **either** of these two reasons:
+    ///   1. The Schur decomposition failed (LAPACK error).
+    ///   2. The result is genuinely complex (imaginary part > 1e-9) — for log
+    ///      or sqrt, consider ``logmComplex(_:)`` / ``sqrtmComplex(_:)``.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
     public static func funm(_ m: Matrix, _ function: MatrixFunction) throws -> Matrix? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
@@ -134,29 +145,24 @@ extension LinAlg {
 
     // MARK: - Schur-Parlett core
 
-    /// Apply a matrix function to a real n×n matrix via the real Schur form.
+    /// Apply a matrix function to a real n×n matrix via the block Schur-Parlett algorithm.
     ///
-    /// Returns `(realPart, imagPart)` row-major arrays for the result matrix, or
-    /// `nil` when LAPACK's Schur decomposition fails. The imaginary parts are
-    /// numerically zero for functions that map real spectra to real values; callers
-    /// gate on that to decide whether to return a `Matrix` or `ComplexMatrix`.
+    /// Returns `(realPart, imagPart)` row-major flat arrays for the result matrix, or
+    /// `nil` when LAPACK's Schur decomposition fails.  The imaginary parts are
+    /// numerically zero for functions that map real spectra to real values (e.g. sin,
+    /// exp); callers gate on the imaginary magnitude to decide whether to return a
+    /// `Matrix` or `ComplexMatrix`.
     ///
-    /// Algorithm (Higham 2008, §4.3 "Schur-Parlett"):
-    ///   1. Real Schur: A = Q T Qᵀ  (T quasi-upper-triangular, Q orthogonal)
-    ///   2. Apply f to T in complex arithmetic using the upper-triangular Parlett
-    ///      recurrence: F_{ii} = f(T_{ii}); F_{ij} = T_{ij}·(F_{ii}−F_{jj}) /
-    ///      (T_{ii}−T_{jj}) + Σ_{k=i+1}^{j−1} (T_{ik}·F_{kj} − F_{ik}·T_{kj}) /
-    ///      (T_{ii}−T_{jj})  for i < j.
-    ///      Because T may have 2×2 diagonal blocks (complex-conjugate pairs), we
-    ///      treat each such block as a tiny 2×2 complex eigendecomposition.
-    ///   3. Back-transform: f(A) = Q F Qᵀ  (real multiply since Q is orthogonal).
-    /// Top-level Schur-Parlett driver.
-    ///
-    /// Algorithm (Higham 2008, §4.3):
-    ///   1. Real Schur form A = Q T Qᵀ via dgees.
-    ///   2. Detect 1×1 vs 2×2 diagonal blocks in T (``schurBlockStructure``).
-    ///   3. Apply f to each diagonal block (``applyFunctionToDiagonalBlocks``).
-    ///   4. Fill the strict upper triangle by the Parlett recurrence
+    /// Algorithm (Higham 2008 "Functions of Matrices", SIAM, §4.3 "Schur-Parlett"):
+    ///   1. Real Schur form A = Q T Qᵀ via LAPACK `dgees`
+    ///      (T quasi-upper-triangular; diagonal blocks are 1×1 (real eigenvalue)
+    ///      or 2×2 (complex-conjugate pair)).
+    ///   2. Detect block structure (``schurBlockStructure``).
+    ///   3. Apply f to each diagonal block in complex arithmetic
+    ///      (``applyFunctionToDiagonalBlocks``).
+    ///   4. Fill the strict upper triangle block-by-block via the Parlett recurrence,
+    ///      solving a 1×1 scalar equation, a 2×1 or 1×2 Sylvester equation, or a
+    ///      4×4 vectorised Sylvester depending on the involved block sizes
     ///      (``parlettUpperTriangle``).
     ///   5. Back-transform f(A) = Q F Qᵀ (``multiplyQFQT``).
     private static func schurParlett(
