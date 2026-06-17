@@ -1,0 +1,2647 @@
+[
+  {
+    "id": "optroot.trivial.x2_minus_2_0",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "x0": 1.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.414213562373095,
+      "bits": "0x3FF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.cos_minus_x_1",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.0,
+      "x0": 0.5,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151606,
+      "bits": "0x3FE7A695DD83CE2D"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.exp_minus_3_2",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "x0": 1.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.cubic_x3_x_2_3",
+    "tier": "trivial",
+    "inputs": {
+      "a": 1.0,
+      "b": 2.0,
+      "x0": 1.5,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.sin_4",
+    "tier": "trivial",
+    "inputs": {
+      "a": 3.0,
+      "b": 4.0,
+      "x0": 3.0,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.cubic_x3_2x_5_5",
+    "tier": "trivial",
+    "inputs": {
+      "a": 2.0,
+      "b": 3.0,
+      "x0": 2.0,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.094551481542327,
+      "bits": "0x4000C1A4350819E4"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.log_minus_1_6",
+    "tier": "trivial",
+    "inputs": {
+      "a": 1.0,
+      "b": 4.0,
+      "x0": 2.0,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.quad_x2_2x_3_7",
+    "tier": "trivial",
+    "inputs": {
+      "a": 1.0,
+      "b": 5.0,
+      "x0": 4.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.x2_minus_2_8",
+    "tier": "trivial",
+    "inputs": {
+      "a": -2.0,
+      "b": 0.0,
+      "x0": -1.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": -1.4142135623730951,
+      "bits": "0xBFF6A09E667F3BCD"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.trivial.sin_9",
+    "tier": "trivial",
+    "inputs": {
+      "a": 2.5,
+      "b": 4.0,
+      "x0": 3.2,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_0",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "x0": 1.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.414213562373095,
+      "bits": "0x3FF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_1",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 3.0,
+      "x0": 1.2,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.414213562373095,
+      "bits": "0x3FF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_2",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 5.0,
+      "x0": 2.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.4142135623730951,
+      "bits": "0x3FF6A09E667F3BCD"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_3",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 1.5,
+      "x0": 1.4,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.4142135623730951,
+      "bits": "0x3FF6A09E667F3BCD"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_4",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": -0.5,
+      "x0": -1.3,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": -1.414213562373095,
+      "bits": "0xBFF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_5",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 0.0,
+      "x0": -1.5,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": -1.4142135623730951,
+      "bits": "0xBFF6A09E667F3BCD"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_6",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.0,
+      "x0": 0.5,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151606,
+      "bits": "0x3FE7A695DD83CE2D"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_7",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 1.5,
+      "x0": 0.7,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_8",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.5,
+      "x0": 0.6,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_9",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.3,
+      "b": 0.9,
+      "x0": 0.74,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_10",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "x0": 0.5,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_11",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "x0": 1.0,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_12",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "x0": 1.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_13",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 1.5,
+      "x0": 1.1,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_14",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 1.2,
+      "x0": 1.1,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681096,
+      "bits": "0x3FF193EA7AAD030A"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_15",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 3.0,
+      "x0": 0.8,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_16",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 2.0,
+      "x0": 1.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_17",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.9,
+      "b": 1.3,
+      "x0": 1.1,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_18",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 2.0,
+      "x0": 1.5,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_19",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.4,
+      "b": 1.6,
+      "x0": 1.5,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_20",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 3.0,
+      "x0": 1.8,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_21",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 5.0,
+      "x0": 2.0,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_22",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.3,
+      "b": 1.7,
+      "x0": 1.52,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_23",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.5,
+      "b": 2.5,
+      "x0": 1.6,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_24",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 3.0,
+      "x0": 2.0,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.094551481542327,
+      "bits": "0x4000C1A4350819E4"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_25",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 2.2,
+      "x0": 2.1,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_26",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 4.0,
+      "x0": 2.5,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_27",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.05,
+      "b": 2.15,
+      "x0": 2.1,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_28",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 5.0,
+      "x0": 3.0,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_29",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 10.0,
+      "x0": 2.2,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_30",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 4.0,
+      "x0": 2.0,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_31",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 3.0,
+      "x0": 2.5,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.7182818284590455,
+      "bits": "0x4005BF0A8B14576A"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_32",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.5,
+      "b": 3.0,
+      "x0": 2.7,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_33",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.5,
+      "b": 5.0,
+      "x0": 3.0,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_34",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 4.0,
+      "x0": 2.7,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_35",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "x0": 2.0,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_36",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 5.0,
+      "x0": 4.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_37",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.5,
+      "b": 4.0,
+      "x0": 3.2,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 2.9999999999999996,
+      "bits": "0x4007FFFFFFFFFFFF"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_38",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.9,
+      "b": 3.1,
+      "x0": 3.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_39",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 6.0,
+      "x0": 4.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_40",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 0.0,
+      "x0": -1.5,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_41",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 0.0,
+      "x0": -0.8,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_42",
+    "tier": "hard",
+    "inputs": {
+      "a": 3.0,
+      "b": 4.0,
+      "x0": 3.0,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_43",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.8,
+      "b": 3.5,
+      "x0": 3.1,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_44",
+    "tier": "hard",
+    "inputs": {
+      "a": 3.0,
+      "b": 3.2,
+      "x0": 3.1,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_45",
+    "tier": "hard",
+    "inputs": {
+      "a": -0.5,
+      "b": 0.5,
+      "x0": 0.2,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_46",
+    "tier": "hard",
+    "inputs": {
+      "a": 5.5,
+      "b": 7.0,
+      "x0": 6.3,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 6.283185307179587,
+      "bits": "0x401921FB54442D19"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_47",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.5,
+      "b": 4.0,
+      "x0": 3.4,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_48",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 2.0,
+      "x0": 1.41,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.414213562373095,
+      "bits": "0x3FF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_49",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.6,
+      "b": 0.8,
+      "x0": 0.73,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151606,
+      "bits": "0x3FE7A695DD83CE2D"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_50",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.05,
+      "b": 1.15,
+      "x0": 1.1,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681093,
+      "bits": "0x3FF193EA7AAD0309"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_51",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.51,
+      "b": 1.53,
+      "x0": 1.52,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_52",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.09,
+      "b": 2.1,
+      "x0": 2.094,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_53",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.7,
+      "b": 2.75,
+      "x0": 2.71,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_54",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.99,
+      "b": 3.01,
+      "x0": 3.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_55",
+    "tier": "hard",
+    "inputs": {
+      "a": 3.13,
+      "b": 3.15,
+      "x0": 3.14,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_56",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 10.0,
+      "x0": 3.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.4142135623730951,
+      "bits": "0x3FF6A09E667F3BCD"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_57",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 0.9,
+      "x0": 0.6,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151606,
+      "bits": "0x3FE7A695DD83CE2D"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_58",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 5.0,
+      "x0": 2.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681096,
+      "bits": "0x3FF193EA7AAD030A"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_59",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 2.5,
+      "x0": 1.7,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_60",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.5,
+      "b": 3.5,
+      "x0": 2.3,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_61",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 10.0,
+      "x0": 4.0,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_62",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 10.0,
+      "x0": 5.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_63",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.9,
+      "b": 3.3,
+      "x0": 3.0,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_64",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": -1.0,
+      "x0": -1.41,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": -1.414213562373095,
+      "bits": "0xBFF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_65",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.1,
+      "b": 1.2,
+      "x0": 0.5,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_66",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.8,
+      "b": 1.4,
+      "x0": 1.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.09861228866811,
+      "bits": "0x3FF193EA7AAD030C"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_67",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.45,
+      "b": 1.6,
+      "x0": 1.5,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_68",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 4.0,
+      "x0": 2.5,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_69",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 5.0,
+      "x0": 3.0,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.7182818284590455,
+      "bits": "0x4005BF0A8B14576A"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_70",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.8,
+      "b": 3.2,
+      "x0": 3.1,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_71",
+    "tier": "hard",
+    "inputs": {
+      "a": 3.0,
+      "b": 3.5,
+      "x0": 3.2,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.x2_minus_2_72",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.2,
+      "b": 1.6,
+      "x0": 1.4,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.4142135623730951,
+      "bits": "0x3FF6A09E667F3BCD"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cos_minus_x_73",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 1.0,
+      "x0": 0.75,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151607,
+      "bits": "0x3FE7A695DD83CE2E"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.exp_minus_3_74",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.9,
+      "b": 1.2,
+      "x0": 1.05,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_x_2_75",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.0,
+      "b": 1.7,
+      "x0": 1.5,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.cubic_x3_2x_5_76",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.0,
+      "b": 2.5,
+      "x0": 2.1,
+      "tag": "cubic_x3_2x_5"
+    },
+    "oracle": {
+      "value": 2.0945514815423265,
+      "bits": "0x4000C1A4350819E3"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.log_minus_1_77",
+    "tier": "hard",
+    "inputs": {
+      "a": 2.5,
+      "b": 3.5,
+      "x0": 2.8,
+      "tag": "log_minus_1"
+    },
+    "oracle": {
+      "value": 2.7182818284590455,
+      "bits": "0x4005BF0A8B14576A"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.quad_x2_2x_3_78",
+    "tier": "hard",
+    "inputs": {
+      "a": 1.5,
+      "b": 4.5,
+      "x0": 3.5,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.000000000000001,
+      "bits": "0x4008000000000002"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.hard.sin_79",
+    "tier": "hard",
+    "inputs": {
+      "a": 6.0,
+      "b": 7.0,
+      "x0": 6.3,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 6.283185307179586,
+      "bits": "0x401921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-06,
+      "newton": 1e-08,
+      "secant": 1e-06,
+      "brentq": 1e-06
+    }
+  },
+  {
+    "id": "optroot.edge.bisect_no_sign_change",
+    "tier": "edge",
+    "inputs": {
+      "a": 2.0,
+      "b": 5.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.414213562373095,
+      "bits": "0x3FF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-05,
+      "brentq": 1e-05
+    },
+    "inEnvelope": {
+      "bisect": false,
+      "brentq": false
+    }
+  },
+  {
+    "id": "optroot.edge.brentq_no_sign_change",
+    "tier": "edge",
+    "inputs": {
+      "a": 2.0,
+      "b": 4.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-05,
+      "brentq": 1e-05
+    },
+    "inEnvelope": {
+      "bisect": false,
+      "brentq": false
+    }
+  },
+  {
+    "id": "optroot.edge.bracketing_same_sign_quad",
+    "tier": "edge",
+    "inputs": {
+      "a": 4.0,
+      "b": 6.0,
+      "tag": "quad_x2_2x_3"
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-05,
+      "brentq": 1e-05
+    },
+    "inEnvelope": {
+      "bisect": false,
+      "brentq": false
+    }
+  },
+  {
+    "id": "optroot.edge.newton_zero_derivative",
+    "tier": "edge",
+    "inputs": {
+      "x0": 0.0,
+      "tag": "x2_minus_2"
+    },
+    "oracle": {
+      "value": 1.414213562373095,
+      "bits": "0x3FF6A09E667F3BCC"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "newton"
+    ],
+    "tol": {
+      "newton": 1e-07
+    },
+    "inEnvelope": {
+      "newton": false
+    }
+  },
+  {
+    "id": "optroot.edge.newton_flat_cos",
+    "tier": "edge",
+    "inputs": {
+      "x0": 1.5707963267948966,
+      "tag": "sin"
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "newton"
+    ],
+    "tol": {
+      "newton": 1e-07
+    },
+    "inEnvelope": {
+      "newton": false
+    }
+  },
+  {
+    "id": "optroot.edge.newton_diverge_exp",
+    "tier": "edge",
+    "inputs": {
+      "x0": -40.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "newton"
+    ],
+    "tol": {
+      "newton": 1e-07
+    },
+    "inEnvelope": {
+      "newton": false
+    }
+  },
+  {
+    "id": "optroot.edge.secant_diverge_exp",
+    "tier": "edge",
+    "inputs": {
+      "x0": -50.0,
+      "x1": -49.0,
+      "tag": "exp_minus_3"
+    },
+    "oracle": {
+      "value": 1.0986122886681098,
+      "bits": "0x3FF193EA7AAD030B"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "secant"
+    ],
+    "tol": {
+      "secant": 1e-05
+    },
+    "inEnvelope": {
+      "secant": false
+    }
+  },
+  {
+    "id": "optroot.edge.tight_bracket_ok",
+    "tier": "edge",
+    "inputs": {
+      "a": 1.5,
+      "b": 1.55,
+      "x0": 1.52,
+      "tag": "cubic_x3_x_2"
+    },
+    "oracle": {
+      "value": 1.5213797068045676,
+      "bits": "0x3FF857923F586105"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "bisect",
+      "newton",
+      "secant",
+      "brentq"
+    ],
+    "tol": {
+      "bisect": 1e-05,
+      "newton": 1e-07,
+      "secant": 1e-05,
+      "brentq": 1e-05
+    }
+  },
+  {
+    "id": "optroot.edge.newton_good_guess_ok",
+    "tier": "edge",
+    "inputs": {
+      "x0": 0.739,
+      "tag": "cos_minus_x"
+    },
+    "oracle": {
+      "value": 0.7390851332151606,
+      "bits": "0x3FE7A695DD83CE2D"
+    },
+    "source": "scipy.optimize.brentq 1.17.1",
+    "strategies": [
+      "newton",
+      "secant"
+    ],
+    "tol": {
+      "newton": 1e-07,
+      "secant": 1e-05
+    }
+  }
+]

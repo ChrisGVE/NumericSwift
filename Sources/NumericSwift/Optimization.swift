@@ -54,7 +54,18 @@ public struct MinimizeScalarResult {
     }
 }
 
-/// Result from scalar root finding
+/// Result from scalar root finding.
+///
+/// The `diagnostics` field is the recoverable self-awareness channel
+/// (``NumericDiagnostic``). The bracketing methods (``bisect(_:a:b:xtol:maxiter:)``,
+/// ``brentq(_:a:b:xtol:rtol:maxiter:)``) append an
+/// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the supplied bracket
+/// has no sign change (`f(a)·f(b) > 0`) — bracketing root finders are mathematically
+/// invalid there. The open methods (``newton(_:fprime:x0:xtol:maxiter:)``,
+/// ``secant(_:x0:x1:xtol:maxiter:)``) append one when the derivative (or secant
+/// slope) collapses toward zero or the iteration diverges / exhausts its budget —
+/// regimes where the returned iterate is not a trustworthy root. A self-aware
+/// caller inspects `diagnostics` (mirroring SciPy's `ValueError`/`RuntimeWarning`).
 public struct RootScalarResult {
     public let root: Double
     public let iterations: Int
@@ -62,12 +73,28 @@ public struct RootScalarResult {
     public let converged: Bool
     public let flag: String
 
-    public init(root: Double, iterations: Int, functionCalls: Int, converged: Bool, flag: String) {
+    /// Recoverable diagnostics emitted during root finding.
+    ///
+    /// Empty for a clean convergence inside the method's valid envelope. A
+    /// non-empty list with an ``NumericDiagnostic/outsideEnvelope(method:reason:)``
+    /// entry means the result may be unreliable (invalid bracket, vanishing
+    /// derivative, or divergence). See the type-level discussion above.
+    public let diagnostics: [NumericDiagnostic]
+
+    public init(
+        root: Double,
+        iterations: Int,
+        functionCalls: Int,
+        converged: Bool,
+        flag: String,
+        diagnostics: [NumericDiagnostic] = []
+    ) {
         self.root = root
         self.iterations = iterations
         self.functionCalls = functionCalls
         self.converged = converged
         self.flag = flag
+        self.diagnostics = diagnostics
     }
 }
 
@@ -329,11 +356,19 @@ public func bisect(
     var fa = f(a); nfev += 1
     var fb = f(b); nfev += 1
 
-    // Check for sign change
+    // Check for sign change. A bracketing method is mathematically invalid when
+    // f(a) and f(b) share a sign — there is no guaranteed root in [a, b]. SciPy
+    // raises a ValueError here; we surface a recoverable `outsideEnvelope`
+    // diagnostic so a self-aware caller can detect the misuse (workbench §5).
     if fa * fb > 0 {
         return RootScalarResult(
             root: .nan, iterations: 0, functionCalls: nfev,
-            converged: false, flag: "f(a) and f(b) must have different signs"
+            converged: false, flag: "f(a) and f(b) must have different signs",
+            diagnostics: [.outsideEnvelope(
+                method: "bisect",
+                reason: "f(a)·f(b) > 0 — bracket has no sign change; bisection is "
+                    + "invalid and cannot guarantee a root in [\(a), \(b)]"
+            )]
         )
     }
 
@@ -405,10 +440,17 @@ public func newton(
             fp = (fplus - fminus) / (2 * h)
         }
 
+        // A vanishing derivative makes the Newton step f(x)/f'(x) blow up — the
+        // method is outside its valid envelope (it needs f'(x) ≠ 0 near the root).
         if abs(fp) < 1e-14 {
             return RootScalarResult(
                 root: x, iterations: nit, functionCalls: nfev,
-                converged: false, flag: "derivative is zero"
+                converged: false, flag: "derivative is zero",
+                diagnostics: [.outsideEnvelope(
+                    method: "newton",
+                    reason: "|f'(x)| < 1e-14 at x=\(x) — near-zero derivative; the "
+                        + "Newton step is ill-defined and the result is unreliable"
+                )]
             )
         }
 
@@ -423,9 +465,17 @@ public func newton(
         }
     }
 
+    // Budget exhausted without meeting tolerance — Newton diverged or stalled
+    // (e.g. f'(x) carries the iterate away from the root). The last iterate is
+    // not a trustworthy root, so flag it outside the convergence envelope.
     return RootScalarResult(
         root: x, iterations: nit, functionCalls: nfev,
-        converged: false, flag: "maxiter reached"
+        converged: false, flag: "maxiter reached",
+        diagnostics: [.outsideEnvelope(
+            method: "newton",
+            reason: "exceeded maxiter=\(maxiter) without converging — the iteration "
+                + "diverged or stalled; the returned iterate may not be a root"
+        )]
     )
 }
 
@@ -456,10 +506,17 @@ public func secant(
     for _ in 0..<maxiter {
         nit += 1
 
+        // A vanishing secant slope f(x1)−f(x0) makes the update ill-defined — the
+        // iterates have stalled on a near-flat region, outside secant's envelope.
         if abs(f1 - f0) < 1e-14 {
             return RootScalarResult(
                 root: x1, iterations: nit, functionCalls: nfev,
-                converged: false, flag: "denominator too small"
+                converged: false, flag: "denominator too small",
+                diagnostics: [.outsideEnvelope(
+                    method: "secant",
+                    reason: "|f(x1)−f(x0)| < 1e-14 — secant slope collapsed near a "
+                        + "flat region; the update is ill-defined and unreliable"
+                )]
             )
         }
 
@@ -476,9 +533,158 @@ public func secant(
         }
     }
 
+    // Budget exhausted without meeting tolerance — the secant iteration diverged
+    // or stalled; the last iterate is not a trustworthy root.
     return RootScalarResult(
         root: x1, iterations: nit, functionCalls: nfev,
-        converged: false, flag: "maxiter reached"
+        converged: false, flag: "maxiter reached",
+        diagnostics: [.outsideEnvelope(
+            method: "secant",
+            reason: "exceeded maxiter=\(maxiter) without converging — the iteration "
+                + "diverged or stalled; the returned iterate may not be a root"
+        )]
+    )
+}
+
+// MARK: - Brent's method (bracketing root finder)
+
+/// Brent's method for scalar root finding (`scipy.optimize.brentq` analogue).
+///
+/// Combines the guaranteed convergence of bisection with the speed of inverse
+/// quadratic interpolation and the secant method. Requires a **bracket** `[a, b]`
+/// across which `f` changes sign (`f(a)·f(b) < 0`); within that bracket Brent's
+/// method always converges to a root.
+///
+/// Distinct from ``brent(_:a:b:xtol:maxiter:)``, which **minimizes** a scalar
+/// function. This routine finds a **root** (a zero), matching SciPy's `brentq`.
+///
+/// ## Limitation envelope
+///
+/// Like every bracketing method, `brentq` is mathematically invalid when the
+/// supplied endpoints do not straddle a root (`f(a)·f(b) > 0`). In that regime it
+/// returns `.nan` and appends an ``NumericDiagnostic/outsideEnvelope(method:reason:)``
+/// diagnostic (SciPy raises a `ValueError`). A self-aware caller inspects
+/// ``RootScalarResult/diagnostics``.
+///
+/// - Parameters:
+///   - f: Function whose root is sought.
+///   - a: Left bracket endpoint.
+///   - b: Right bracket endpoint.
+///   - xtol: Absolute tolerance on the root location.
+///   - rtol: Relative tolerance on the root location.
+///   - maxiter: Maximum iterations.
+/// - Returns: Root finding result, with diagnostics for out-of-envelope brackets.
+///
+/// Reference: R. P. Brent, *Algorithms for Minimization without Derivatives* (1973);
+/// scipy.optimize.brentq.
+public func brentq(
+    _ f: (Double) -> Double,
+    a: Double,
+    b: Double,
+    xtol: Double = optimDefaultXTol,
+    rtol: Double = 4 * Double.ulpOfOne,
+    maxiter: Int = optimDefaultMaxIter
+) -> RootScalarResult {
+    var xa = a, xb = b
+    var nfev = 0
+
+    var fa = f(xa); nfev += 1
+    var fb = f(xb); nfev += 1
+
+    // Exact roots at the endpoints.
+    if fa == 0 {
+        return RootScalarResult(root: xa, iterations: 0, functionCalls: nfev, converged: true, flag: "converged")
+    }
+    if fb == 0 {
+        return RootScalarResult(root: xb, iterations: 0, functionCalls: nfev, converged: true, flag: "converged")
+    }
+
+    // No sign change → invalid bracket → outside the envelope.
+    if fa * fb > 0 {
+        return RootScalarResult(
+            root: .nan, iterations: 0, functionCalls: nfev,
+            converged: false, flag: "f(a) and f(b) must have different signs",
+            diagnostics: [.outsideEnvelope(
+                method: "brentq",
+                reason: "f(a)·f(b) > 0 — bracket has no sign change; Brent's method "
+                    + "is invalid and cannot guarantee a root in [\(a), \(b)]"
+            )]
+        )
+    }
+
+    // Brent's method state. `xb` holds the best estimate; `xc` the contrapoint.
+    var xc = xa, fc = fa
+    var d = xb - xa, e = d
+    var nit = 0
+
+    while nit < maxiter {
+        nit += 1
+
+        // Ensure |f(b)| <= |f(c)| so b is the better root estimate.
+        if abs(fc) < abs(fb) {
+            xa = xb; xb = xc; xc = xa
+            fa = fb; fb = fc; fc = fa
+        }
+
+        let tol = 2 * rtol * abs(xb) + xtol / 2
+        let m = 0.5 * (xc - xb)
+
+        if abs(m) <= tol || fb == 0 {
+            return RootScalarResult(
+                root: xb, iterations: nit, functionCalls: nfev,
+                converged: true, flag: "converged"
+            )
+        }
+
+        if abs(e) < tol || abs(fa) <= abs(fb) {
+            // Bisection step.
+            d = m; e = m
+        } else {
+            // Attempt inverse quadratic interpolation (or secant if a == c).
+            let s = fb / fa
+            var p: Double, q: Double
+            if xa == xc {
+                p = 2 * m * s
+                q = 1 - s
+            } else {
+                let qq = fa / fc
+                let r = fb / fc
+                p = s * (2 * m * qq * (qq - r) - (xb - xa) * (r - 1))
+                q = (qq - 1) * (r - 1) * (s - 1)
+            }
+            if p > 0 { q = -q } else { p = -p }
+            // Accept interpolation only if it stays within bounds and shrinks.
+            if 2 * p < min(3 * m * q - abs(tol * q), abs(e * q)) {
+                e = d
+                d = p / q
+            } else {
+                d = m; e = m
+            }
+        }
+
+        xa = xb; fa = fb
+        // Step at least `tol` toward the root.
+        if abs(d) > tol {
+            xb += d
+        } else {
+            xb += (m > 0 ? tol : -tol)
+        }
+        fb = f(xb); nfev += 1
+
+        // Maintain the bracket: c becomes the endpoint with opposite sign to b.
+        if (fb > 0) == (fc > 0) {
+            xc = xa; fc = fa
+            d = xb - xa; e = d
+        }
+    }
+
+    return RootScalarResult(
+        root: xb, iterations: nit, functionCalls: nfev,
+        converged: false, flag: "maxiter reached",
+        diagnostics: [.outsideEnvelope(
+            method: "brentq",
+            reason: "exceeded maxiter=\(maxiter) without converging"
+        )]
     )
 }
 
