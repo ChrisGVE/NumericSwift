@@ -7,6 +7,10 @@ on:
     branches: [main, dev]
 
 jobs:
+  # ── Primary macOS test job ────────────────────────────────────────────────
+  # Builds and runs the full test suite in standalone mode (no optional deps).
+  # Code coverage is collected, exported as lcov, and uploaded as an Actions
+  # artifact so any contributor can download it from the workflow run summary.
   test-standalone:
     name: Test Standalone
     runs-on: macos-14
@@ -22,9 +26,52 @@ jobs:
       - name: Build
         run: swift build
 
-      - name: Run Tests
-        run: swift test
+      - name: Run Tests (with coverage)
+        # --enable-code-coverage writes profdata to .build/debug/codecov/
+        run: swift test --enable-code-coverage
 
+      - name: Export lcov coverage report
+        # On macOS, SPM places the test binary inside an .xctest bundle at a
+        # path like .build/<arch>-apple-macosx/debug/<Name>.xctest/Contents/MacOS/<Name>.
+        # The merged profdata is written to .build/debug/codecov/ (a symlink to
+        # the arch-specific directory) or directly under the arch path.
+        # We search broadly with `find` to stay resilient across Xcode/SPM versions.
+        run: |
+          # Locate the merged profdata (produced by --enable-code-coverage)
+          PROFDATA=$(find .build -name "default.profdata" | head -1)
+          # Locate the .xctest bundle, then derive the executable path from it
+          XCTEST=$(find .build -name "*.xctest" -not -path "*/dSYM/*" | head -1)
+          BINARY="$XCTEST/Contents/MacOS/$(basename "$XCTEST" .xctest)"
+          echo "profdata : $PROFDATA"
+          echo "xctest   : $XCTEST"
+          echo "binary   : $BINARY"
+          # Export per-file coverage in lcov format for downstream tooling
+          xcrun llvm-cov export \
+            -instr-profile "$PROFDATA" \
+            "$BINARY" \
+            --format=lcov \
+            > coverage.lcov
+          # Emit a human-readable line summary to the job summary page
+          echo "## Coverage Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          xcrun llvm-cov report \
+            -instr-profile "$PROFDATA" \
+            "$BINARY" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage artifact
+        # Pinned to actions/upload-artifact v4.6.2
+        # SHA: ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: coverage-lcov
+          path: coverage.lcov
+          # Keep the artifact for 30 days (GitHub default is 90; 30 is enough
+          # for coverage history without inflating storage costs).
+          retention-days: 30
+
+  # ── ArraySwift optional dependency ───────────────────────────────────────
+  # ArraySwift is a public Swift package; its repo is cloned directly.
   test-with-arrayswift:
     name: Test with ArraySwift
     runs-on: macos-14
@@ -57,6 +104,8 @@ jobs:
           NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
         run: swift test
 
+  # ── PlotSwift optional dependency ────────────────────────────────────────
+  # PlotSwift is a public Swift package; its repo is cloned directly.
   test-with-plotswift:
     name: Test with PlotSwift
     runs-on: macos-14
@@ -89,6 +138,7 @@ jobs:
           NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
         run: swift test
 
+  # ── ArraySwift + PlotSwift combined ──────────────────────────────────────
   test-combined:
     name: Test with ArraySwift + PlotSwift
     runs-on: macos-14
@@ -128,3 +178,84 @@ jobs:
           NUMERICSWIFT_INCLUDE_ARRAYSWIFT: "1"
           NUMERICSWIFT_INCLUDE_PLOTSWIFT: "1"
         run: swift test
+
+  # ── iOS Simulator build ───────────────────────────────────────────────────
+  # Verifies the library compiles for iOS.  We use xcodebuild instead of
+  # `swift build` because the SPM CLI cannot cross-compile to iOS targets.
+  # Tests are not run here: booting an iOS Simulator in CI adds significant
+  # complexity and is not required for a library build-correctness check.
+  build-ios:
+    name: Build (iOS Simulator)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        # macos-15 ships with Xcode 16; select it explicitly so the build is
+        # reproducible even if Apple changes the default in a runner update.
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Build for iOS Simulator
+        # generic/platform=iOS Simulator compiles for all simulator archs
+        # without requiring a booted device.  CODE_SIGNING_REQUIRED=NO and
+        # CODE_SIGN_IDENTITY= are required in CI where no signing identity
+        # is available.
+        run: |
+          xcodebuild build \
+            -scheme NumericSwift \
+            -destination 'generic/platform=iOS Simulator' \
+            SWIFT_SUPPRESS_WARNINGS=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=
+
+  # ── MathLex optional dependency (best-effort) ─────────────────────────────
+  # MathLex is a Rust crate consumed via a local sibling path (../mathlex).
+  # This job clones mathlex, compiles the Rust library, then builds NumericSwift
+  # with NUMERICSWIFT_INCLUDE_MATHLEX=1.
+  #
+  # continue-on-error: true — the mathlex repo (ChrisGVE/mathlex) may not be
+  # publicly accessible, and Rust compilation adds non-trivial CI time.  A
+  # failure here is advisory, not a gate on merging.  When mathlex is public
+  # and stable, this flag can be removed to make it a hard requirement.
+  build-with-mathlex:
+    name: Build with MathLex (best-effort)
+    runs-on: macos-14
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: NumericSwift
+
+      - name: Clone MathLex
+        # mathlex is a private/restricted repo; if this step fails the job
+        # is still marked as allowed to fail (continue-on-error above).
+        uses: actions/checkout@v4
+        with:
+          repository: ChrisGVE/mathlex
+          path: mathlex
+
+      - name: Install Rust toolchain
+        # Rust is required to compile the mathlex Rust crate before Swift
+        # can link against it.
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Build MathLex Rust library
+        working-directory: mathlex
+        run: cargo build --release
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Swift Version
+        run: swift --version
+
+      - name: Build NumericSwift with MathLex
+        working-directory: NumericSwift
+        env:
+          NUMERICSWIFT_INCLUDE_MATHLEX: "1"
+        run: swift build
