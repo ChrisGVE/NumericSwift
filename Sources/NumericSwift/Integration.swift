@@ -1185,6 +1185,16 @@ public func solveIVP(
 
   let maxIter = 10000
   var iter = 0
+  // Stiffness telemetry for the explicit adaptive methods (rk45/rk23).
+  // A stiff system forces the explicit error controller into step-size
+  // collapse: it rejects far more steps than it accepts, and the accepted
+  // steps shrink toward `hMin`. We count both to recognise that regime and
+  // surface a recoverable ``NumericDiagnostic/outsideEnvelope`` afterwards
+  // (see `detectExplicitStiffness`). RK4 is fixed-step and never rejects, so
+  // it is excluded from this telemetry.
+  var rejectedSteps = 0
+  var acceptedSteps = 0
+  var minAcceptedStep = Double.infinity
 
   while direction * (tf - t) > 1e-12 * abs(tf) && iter < maxIter {
     iter += 1
@@ -1236,6 +1246,8 @@ public func solveIVP(
         y = yNew
         tList.append(t)
         yList.append(y)
+        acceptedSteps += 1
+        minAcceptedStep = min(minAcceptedStep, abs(h))
 
         // Record the accepted step for dense-output evaluation
         denseSteps.append(DenseStep(
@@ -1254,6 +1266,7 @@ public func solveIVP(
         }
       } else {
         // Reject step, decrease step size
+        rejectedSteps += 1
         let factor = max(0.1, 0.9 * pow(1 / errNorm, 0.25))
         h *= factor
       }
@@ -1348,13 +1361,97 @@ public func solveIVP(
 
   let success = direction * (tf - t) <= 1e-12 * abs(tf)
 
+  // Stiffness self-awareness: an explicit method applied to a stiff system is
+  // outside its declared envelope. Surface a recoverable diagnostic so callers
+  // can switch to `.bdf`. RK4 (fixed-step) carries no telemetry and is exempt.
+  let diagnostics = detectExplicitStiffness(
+    method: method,
+    success: success,
+    iter: iter,
+    maxIter: maxIter,
+    acceptedSteps: acceptedSteps,
+    rejectedSteps: rejectedSteps,
+    minAcceptedStep: minAcceptedStep,
+    span: abs(tf - t0)
+  )
+
   return ODEResult(
     t: resultT,
     y: resultY,
     success: success,
     message: success ? "Integration successful" : "Max iterations reached",
-    nfev: nfev
+    nfev: nfev,
+    diagnostics: diagnostics
   )
+}
+
+/// Detect that an explicit adaptive ODE step controller was driven into the
+/// step-size-collapse regime characteristic of a **stiff** system, and return
+/// the corresponding recoverable diagnostic.
+///
+/// ## Why this is the chosen envelope
+///
+/// Explicit Runge-Kutta pairs (`.rk45`, `.rk23`) are stability-limited on stiff
+/// problems: the step size is forced down to satisfy stability rather than
+/// accuracy, so the error controller rejects step after step and the accepted
+/// steps shrink to a tiny fraction of the integration span. SciPy's explicit
+/// solvers surface the same regime as the "stiffness detected" warning and
+/// recommend `LSODA`/`BDF`. NumericSwift's documented stiff path is the
+/// fixed-order BDF-1 method (see ``ODEMethod/bdf``, issue #15), so the
+/// recoverable signal points the caller there.
+///
+/// ## Detection signature
+///
+/// Stiffness is reported when **either** condition holds for an explicit
+/// adaptive method:
+///   1. the integrator exhausted its iteration budget without reaching `tf`
+///      (`!success && iter >= maxIter`) — the unbounded step-rejection cascade; or
+///   2. the controller rejected at least as many steps as it accepted
+///      **and** the smallest accepted step fell below `span · 1e-6` — the
+///      step-size-collapse fingerprint, distinguishing genuine stiffness from
+///      the handful of rejections a smooth problem incurs at startup.
+///
+/// Both thresholds are deliberately conservative so a well-behaved non-stiff
+/// solve never trips them (guarded by the in-envelope workbench cases).
+///
+/// - Returns: A single ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when
+///   stiffness is detected, otherwise an empty array.
+private func detectExplicitStiffness(
+  method: ODEMethod,
+  success: Bool,
+  iter: Int,
+  maxIter: Int,
+  acceptedSteps: Int,
+  rejectedSteps: Int,
+  minAcceptedStep: Double,
+  span: Double
+) -> [NumericDiagnostic] {
+  // Only the explicit adaptive pairs carry stiffness telemetry.
+  guard method == .rk45 || method == .rk23 else { return [] }
+
+  let budgetExhausted = !success && iter >= maxIter
+  let stepCollapse =
+    acceptedSteps > 0
+    && rejectedSteps >= acceptedSteps
+    && minAcceptedStep < span * 1e-6
+
+  guard budgetExhausted || stepCollapse else { return [] }
+
+  let reason: String
+  if budgetExhausted {
+    reason =
+      "explicit \(method.rawValue) exhausted its \(maxIter)-step budget without "
+      + "reaching the end of the interval (\(rejectedSteps) rejected vs "
+      + "\(acceptedSteps) accepted) — the step size collapsed, the signature of a "
+      + "stiff system; use the implicit `.bdf` method"
+  } else {
+    reason =
+      "explicit \(method.rawValue) step size collapsed (\(rejectedSteps) rejected "
+      + "vs \(acceptedSteps) accepted; min accepted step "
+      + "\(minAcceptedStep) ≪ span \(span)) — the signature of a stiff system; "
+      + "use the implicit `.bdf` method"
+  }
+  return [.outsideEnvelope(method: "solveIVP.\(method.rawValue)", reason: reason)]
 }
 
 /// odeint-style ODE integration (scipy.integrate.odeint compatible).

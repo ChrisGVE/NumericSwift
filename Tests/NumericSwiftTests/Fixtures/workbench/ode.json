@@ -1,0 +1,2906 @@
+[
+  {
+    "id": "ode.trivial.exp_decay_0",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 1.0,
+      "k": 1.0
+    },
+    "oracle": {
+      "value": 0.3678794411649507,
+      "bits": "0x3FD78B56362B2669"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.exp_decay_1",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 2.0,
+      "k": 1.0
+    },
+    "oracle": {
+      "value": 0.13533528323521843,
+      "bits": "0x3FC152AAA3BEBD92"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.exp_decay_2",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        2.0
+      ],
+      "tf": 1.0,
+      "k": 0.5
+    },
+    "oracle": {
+      "value": 1.213061319398365,
+      "bits": "0x3FF368B2FC6DBCC7"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.harmonic_3",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 1.0
+    },
+    "oracle": {
+      "value": 0.5403023058807895,
+      "bits": "0x3FE14A280FB6C39F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.harmonic_4",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 3.141592653589793
+    },
+    "oracle": {
+      "value": -1.00000000006462,
+      "bits": "0xBFF00000000470CF"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.harmonic_5",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 1.0
+    },
+    "oracle": {
+      "value": 0.8414709848066042,
+      "bits": "0x3FEAED548F08DF76"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.logistic_6",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.01
+      ],
+      "tf": 5.0,
+      "r": 1.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.5998596018956645,
+      "bits": "0x3FE3320CC38AABB1"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.logistic_7",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.1
+      ],
+      "tf": 3.0,
+      "r": 1.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.6905678577057578,
+      "bits": "0x3FE61921C3907AF9"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.exp_decay_8",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 0.5,
+      "k": 2.0
+    },
+    "oracle": {
+      "value": 0.3678794411649507,
+      "bits": "0x3FD78B56362B2669"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.trivial.linear2d_9",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 1.0
+    },
+    "oracle": {
+      "value": 0.19876611034583586,
+      "bits": "0x3FC9712AFBBE86EA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-06
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_0",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 1.0,
+      "k": 0.3
+    },
+    "oracle": {
+      "value": 0.7408182206637313,
+      "bits": "0x3FE7B4C869C1032C"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_1",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 3.0,
+      "k": 0.3
+    },
+    "oracle": {
+      "value": 0.40656965973491294,
+      "bits": "0x3FDA053CC006DDFD"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_2",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 6.0,
+      "k": 0.3
+    },
+    "oracle": {
+      "value": 0.16529888821863592,
+      "bits": "0x3FC52883937B6AF0"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_3",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 1.0,
+      "k": 1.0
+    },
+    "oracle": {
+      "value": 0.3678794411649507,
+      "bits": "0x3FD78B56362B2669"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_4",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 3.0,
+      "k": 1.0
+    },
+    "oracle": {
+      "value": 0.04978706836788897,
+      "bits": "0x3FA97DB0CCCEBEC6"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_5",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 6.0,
+      "k": 1.0
+    },
+    "oracle": {
+      "value": 0.0024787521767404967,
+      "bits": "0x3F644E51F116709D"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_6",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 1.0,
+      "k": 2.5
+    },
+    "oracle": {
+      "value": 0.08208499862350561,
+      "bits": "0x3FB50385C0948579"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_7",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 3.0,
+      "k": 2.5
+    },
+    "oracle": {
+      "value": 0.0005530843697117672,
+      "bits": "0x3F421F9BA3D1D2E2"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_8",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 6.0,
+      "k": 2.5
+    },
+    "oracle": {
+      "value": 3.059024017753975e-07,
+      "bits": "0x3E94875CFDA96F54"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_9",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 1.0,
+      "k": 5.0
+    },
+    "oracle": {
+      "value": 0.006737946999221894,
+      "bits": "0x3F7B993FE00FB9E0"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_10",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 3.0,
+      "k": 5.0
+    },
+    "oracle": {
+      "value": 3.059024017753975e-07,
+      "bits": "0x3E94875CFDA96F54"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_11",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 6.0,
+      "k": 5.0
+    },
+    "oracle": {
+      "value": 9.937648229531364e-14,
+      "bits": "0x3D3BF8D4892D47DE"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_12",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 2.0
+    },
+    "oracle": {
+      "value": -0.4161468365525845,
+      "bits": "0xBFDAA2265754F0F9"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_13",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.5,
+        0.5
+      ],
+      "tf": 2.0
+    },
+    "oracle": {
+      "value": 0.24657529513885054,
+      "bits": "0x3FCF8FC77E4FBB8B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_14",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.0,
+        2.0
+      ],
+      "tf": 2.0
+    },
+    "oracle": {
+      "value": 1.818594853720509,
+      "bits": "0x3FFD18F6EAD674B2"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_15",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 5.0
+    },
+    "oracle": {
+      "value": 0.28366218546815486,
+      "bits": "0x3FD22785706CA5AB"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_16",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.5,
+        0.5
+      ],
+      "tf": 5.0
+    },
+    "oracle": {
+      "value": -0.33763104458997706,
+      "bits": "0xBFD59BBF3DA83590"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_17",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.0,
+        2.0
+      ],
+      "tf": 5.0
+    },
+    "oracle": {
+      "value": -1.9178485493971578,
+      "bits": "0xBFFEAF81F5E57826"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_18",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 8.0
+    },
+    "oracle": {
+      "value": -0.1455000338118614,
+      "bits": "0xBFC29FBEBF64F8AD"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_19",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.5,
+        0.5
+      ],
+      "tf": 8.0
+    },
+    "oracle": {
+      "value": 0.42192910639115283,
+      "bits": "0x3FDB00E2F04B8D69"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_20",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.0,
+        2.0
+      ],
+      "tf": 8.0
+    },
+    "oracle": {
+      "value": 1.9787164933257928,
+      "bits": "0x3FFFA8D2A02E3DC7"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_21",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 12.0
+    },
+    "oracle": {
+      "value": 0.8438539587687772,
+      "bits": "0x3FEB00DA0470628E"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_22",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.5,
+        0.5
+      ],
+      "tf": 12.0
+    },
+    "oracle": {
+      "value": 0.15364052038857795,
+      "bits": "0x3FC3AA7E19346606"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_23",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.0,
+        2.0
+      ],
+      "tf": 12.0
+    },
+    "oracle": {
+      "value": -1.0731458360143478,
+      "bits": "0xBFF12B9AF7D852C0"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_24",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 2.0,
+      "r": 0.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.12516099799970679,
+      "bits": "0x3FC005468C925CF7"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_25",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 5.0,
+      "r": 0.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.3906837591789279,
+      "bits": "0x3FD900F674301E11"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_26",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 10.0,
+      "r": 0.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.8865083240528154,
+      "bits": "0x3FEC5E46B46E091D"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_27",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 2.0,
+      "r": 0.5,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 0.6258049899954771,
+      "bits": "0x3FE406982FB688A7"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_28",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 5.0,
+      "r": 0.5,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 1.9534187958619318,
+      "bits": "0x3FFF41341139E62F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_29",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 10.0,
+      "r": 0.5,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 4.432541620311787,
+      "bits": "0x4011BAEC30C59787"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_30",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 2.0,
+      "r": 1.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.2800045621827926,
+      "bits": "0x3FD1EB98415393BF"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_31",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 5.0,
+      "r": 1.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.8865083240528154,
+      "bits": "0x3FEC5E46B46E091D"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_32",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 10.0,
+      "r": 1.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9991381447681297,
+      "bits": "0x3FEFF8F08EFEE32B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_33",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 2.0,
+      "r": 1.0,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 1.400022810857031,
+      "bits": "0x3FF6667E51A48F1F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_34",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 5.0,
+      "r": 1.0,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 4.432541620311787,
+      "bits": "0x4011BAEC30C59787"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_35",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 10.0,
+      "r": 1.0,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 4.9956907238369554,
+      "bits": "0x4013FB96595F3DBD"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_36",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 2.0,
+      "r": 2.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.7418413371984179,
+      "bits": "0x3FE7BD2A0B42D1D3"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_37",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 5.0,
+      "r": 2.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9991381447681297,
+      "bits": "0x3FEFF8F08EFEE32B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_38",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.05
+      ],
+      "tf": 10.0,
+      "r": 2.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9999999608379443,
+      "bits": "0x3FEFFFFFEAF99BA9"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_39",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 2.0,
+      "r": 2.0,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 3.709206685841998,
+      "bits": "0x400DAC748E0E5E0F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_40",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 5.0,
+      "r": 2.0,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 4.9956907238369554,
+      "bits": "0x4013FB96595F3DBD"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_41",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.25
+      ],
+      "tf": 10.0,
+      "r": 2.0,
+      "kk": 5.0
+    },
+    "oracle": {
+      "value": 4.999999804189296,
+      "bits": "0x4013FFFFF2DBFF6B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_42",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 1.0
+    },
+    "oracle": {
+      "value": 0.19876611034583586,
+      "bits": "0x3FC9712AFBBE86EA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_43",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 1.0
+    },
+    "oracle": {
+      "value": 0.30955987565385257,
+      "bits": "0x3FD3CFD43985936E"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_44",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 2.0
+    },
+    "oracle": {
+      "value": -0.05631934999089711,
+      "bits": "0xBFACD5E3CCAF8E19"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_45",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 2.0
+    },
+    "oracle": {
+      "value": 0.1230600248064092,
+      "bits": "0x3FBF80DC9DFD0CC7"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_46",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 4.0
+    },
+    "oracle": {
+      "value": -0.011971900522165502,
+      "bits": "0xBF8884B949B5969A"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_47",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 4.0
+    },
+    "oracle": {
+      "value": -0.013861321213803233,
+      "bits": "0xBF8C63530A57517F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_48",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 6.0
+    },
+    "oracle": {
+      "value": 0.0023800241878312216,
+      "bits": "0x3F637F45C19D12EA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_49",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 6.0
+    },
+    "oracle": {
+      "value": -0.0006926017740356411,
+      "bits": "0xBF46B1F6FBFC3876"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_50",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 8.0
+    },
+    "oracle": {
+      "value": -4.8809824082889445e-05,
+      "bits": "0xBF099724C907DC35"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_51",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 8.0
+    },
+    "oracle": {
+      "value": 0.0003318927169106871,
+      "bits": "0x3F35C03C5D6ADF3B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.vdp_52",
+    "tier": "hard",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 5.0,
+      "mu": 1.0
+    },
+    "oracle": {
+      "value": -0.8370774504059784,
+      "bits": "0xBFEAC956A636CEC2"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.1,
+      "rk23": 0.5,
+      "bdf": 1.0,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.vdp_53",
+    "tier": "hard",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 10.0,
+      "mu": 1.0
+    },
+    "oracle": {
+      "value": -2.008340782621059,
+      "bits": "0xC0001114F8E4A4DA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.1,
+      "rk23": 0.5,
+      "bdf": 1.0,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.vdp_54",
+    "tier": "hard",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 5.0,
+      "mu": 2.0
+    },
+    "oracle": {
+      "value": -1.6196015128249364,
+      "bits": "0xBFF9E9E346A229E3"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.1,
+      "rk23": 0.5,
+      "bdf": 1.0,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.vdp_55",
+    "tier": "hard",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 10.0,
+      "mu": 2.0
+    },
+    "oracle": {
+      "value": 0.8415536522133191,
+      "bits": "0x3FEAEE01ECC2BCF0"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.1,
+      "rk23": 0.5,
+      "bdf": 1.0,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.vdp_56",
+    "tier": "hard",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 5.0,
+      "mu": 5.0
+    },
+    "oracle": {
+      "value": 0.40418159373810153,
+      "bits": "0x3FD9DE1C79B004FD"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.1,
+      "rk23": 0.5,
+      "bdf": 1.0,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.vdp_57",
+    "tier": "hard",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 10.0,
+      "mu": 5.0
+    },
+    "oracle": {
+      "value": -1.1587012657648166,
+      "bits": "0xBFF28A0A56A4B2F6"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.1,
+      "rk23": 0.5,
+      "bdf": 1.0,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_58",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 2.0,
+      "k": 0.7
+    },
+    "oracle": {
+      "value": 0.36989544590505613,
+      "bits": "0x3FD7AC5DF2C67FD9"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_59",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 4.0,
+      "k": 0.7
+    },
+    "oracle": {
+      "value": 0.0912150939376907,
+      "bits": "0x3FB759DF555D2BCA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_60",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 7.0,
+      "k": 0.7
+    },
+    "oracle": {
+      "value": 0.011169874606601765,
+      "bits": "0x3F86E03B31161170"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_61",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 2.0,
+      "k": 1.5
+    },
+    "oracle": {
+      "value": 0.07468060255183871,
+      "bits": "0x3FB31E44999B108F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_62",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 4.0,
+      "k": 1.5
+    },
+    "oracle": {
+      "value": 0.00371812826511036,
+      "bits": "0x3F6E757AE9A1A574"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_63",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 7.0,
+      "k": 1.5
+    },
+    "oracle": {
+      "value": 4.13046737808566e-05,
+      "bits": "0x3F05A7D1C8D41016"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_64",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 2.0,
+      "k": 3.5
+    },
+    "oracle": {
+      "value": 0.0013678229483116426,
+      "bits": "0x3F566910B51A1482"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_65",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 4.0,
+      "k": 3.5
+    },
+    "oracle": {
+      "value": 1.2472932335196554e-06,
+      "bits": "0x3EB4ED1569DB36BA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_66",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.5
+      ],
+      "tf": 7.0,
+      "k": 3.5
+    },
+    "oracle": {
+      "value": 3.444835017691586e-11,
+      "bits": "0x3DC2F02C9DBCCFE2"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_67",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        2.0,
+        -1.0
+      ],
+      "tf": 3.0
+    },
+    "oracle": {
+      "value": -2.1211050012461263,
+      "bits": "0xC000F805E61DDF8B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_68",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        2.0,
+        -1.0
+      ],
+      "tf": 6.0
+    },
+    "oracle": {
+      "value": 2.1997560715069944,
+      "bits": "0x40019919B612665B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.harmonic_69",
+    "tier": "hard",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        2.0,
+        -1.0
+      ],
+      "tf": 9.0
+    },
+    "oracle": {
+      "value": -2.2343790090134332,
+      "bits": "0xC001E0021A14A716"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_70",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        0.8
+      ],
+      "tf": 3.0,
+      "k": 0.4
+    },
+    "oracle": {
+      "value": 0.2409553695247671,
+      "bits": "0x3FCED7A023F3C5AA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_71",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        0.8
+      ],
+      "tf": 8.0,
+      "k": 0.4
+    },
+    "oracle": {
+      "value": 0.032609763182774365,
+      "bits": "0x3FA0B23A14CCF6D8"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_72",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        0.8
+      ],
+      "tf": 3.0,
+      "k": 1.2
+    },
+    "oracle": {
+      "value": 0.021858977957977265,
+      "bits": "0x3F9662332DD06193"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.exp_decay_73",
+    "tier": "hard",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        0.8
+      ],
+      "tf": 8.0,
+      "k": 1.2
+    },
+    "oracle": {
+      "value": 5.418298891109608e-05,
+      "bits": "0x3F0C685152AEEA80"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_74",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.02
+      ],
+      "tf": 4.0,
+      "r": 1.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.891695664121625,
+      "bits": "0x3FEC88C5586C656B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_75",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.02
+      ],
+      "tf": 8.0,
+      "r": 1.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9996990242081905,
+      "bits": "0x3FEFFD88CEDA273E"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_76",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.02
+      ],
+      "tf": 4.0,
+      "r": 2.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9977803412820513,
+      "bits": "0x3FEFEDD109CCBD79"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.logistic_77",
+    "tier": "hard",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.02
+      ],
+      "tf": 8.0,
+      "r": 2.5,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9999998990037272,
+      "bits": "0x3FEFFFFFC9C72D8F"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_78",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        2.0,
+        -1.0
+      ],
+      "tf": 3.0
+    },
+    "oracle": {
+      "value": -0.10560359971406703,
+      "bits": "0xBFBB08D6671C9E75"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.hard.linear2d_79",
+    "tier": "hard",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        2.0,
+        -1.0
+      ],
+      "tf": 10.0
+    },
+    "oracle": {
+      "value": -5.148905615130213e-05,
+      "bits": "0xBF0AFEBE7F8854D7"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23",
+      "bdf",
+      "odeint"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.05,
+      "bdf": 0.5,
+      "odeint": 1e-05
+    }
+  },
+  {
+    "id": "ode.edge.stiff_oov_0",
+    "tier": "edge",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 3000.0,
+      "mu": 1000.0
+    },
+    "oracle": {
+      "value": -1.5106069327797464,
+      "bits": "0xBFF82B722CD665EA"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 1000000000.0,
+      "rk23": 1000000000.0
+    },
+    "inEnvelope": {
+      "rk45": false,
+      "rk23": false
+    }
+  },
+  {
+    "id": "ode.edge.stiff_oov_1",
+    "tier": "edge",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 300.0,
+      "mu": 100.0
+    },
+    "oracle": {
+      "value": -1.5348723987959427,
+      "bits": "0xBFF88ED65C45C94B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 1000000000.0,
+      "rk23": 1000000000.0
+    },
+    "inEnvelope": {
+      "rk45": false,
+      "rk23": false
+    }
+  },
+  {
+    "id": "ode.edge.stiff_oov_2",
+    "tier": "edge",
+    "inputs": {
+      "tag": "robertson",
+      "y0": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "tf": 40.0
+    },
+    "oracle": {
+      "value": 0.7158270687006468,
+      "bits": "0x3FE6E80E2B352577"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 1000000000.0,
+      "rk23": 1000000000.0
+    },
+    "inEnvelope": {
+      "rk45": false,
+      "rk23": false
+    }
+  },
+  {
+    "id": "ode.edge.stiff_ok_0",
+    "tier": "edge",
+    "inputs": {
+      "tag": "vdp",
+      "y0": [
+        2.0,
+        0.0
+      ],
+      "tf": 300.0,
+      "mu": 100.0
+    },
+    "oracle": {
+      "value": -1.5348723987959427,
+      "bits": "0xBFF88ED65C45C94B"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "bdf"
+    ],
+    "tol": {
+      "bdf": 1000000000.0
+    }
+  },
+  {
+    "id": "ode.edge.stiff_ok_1",
+    "tier": "edge",
+    "inputs": {
+      "tag": "robertson",
+      "y0": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "tf": 40.0
+    },
+    "oracle": {
+      "value": 0.7158270687006468,
+      "bits": "0x3FE6E80E2B352577"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "bdf"
+    ],
+    "tol": {
+      "bdf": 1000000000.0
+    }
+  },
+  {
+    "id": "ode.edge.nonstiff_ok_0",
+    "tier": "edge",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        1.0,
+        0.0
+      ],
+      "tf": 50.0
+    },
+    "oracle": {
+      "value": 0.9649660285352919,
+      "bits": "0x3FEEE1006FC9EC30"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.1
+    }
+  },
+  {
+    "id": "ode.edge.nonstiff_ok_1",
+    "tier": "edge",
+    "inputs": {
+      "tag": "exp_decay",
+      "y0": [
+        1.0
+      ],
+      "tf": 20.0,
+      "k": 1.0
+    },
+    "oracle": {
+      "value": 2.061180372600855e-09,
+      "bits": "0x3E21B495650E3E17"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.1
+    }
+  },
+  {
+    "id": "ode.edge.nonstiff_ok_2",
+    "tier": "edge",
+    "inputs": {
+      "tag": "logistic",
+      "y0": [
+        0.001
+      ],
+      "tf": 20.0,
+      "r": 1.0,
+      "kk": 1.0
+    },
+    "oracle": {
+      "value": 0.9999979409109971,
+      "bits": "0x3FEFFFFBAE88F65C"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.1
+    }
+  },
+  {
+    "id": "ode.edge.nonstiff_ok_3",
+    "tier": "edge",
+    "inputs": {
+      "tag": "linear2d",
+      "y0": [
+        1.0,
+        1.0
+      ],
+      "tf": 15.0
+    },
+    "oracle": {
+      "value": -3.3465821613941454e-08,
+      "bits": "0xBE61F781EB801975"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.1
+    }
+  },
+  {
+    "id": "ode.edge.nonstiff_ok_4",
+    "tier": "edge",
+    "inputs": {
+      "tag": "harmonic",
+      "y0": [
+        0.0,
+        1.0
+      ],
+      "tf": 30.0
+    },
+    "oracle": {
+      "value": -0.9880316241054671,
+      "bits": "0xBFEF9DF47F1E4BBF"
+    },
+    "source": "scipy.integrate.solve_ivp 1.17.1",
+    "strategies": [
+      "rk45",
+      "rk23"
+    ],
+    "tol": {
+      "rk45": 0.01,
+      "rk23": 0.1
+    }
+  }
+]
