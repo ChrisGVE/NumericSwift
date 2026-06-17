@@ -18,28 +18,28 @@ struct NanMeanTests {
   @Test("no NaN matches mean")
   func noNaN() {
     let data = [1.0, 2.0, 3.0, 4.0, 5.0]
-    #expect(nanmean(data) == mean(data))
+    #expect(Stats.nanmean(data) == Stats.mean(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
     let data = [1.0, Double.nan, 3.0, Double.nan, 5.0]
-    #expect(nanmean(data) == mean([1.0, 3.0, 5.0]))
+    #expect(Stats.nanmean(data) == Stats.mean([1.0, 3.0, 5.0]))
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanmean([Double.nan, Double.nan]).isNaN)
+    #expect(Stats.nanmean([Double.nan, Double.nan]).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanmean([]).isNaN)
+    #expect(Stats.nanmean([]).isNaN)
   }
 
   @Test("single non-NaN among NaNs")
   func singleAmongNaN() {
-    #expect(nanmean([Double.nan, 7.0, Double.nan]) == 7.0)
+    #expect(Stats.nanmean([Double.nan, 7.0, Double.nan]) == 7.0)
   }
 }
 
@@ -50,28 +50,28 @@ struct NanMedianTests {
   @Test("no NaN matches median")
   func noNaN() {
     let data = [3.0, 1.0, 4.0, 1.0, 5.0]
-    #expect(nanmedian(data) == median(data))
+    #expect(Stats.nanmedian(data) == Stats.median(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
     let data = [Double.nan, 2.0, 4.0, Double.nan, 6.0]
-    #expect(nanmedian(data) == median([2.0, 4.0, 6.0]))
+    #expect(Stats.nanmedian(data) == Stats.median([2.0, 4.0, 6.0]))
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanmedian([Double.nan]).isNaN)
+    #expect(Stats.nanmedian([Double.nan]).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanmedian([]).isNaN)
+    #expect(Stats.nanmedian([]).isNaN)
   }
 
   @Test("single non-NaN among NaNs")
   func singleAmongNaN() {
-    #expect(nanmedian([Double.nan, 42.0, Double.nan]) == 42.0)
+    #expect(Stats.nanmedian([Double.nan, 42.0, Double.nan]) == 42.0)
   }
 }
 
@@ -82,31 +82,31 @@ struct NanVarianceTests {
   @Test("no NaN matches variance")
   func noNaN() {
     let data = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
-    #expect(nanvariance(data) == variance(data))
+    #expect(Stats.nanvariance(data) == Stats.variance(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
     let clean = [2.0, 4.0, 6.0]
     let withNaN = [2.0, Double.nan, 4.0, Double.nan, 6.0]
-    #expect(nanvariance(withNaN) == variance(clean))
+    #expect(Stats.nanvariance(withNaN) == Stats.variance(clean))
   }
 
   @Test("ddof forwarded")
   func ddof() {
     let clean = [1.0, 2.0, 3.0]
     let withNaN = [1.0, Double.nan, 2.0, 3.0]
-    #expect(nanvariance(withNaN, ddof: 1) == variance(clean, ddof: 1))
+    #expect(Stats.nanvariance(withNaN, ddof: 1) == Stats.variance(clean, ddof: 1))
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanvariance([Double.nan, Double.nan]).isNaN)
+    #expect(Stats.nanvariance([Double.nan, Double.nan]).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanvariance([]).isNaN)
+    #expect(Stats.nanvariance([]).isNaN)
   }
 }
 
@@ -117,31 +117,31 @@ struct NanStdTests {
   @Test("no NaN matches stddev")
   func noNaN() {
     let data = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
-    #expect(nanstd(data) == stddev(data))
+    #expect(Stats.nanstd(data) == Stats.stddev(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
     let clean = [2.0, 4.0, 6.0]
     let withNaN = [2.0, Double.nan, 4.0, 6.0]
-    #expect(nanstd(withNaN) == stddev(clean))
+    #expect(Stats.nanstd(withNaN) == Stats.stddev(clean))
   }
 
   @Test("ddof forwarded")
   func ddof() {
     let clean = [1.0, 2.0, 3.0]
     let withNaN = [1.0, Double.nan, 2.0, 3.0]
-    #expect(nanstd(withNaN, ddof: 1) == stddev(clean, ddof: 1))
+    #expect(Stats.nanstd(withNaN, ddof: 1) == Stats.stddev(clean, ddof: 1))
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanstd([Double.nan]).isNaN)
+    #expect(Stats.nanstd([Double.nan]).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanstd([]).isNaN)
+    #expect(Stats.nanstd([]).isNaN)
   }
 }
 
@@ -152,27 +152,27 @@ struct NanMinTests {
   @Test("no NaN matches amin")
   func noNaN() {
     let data = [3.0, 1.0, 4.0, 1.0, 5.0]
-    #expect(nanmin(data) == amin(data))
+    #expect(Stats.nanmin(data) == Stats.amin(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
-    #expect(nanmin([Double.nan, 3.0, Double.nan, 1.0]) == 1.0)
+    #expect(Stats.nanmin([Double.nan, 3.0, Double.nan, 1.0]) == 1.0)
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanmin([Double.nan, Double.nan]).isNaN)
+    #expect(Stats.nanmin([Double.nan, Double.nan]).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanmin([]).isNaN)
+    #expect(Stats.nanmin([]).isNaN)
   }
 
   @Test("single non-NaN among NaNs")
   func singleAmongNaN() {
-    #expect(nanmin([Double.nan, -5.0, Double.nan]) == -5.0)
+    #expect(Stats.nanmin([Double.nan, -5.0, Double.nan]) == -5.0)
   }
 }
 
@@ -181,27 +181,27 @@ struct NanMaxTests {
   @Test("no NaN matches amax")
   func noNaN() {
     let data = [3.0, 1.0, 4.0, 1.0, 5.0]
-    #expect(nanmax(data) == amax(data))
+    #expect(Stats.nanmax(data) == Stats.amax(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
-    #expect(nanmax([Double.nan, 3.0, Double.nan, 7.0]) == 7.0)
+    #expect(Stats.nanmax([Double.nan, 3.0, Double.nan, 7.0]) == 7.0)
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanmax([Double.nan, Double.nan]).isNaN)
+    #expect(Stats.nanmax([Double.nan, Double.nan]).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanmax([]).isNaN)
+    #expect(Stats.nanmax([]).isNaN)
   }
 
   @Test("single non-NaN among NaNs")
   func singleAmongNaN() {
-    #expect(nanmax([Double.nan, 99.0, Double.nan]) == 99.0)
+    #expect(Stats.nanmax([Double.nan, 99.0, Double.nan]) == 99.0)
   }
 }
 
@@ -212,28 +212,28 @@ struct NanSumTests {
   @Test("no NaN matches sum")
   func noNaN() {
     let data = [1.0, 2.0, 3.0]
-    #expect(nansum(data) == sum(data))
+    #expect(Stats.nansum(data) == sum(data))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
-    #expect(nansum([1.0, Double.nan, 2.0, Double.nan, 3.0]) == 6.0)
+    #expect(Stats.nansum([1.0, Double.nan, 2.0, Double.nan, 3.0]) == 6.0)
   }
 
   @Test("all NaN returns 0")
   func allNaN() {
     // numpy returns 0.0 for nansum of all-NaN arrays
-    #expect(nansum([Double.nan, Double.nan]) == 0.0)
+    #expect(Stats.nansum([Double.nan, Double.nan]) == 0.0)
   }
 
   @Test("empty array returns 0")
   func empty() {
-    #expect(nansum([]) == 0.0)
+    #expect(Stats.nansum([]) == 0.0)
   }
 
   @Test("single non-NaN among NaNs")
   func singleAmongNaN() {
-    #expect(nansum([Double.nan, 5.0, Double.nan]) == 5.0)
+    #expect(Stats.nansum([Double.nan, 5.0, Double.nan]) == 5.0)
   }
 }
 
@@ -244,40 +244,40 @@ struct NanPercentileTests {
   @Test("no NaN matches percentile")
   func noNaN() {
     let data = [1.0, 2.0, 3.0, 4.0, 5.0]
-    #expect(nanpercentile(data, 50) == percentile(data, 50))
+    #expect(Stats.nanpercentile(data, 50) == Stats.percentile(data, 50))
   }
 
   @Test("some NaN values ignored")
   func someNaN() {
     let clean = [1.0, 2.0, 3.0, 4.0, 5.0]
     let withNaN = [1.0, Double.nan, 2.0, 3.0, Double.nan, 4.0, 5.0]
-    #expect(nanpercentile(withNaN, 50) == percentile(clean, 50))
+    #expect(Stats.nanpercentile(withNaN, 50) == Stats.percentile(clean, 50))
   }
 
   @Test("all NaN returns NaN")
   func allNaN() {
-    #expect(nanpercentile([Double.nan, Double.nan], 50).isNaN)
+    #expect(Stats.nanpercentile([Double.nan, Double.nan], 50).isNaN)
   }
 
   @Test("empty array returns NaN")
   func empty() {
-    #expect(nanpercentile([], 50).isNaN)
+    #expect(Stats.nanpercentile([], 50).isNaN)
   }
 
   @Test("single non-NaN among NaNs")
   func singleAmongNaN() {
-    #expect(nanpercentile([Double.nan, 8.0, Double.nan], 50) == 8.0)
+    #expect(Stats.nanpercentile([Double.nan, 8.0, Double.nan], 50) == 8.0)
   }
 
   @Test("0th percentile is nanmin")
   func p0() {
     let data = [Double.nan, 3.0, 1.0, Double.nan, 5.0]
-    #expect(nanpercentile(data, 0) == nanmin(data))
+    #expect(Stats.nanpercentile(data, 0) == Stats.nanmin(data))
   }
 
   @Test("100th percentile is nanmax")
   func p100() {
     let data = [Double.nan, 3.0, 1.0, Double.nan, 5.0]
-    #expect(nanpercentile(data, 100) == nanmax(data))
+    #expect(Stats.nanpercentile(data, 100) == Stats.nanmax(data))
   }
 }

@@ -894,8 +894,8 @@ public func ttest1Sample(_ sample: [Double], popmean: Double) -> TestResult? {
   guard sample.count >= 2 else { return nil }
 
   let n = Double(sample.count)
-  let sampleMean = mean(sample)
-  let sampleStd = stddev(sample, ddof: 1)
+  let sampleMean = Stats.mean(sample)
+  let sampleStd = Stats.stddev(sample, ddof: 1)
   let se = sampleStd / Darwin.sqrt(n)
 
   guard se > 0 else { return TestResult(statistic: .nan, pvalue: .nan) }
@@ -918,10 +918,10 @@ public func ttestIndependent(_ sample1: [Double], _ sample2: [Double], equalVari
 
   let n1 = Double(sample1.count)
   let n2 = Double(sample2.count)
-  let mean1 = mean(sample1)
-  let mean2 = mean(sample2)
-  let var1 = NumericSwift.variance(sample1, ddof: 1)
-  let var2 = NumericSwift.variance(sample2, ddof: 1)
+  let mean1 = Stats.mean(sample1)
+  let mean2 = Stats.mean(sample2)
+  let var1 = Stats.variance(sample1, ddof: 1)
+  let var2 = Stats.variance(sample2, ddof: 1)
 
   let tStat: Double
   let df: Double
@@ -954,8 +954,8 @@ public func pearsonr(_ x: [Double], _ y: [Double]) -> TestResult? {
   guard x.count == y.count, x.count >= 3 else { return nil }
 
   let n = Double(x.count)
-  let meanX = mean(x)
-  let meanY = mean(y)
+  let meanX = Stats.mean(x)
+  let meanY = Stats.mean(y)
 
   var sumXY = 0.0
   var sumX2 = 0.0
@@ -1044,8 +1044,8 @@ public func describe(_ data: [Double]) -> DescribeResult? {
 
   let n = data.count
   let nDouble = Double(n)
-  let dataMean = mean(data)
-  let dataVar = NumericSwift.variance(data, ddof: 1)
+  let dataMean = Stats.mean(data)
+  let dataVar = Stats.variance(data, ddof: 1)
   let dataStd = Darwin.sqrt(dataVar)
 
   // Skewness (Fisher's definition)
@@ -1089,8 +1089,8 @@ public func describe(_ data: [Double]) -> DescribeResult? {
 public func zscore(_ data: [Double], ddof: Int = 0) -> [Double] {
   guard data.count > ddof else { return [] }
 
-  let dataMean = mean(data)
-  let dataStd = stddev(data, ddof: ddof)
+  let dataMean = Stats.mean(data)
+  let dataStd = Stats.stddev(data, ddof: ddof)
 
   guard dataStd > 0 else {
     return data.map { _ in Double.nan }
@@ -1104,8 +1104,8 @@ public func skew(_ data: [Double]) -> Double {
   guard data.count >= 3 else { return .nan }
 
   let n = Double(data.count)
-  let dataMean = mean(data)
-  let dataStd = stddev(data, ddof: 1)
+  let dataMean = Stats.mean(data)
+  let dataStd = Stats.stddev(data, ddof: 1)
 
   guard dataStd > 0 else { return .nan }
 
@@ -1127,8 +1127,8 @@ public func kurtosis(_ data: [Double], fisher: Bool = true) -> Double {
   guard data.count >= 4 else { return .nan }
 
   let n = Double(data.count)
-  let dataMean = mean(data)
-  let dataVar = NumericSwift.variance(data, ddof: 1)
+  let dataMean = Stats.mean(data)
+  let dataVar = Stats.variance(data, ddof: 1)
 
   guard dataVar > 0 else { return .nan }
 

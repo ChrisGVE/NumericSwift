@@ -20,13 +20,13 @@ final class NaNInfHandlingTests: XCTestCase {
 
   func testMeanWithNaN() throws  {
     // NaN propagates through arithmetic sum
-    let result = mean([1.0, .nan, 3.0])
+    let result = Stats.mean([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "mean with NaN element should propagate NaN")
   }
 
   func testMeanWithInf() throws  {
     // Inf propagates through arithmetic sum
-    let result = mean([1.0, .infinity, 3.0])
+    let result = Stats.mean([1.0, .infinity, 3.0])
     XCTAssertTrue(result.isInfinite, "mean with Inf element should propagate Inf")
   }
 
@@ -34,12 +34,12 @@ final class NaNInfHandlingTests: XCTestCase {
     // Swift's sort is not stable for NaN (NaN < x and x < NaN are both false).
     // In practice NaN ends up in a position that makes the median NaN.
     // Document actual behavior: NaN propagates through the sorted result.
-    let result = median([1.0, .nan, 3.0])
+    let result = Stats.median([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "median with NaN element propagates NaN via sort ordering")
   }
 
   func testMedianWithInf() throws  {
-    let result = median([1.0, .infinity, 3.0])
+    let result = Stats.median([1.0, .infinity, 3.0])
     // Sorted: [1, 3, Inf]; median → 3.0
     XCTAssertFalse(result.isNaN)
     XCTAssertEqual(result, 3.0, accuracy: 1e-12)
@@ -47,24 +47,24 @@ final class NaNInfHandlingTests: XCTestCase {
 
   func testVarianceWithNaN() throws  {
     // mean becomes NaN → squared diffs become NaN → variance is NaN
-    let result = variance([1.0, .nan, 3.0])
+    let result = Stats.variance([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "variance with NaN element should propagate NaN")
   }
 
   func testVarianceWithInf() throws  {
-    let result = variance([1.0, .infinity, 3.0])
+    let result = Stats.variance([1.0, .infinity, 3.0])
     XCTAssertTrue(
       result.isNaN || result.isInfinite,
       "variance with Inf element should produce NaN or Inf")
   }
 
   func testStddevWithNaN() throws  {
-    let result = stddev([1.0, .nan, 3.0])
+    let result = Stats.stddev([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "stddev with NaN element should propagate NaN")
   }
 
   func testStddevWithInf() throws  {
-    let result = stddev([1.0, .infinity, 3.0])
+    let result = Stats.stddev([1.0, .infinity, 3.0])
     XCTAssertTrue(
       result.isNaN || result.isInfinite,
       "stddev with Inf element should produce NaN or Inf")
@@ -73,39 +73,39 @@ final class NaNInfHandlingTests: XCTestCase {
   func testPercentileWithNaN() throws  {
     // NaN sort position is undefined; the NaN propagates into the interpolated result.
     // Document actual behavior: no crash, but result is NaN.
-    let result = percentile([1.0, .nan, 3.0], 50)
+    let result = Stats.percentile([1.0, .nan, 3.0], 50)
     XCTAssertTrue(
       result.isNaN, "percentile with NaN element propagates NaN via sort ordering")
   }
 
   func testPercentileWithInf() throws  {
-    let result = percentile([1.0, .infinity, 3.0], 100)
+    let result = Stats.percentile([1.0, .infinity, 3.0], 100)
     XCTAssertTrue(result.isInfinite, "100th percentile with Inf element should return Inf")
   }
 
   func testGmeanWithNaN() throws  {
     // gmean checks v <= 0 but NaN > 0 is false, so NaN passes the guard
     // and log(NaN) = NaN propagates
-    let result = gmean([1.0, .nan, 3.0])
+    let result = Stats.gmean([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "gmean with NaN element should propagate NaN")
   }
 
   func testGmeanWithInf() throws  {
     // Inf passes the positivity check; log(Inf) = Inf; exp(Inf) = Inf
-    let result = gmean([1.0, .infinity, 3.0])
+    let result = Stats.gmean([1.0, .infinity, 3.0])
     XCTAssertTrue(result.isInfinite, "gmean with Inf element should produce Inf")
   }
 
   func testHmeanWithNaN() throws  {
     // NaN fails the v <= 0 guard (NaN <= 0 is false) so it passes through;
     // 1/NaN = NaN propagates into the reciprocal sum
-    let result = hmean([1.0, .nan, 3.0])
+    let result = Stats.hmean([1.0, .nan, 3.0])
     XCTAssertTrue(result.isNaN, "hmean with NaN element should propagate NaN")
   }
 
   func testHmeanWithInf() throws  {
     // 1/Inf = 0; harmonic mean of [1, Inf, 3] = 3 / (1 + 0 + 1/3) = 3/(4/3) = 2.25
-    let result = hmean([1.0, .infinity, 3.0])
+    let result = Stats.hmean([1.0, .infinity, 3.0])
     XCTAssertFalse(result.isNaN)
     XCTAssertFalse(result.isInfinite)
     XCTAssertGreaterThan(result, 0)
@@ -114,12 +114,12 @@ final class NaNInfHandlingTests: XCTestCase {
   // MARK: - Statistics: all-NaN array
 
   func testMeanAllNaN() throws  {
-    let result = mean([Double.nan, Double.nan])
+    let result = Stats.mean([Double.nan, Double.nan])
     XCTAssertTrue(result.isNaN)
   }
 
   func testVarianceAllNaN() throws  {
-    let result = variance([Double.nan, Double.nan])
+    let result = Stats.variance([Double.nan, Double.nan])
     XCTAssertTrue(result.isNaN)
   }
 
