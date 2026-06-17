@@ -72,6 +72,54 @@ public func erfcinv(_ x: Double) -> Double {
   return erfinv(1.0 - x)
 }
 
+/// Argument distance from the unit boundary, `1 − |x|`, beyond which ``erfinv``'s
+/// extreme-tail accuracy degrades below ~8 significant digits.
+///
+/// For `|x| > 1 − 1e-11` the Winitzki + Halley scheme loses precision in the
+/// far tail (CLAUDE.md "Known Limitations" §1: ~5 digits for `|p| > 0.9999`,
+/// degrading to total loss as `|x| → 1`). Measured against scipy.special.erfinv:
+/// the relative error is ~1e-9 at `|x| = 1 − 1e-10` (still inside the envelope),
+/// rises to ~1.5e-6 at `1 − 1e-12`, and diverges (absolute error > 2) by
+/// `1 − 1e-15`. The cutoff is placed at `1e-11` so the reliable region (≥8
+/// digits) stays in-envelope and the degraded far tail is flagged.
+private let erfinvTailBoundary = 1e-11
+
+/// Inverse error function with a recoverable accuracy diagnostic.
+///
+/// Returns the same value as ``erfinv(_:)`` wrapped in a ``Diagnosed`` so callers
+/// can detect the documented extreme-tail precision loss without parsing the
+/// numeric result. When `|x| > 1 − ``erfinvTailBoundary``` the returned
+/// ``Diagnosed`` carries an ``NumericDiagnostic/outsideEnvelope(method:reason:)``
+/// — the value is still the best-effort `erfinv`, but it may have fewer than ~8
+/// correct significant digits in this regime.
+///
+/// In-envelope inputs (`|x| ≤ 1 − ``erfinvTailBoundary```) return an empty
+/// diagnostic list and full ~14-digit accuracy.
+///
+/// - Parameter x: The argument, `x ∈ (−1, 1)`.
+/// - Returns: A ``Diagnosed`` pairing `erfinv(x)` with any extreme-tail diagnostic.
+public func erfinvDiagnosed(_ x: Double) -> Diagnosed<Double> {
+  let value = erfinv(x)
+  // Only finite, in-domain arguments can be "outside the envelope"; the bare
+  // ±1 / out-of-domain cases already return ±inf / NaN, which carry their own
+  // signal and are not flagged here.
+  guard x > -1, x < 1, x.isFinite else {
+    return Diagnosed(value)
+  }
+  if 1.0 - abs(x) < erfinvTailBoundary {
+    return Diagnosed(
+      value,
+      diagnostics: [
+        .outsideEnvelope(
+          method: "erfinv",
+          reason: "|x| > 1 − 1e-11 — far-tail precision degrades below ~8 digits"
+        )
+      ]
+    )
+  }
+  return Diagnosed(value)
+}
+
 // MARK: - Beta Functions
 
 /// Beta function B(a,b) = Γ(a)Γ(b)/Γ(a+b)
