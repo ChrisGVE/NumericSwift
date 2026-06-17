@@ -8,123 +8,199 @@
 //  Supported methods: linear (multilinear) and nearest.
 //  Out-of-bounds behaviour: throw or fill with a constant value.
 //
+//  ## Internal architecture
+//
+//  - `InterpolationND.interpn(...)` — public entry point; validates arguments,
+//    constructs a `RegularGrid`, and maps each query point through `evaluate`.
+//
+//  - `RegularGrid` — private struct; holds the pre-validated axes, flat
+//    row-major values array, and pre-computed strides.  Owns the `multilinear`
+//    and `nearestNeighbour` evaluation logic.
+//
+//  - `findIntervalND(_:_:)` — private free function; binary search returning the
+//    largest left-bracket index `i` with `sortedAxis[i] <= x`, clamped so that
+//    `i + 1` is always a valid index.
+//
 //  Licensed under the Apache License, Version 2.0.
 //
 
 import Foundation
 
-// MARK: - Public types
+// MARK: - InterpolationND namespace
 
-/// Interpolation method for N-dimensional grid interpolation.
-public enum InterpolationNDMethod: Sendable {
-  /// Multilinear interpolation: weighted sum over the 2^N enclosing corners.
-  case linear
-  /// Nearest-neighbour: returns the value at the closest grid node.
-  case nearest
-}
+/// Namespace for N-dimensional grid interpolation.
+///
+/// All public types and the entry-point function are scoped under this enum to
+/// keep the module-level namespace tidy, consistent with the `Sparse` and
+/// `LinAlg` namespaces elsewhere in NumericSwift.
+///
+/// ```swift
+/// let result = try InterpolationND.interpn(
+///     points: [x, y], values: values, xi: [[0.5, 1.0]])
+/// ```
+public enum InterpolationND {
 
-/// Out-of-bounds policy for N-dimensional grid interpolation.
-public enum InterpolationNDBounds: Sendable {
-  /// Throw `InterpolationNDError.outOfBounds` when any query coordinate lies
-  /// outside the axis range.
-  case error
-  /// Return `fill` for any query point where at least one coordinate is
-  /// outside its axis range.  Use `.nan` to reproduce SciPy's default.
-  case fillValue(Double)
-}
+  // MARK: - Interpolation method
 
-/// Errors produced by `interpn`.
-public enum InterpolationNDError: Error, Equatable, Sendable {
-  /// A query coordinate is outside the axis bounds.
+  /// Interpolation method for N-dimensional grid interpolation.
+  public enum Method: Sendable {
+    /// Multilinear interpolation: weighted sum over the 2^N enclosing corners.
+    case linear
+    /// Nearest-neighbour: returns the value at the closest grid node.
+    case nearest
+  }
+
+  // MARK: - Out-of-bounds policy
+
+  /// Out-of-bounds policy for N-dimensional grid interpolation.
+  public enum BoundsHandling: Sendable {
+    /// Throw ``InterpolationND/InterpError/outOfBounds(axis:value:min:max:)``
+    /// when any query coordinate lies outside the axis range.
+    case error
+    /// Return `fill` for any query point where at least one coordinate is
+    /// outside its axis range.  Use `.nan` to reproduce SciPy's default.
+    case fillValue(Double)
+  }
+
+  // MARK: - Error type
+
+  /// Errors produced by ``InterpolationND/interpn(points:values:xi:method:boundsHandling:)``.
+  public enum InterpError: Error, Equatable, Sendable {
+    /// A query coordinate is outside the axis bounds.
+    ///
+    /// - Parameters:
+    ///   - axis: Zero-based axis index.
+    ///   - value: The out-of-range coordinate.
+    ///   - min: Lower bound of the axis.
+    ///   - max: Upper bound of the axis.
+    case outOfBounds(axis: Int, value: Double, min: Double, max: Double)
+
+    /// The grid specification is malformed (axis too short, wrong values count,
+    /// or axis not strictly increasing).
+    case invalidGrid(reason: String)
+
+    /// A query point has a different number of components than the grid has axes.
+    ///
+    /// - Parameters:
+    ///   - expected: Number of axes.
+    ///   - got: Number of components in the query point.
+    case dimensionMismatch(expected: Int, got: Int)
+  }
+
+  // MARK: - Public entry point
+
+  /// Interpolate on a regular N-dimensional grid.
+  ///
+  /// This function evaluates an N-dimensional interpolant at a set of query
+  /// points.  The grid is defined by one coordinate array per axis; the data
+  /// values are given as a flat, row-major (C-order) array whose shape matches
+  /// the grid.
+  ///
+  /// The API mirrors SciPy's `scipy.interpolate.interpn`:
+  ///
+  /// ```python
+  /// from scipy.interpolate import interpn
+  /// v = interpn((x, y), values, [(0.5, 1.0)], method='linear')
+  /// ```
+  ///
+  /// Equivalent Swift:
+  ///
+  /// ```swift
+  /// let v = try InterpolationND.interpn(
+  ///     points: [x, y], values: values, xi: [[0.5, 1.0]],
+  ///     method: .linear, boundsHandling: .error)
+  /// ```
+  ///
+  /// ## Algorithm
+  ///
+  /// **Linear:** multilinear interpolation over the 2^N enclosing corners.
+  /// For each axis *d*, binary search finds the bracketing interval, and a
+  /// fractional weight `t_d` is computed from the distance within that interval.
+  /// The result is the weighted sum
+  ///
+  ///     Σ_c  (Π_d weight_d(c)) · value(c)
+  ///
+  /// over all 2^N corner combinations, where `weight_d(c) = 1−t_d` if the
+  /// corner selects the left node on axis *d*, and `t_d` otherwise.
+  ///
+  /// **Nearest:** each axis independently rounds to the closest grid node
+  /// (ties go to the left/lower node, matching SciPy's behaviour).
   ///
   /// - Parameters:
-  ///   - axis: Zero-based axis index.
-  ///   - value: The out-of-range coordinate.
-  ///   - min: Lower bound of the axis.
-  ///   - max: Upper bound of the axis.
-  case outOfBounds(axis: Int, value: Double, min: Double, max: Double)
-
-  /// The grid specification is malformed (axis too short, wrong values count,
-  /// or axis not strictly increasing).
-  case invalidGrid(reason: String)
-
-  /// A query point has a different number of components than the grid has axes.
-  ///
-  /// - Parameters:
-  ///   - expected: Number of axes.
-  ///   - got: Number of components in the query point.
-  case dimensionMismatch(expected: Int, got: Int)
+  ///   - points: Coordinate arrays for each axis, each strictly increasing
+  ///     and containing at least two elements.
+  ///   - values: Flat, row-major array of data values.  Its count must equal
+  ///     the product of the axis lengths.
+  ///   - xi: Query points.  Each element is an N-component coordinate vector.
+  ///   - method: Interpolation method (`.linear` or `.nearest`).
+  ///   - boundsHandling: What to do when a query point is outside the grid
+  ///     (`.error` throws; `.fillValue(v)` returns `v`).
+  /// - Returns: Interpolated values, one per query point, in the same order.
+  /// - Throws: ``InterpolationND/InterpError/invalidGrid(reason:)`` when `points`
+  ///   or `values` are malformed;
+  ///   ``InterpolationND/InterpError/dimensionMismatch(expected:got:)`` when a
+  ///   query point has the wrong number of components;
+  ///   ``InterpolationND/InterpError/outOfBounds(axis:value:min:max:)`` when a
+  ///   query point is out of range and `boundsHandling` is `.error`.
+  public static func interpn(
+    points: [[Double]],
+    values: [Double],
+    xi: [[Double]],
+    method: Method = .linear,
+    boundsHandling: BoundsHandling = .error
+  ) throws -> [Double] {
+    let grid = try RegularGrid(points: points, values: values)
+    return try xi.map { queryPoint in
+      try grid.evaluate(at: queryPoint, method: method, boundsHandling: boundsHandling)
+    }
+  }
 }
 
-// MARK: - Public API
+// MARK: - Backward-compatible free-function shim
 
 /// Interpolate on a regular N-dimensional grid.
 ///
-/// This function evaluates an N-dimensional interpolant at a set of query
-/// points.  The grid is defined by one coordinate array per axis; the data
-/// values are given as a flat, row-major (C-order) array whose shape matches
-/// the grid.
+/// This is a module-level shim that forwards to
+/// ``InterpolationND/interpn(points:values:xi:method:boundsHandling:)``.
+/// Prefer the namespaced form `InterpolationND.interpn(...)` in new code.
 ///
-/// The API mirrors SciPy's `scipy.interpolate.interpn`:
-///
-/// ```python
-/// from scipy.interpolate import interpn
-/// v = interpn((x, y), values, [(0.5, 1.0)], method='linear')
-/// ```
-///
-/// Equivalent Swift:
-///
-/// ```swift
-/// let v = try interpn(
-///     points: [x, y], values: values, xi: [[0.5, 1.0]],
-///     method: .linear, boundsHandling: .error)
-/// ```
-///
-/// ## Algorithm
-///
-/// **Linear:** multilinear interpolation over the 2^N enclosing corners.
-/// For each axis *d*, binary search finds the bracketing interval, and a
-/// fractional weight `t_d` is computed from the distance within that interval.
-/// The result is the weighted sum
-///
-///     Σ_c  (Π_d weight_d(c)) · value(c)
-///
-/// over all 2^N corner combinations, where `weight_d(c) = 1−t_d` if the
-/// corner selects the left node on axis *d*, and `t_d` otherwise.
-///
-/// **Nearest:** each axis independently rounds to the closest grid node
-/// (ties go to the left/lower node, matching SciPy's behaviour).
-///
-/// - Parameters:
-///   - points: Coordinate arrays for each axis, each strictly increasing
-///     and containing at least two elements.
-///   - values: Flat, row-major array of data values.  Its count must equal
-///     the product of the axis lengths.
-///   - xi: Query points.  Each element is an N-component coordinate vector.
-///   - method: Interpolation method (`.linear` or `.nearest`).
-///   - boundsHandling: What to do when a query point is outside the grid
-///     (`.error` throws; `.fillValue(v)` returns `v`).
-/// - Returns: Interpolated values, one per query point, in the same order.
-/// - Throws: `InterpolationNDError.invalidGrid` when `points` or `values`
-///   are malformed; `InterpolationNDError.dimensionMismatch` when a query
-///   point has the wrong number of components; `InterpolationNDError.outOfBounds`
-///   when a query point is out of range and `boundsHandling` is `.error`.
+/// - SeeAlso: ``InterpolationND/interpn(points:values:xi:method:boundsHandling:)``
+@available(*, deprecated, renamed: "InterpolationND.interpn(points:values:xi:method:boundsHandling:)")
 public func interpn(
   points: [[Double]],
   values: [Double],
   xi: [[Double]],
-  method: InterpolationNDMethod = .linear,
-  boundsHandling: InterpolationNDBounds = .error
+  method: InterpolationND.Method = .linear,
+  boundsHandling: InterpolationND.BoundsHandling = .error
 ) throws -> [Double] {
-  let grid = try RegularGrid(points: points, values: values)
-  return try xi.map { queryPoint in
-    try grid.evaluate(at: queryPoint, method: method, boundsHandling: boundsHandling)
-  }
+  try InterpolationND.interpn(
+    points: points, values: values, xi: xi,
+    method: method, boundsHandling: boundsHandling)
 }
+
+// MARK: - Legacy type aliases (kept for backward compatibility)
+
+/// Interpolation method for N-dimensional grid interpolation.
+///
+/// - SeeAlso: ``InterpolationND/Method``
+@available(*, deprecated, renamed: "InterpolationND.Method")
+public typealias InterpolationNDMethod = InterpolationND.Method
+
+/// Out-of-bounds policy for N-dimensional grid interpolation.
+///
+/// - SeeAlso: ``InterpolationND/BoundsHandling``
+@available(*, deprecated, renamed: "InterpolationND.BoundsHandling")
+public typealias InterpolationNDBounds = InterpolationND.BoundsHandling
+
+/// Errors produced by `interpn`.
+///
+/// - SeeAlso: ``InterpolationND/InterpError``
+@available(*, deprecated, renamed: "InterpolationND.InterpError")
+public typealias InterpolationNDError = InterpolationND.InterpError
 
 // MARK: - Internal grid representation
 
-/// Pre-validated grid descriptor used internally by `interpn`.
+/// Pre-validated grid descriptor used internally by ``InterpolationND/interpn(points:values:xi:method:boundsHandling:)``.
 ///
 /// Holds the per-axis coordinate arrays, the strides needed for flat
 /// (row-major) index arithmetic, and a reference to the values array.
@@ -147,18 +223,18 @@ private struct RegularGrid {
 
   init(points: [[Double]], values: [Double]) throws {
     guard !points.isEmpty else {
-      throw InterpolationNDError.invalidGrid(reason: "points must contain at least one axis")
+      throw InterpolationND.InterpError.invalidGrid(reason: "points must contain at least one axis")
     }
 
     // Validate each axis
     for (d, axis) in points.enumerated() {
       guard axis.count >= 2 else {
-        throw InterpolationNDError.invalidGrid(
+        throw InterpolationND.InterpError.invalidGrid(
           reason: "axis \(d) must have at least 2 elements, got \(axis.count)")
       }
       for i in 1..<axis.count {
         guard axis[i] > axis[i - 1] else {
-          throw InterpolationNDError.invalidGrid(
+          throw InterpolationND.InterpError.invalidGrid(
             reason: "axis \(d) must be strictly increasing: \(axis[i-1]) >= \(axis[i]) at index \(i)")
         }
       }
@@ -167,7 +243,7 @@ private struct RegularGrid {
     // Validate values count against grid shape
     let expectedCount = points.reduce(1) { $0 * $1.count }
     guard values.count == expectedCount else {
-      throw InterpolationNDError.invalidGrid(
+      throw InterpolationND.InterpError.invalidGrid(
         reason: "values count \(values.count) does not match grid shape \(points.map(\.count)) = \(expectedCount)")
     }
 
@@ -187,11 +263,11 @@ private struct RegularGrid {
   /// Evaluate the interpolant at one query point.
   func evaluate(
     at point: [Double],
-    method: InterpolationNDMethod,
-    boundsHandling: InterpolationNDBounds
+    method: InterpolationND.Method,
+    boundsHandling: InterpolationND.BoundsHandling
   ) throws -> Double {
     guard point.count == ndim else {
-      throw InterpolationNDError.dimensionMismatch(expected: ndim, got: point.count)
+      throw InterpolationND.InterpError.dimensionMismatch(expected: ndim, got: point.count)
     }
 
     // Bounds check — performed before any interpolation work.
@@ -201,7 +277,7 @@ private struct RegularGrid {
       if point[d] < lo || point[d] > hi {
         switch boundsHandling {
         case .error:
-          throw InterpolationNDError.outOfBounds(axis: d, value: point[d], min: lo, max: hi)
+          throw InterpolationND.InterpError.outOfBounds(axis: d, value: point[d], min: lo, max: hi)
         case .fillValue(let fill):
           return fill
         }
