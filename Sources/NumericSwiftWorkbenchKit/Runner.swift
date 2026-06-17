@@ -88,6 +88,7 @@ public enum Workbench {
         distributionsSuite,
         specialfunctionsSuite,
         statisticsSuite,
+        seriesSuite,
     ]
 
     /// Look up a suite by domain name.
