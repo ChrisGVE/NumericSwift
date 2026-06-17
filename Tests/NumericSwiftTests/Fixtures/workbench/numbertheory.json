@@ -1,0 +1,1826 @@
+[
+  {
+    "id": "numbertheory.trivial.isPrime_0",
+    "tier": "trivial",
+    "inputs": {
+      "n": 7
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.gcd_1",
+    "tier": "trivial",
+    "inputs": {
+      "a": 24,
+      "b": 36
+    },
+    "oracle": {
+      "value": 12.0,
+      "bits": "0x4028000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.lcm_2",
+    "tier": "trivial",
+    "inputs": {
+      "a": 4,
+      "b": 6
+    },
+    "oracle": {
+      "value": 12.0,
+      "bits": "0x4028000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "lcm"
+    ],
+    "tol": {
+      "lcm": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.factorial_3",
+    "tier": "trivial",
+    "inputs": {
+      "n": 5
+    },
+    "oracle": {
+      "value": 120.0,
+      "bits": "0x405E000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.primeFactorsCount_4",
+    "tier": "trivial",
+    "inputs": {
+      "n": 12
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.primesUpToCount_5",
+    "tier": "trivial",
+    "inputs": {
+      "n": 30
+    },
+    "oracle": {
+      "value": 10.0,
+      "bits": "0x4024000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.eulerPhi_6",
+    "tier": "trivial",
+    "inputs": {
+      "n": 10
+    },
+    "oracle": {
+      "value": 4.0,
+      "bits": "0x4010000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.mobius_7",
+    "tier": "trivial",
+    "inputs": {
+      "n": 30
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.comb_8",
+    "tier": "trivial",
+    "inputs": {
+      "n": 5,
+      "k": 2
+    },
+    "oracle": {
+      "value": 10.0,
+      "bits": "0x4024000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "comb"
+    ],
+    "tol": {
+      "comb": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.trivial.digitSum_9",
+    "tier": "trivial",
+    "inputs": {
+      "n": 12345
+    },
+    "oracle": {
+      "value": 15.0,
+      "bits": "0x402E000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "digitSum"
+    ],
+    "tol": {
+      "digitSum": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_0",
+    "tier": "hard",
+    "inputs": {
+      "n": 97
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_1",
+    "tier": "hard",
+    "inputs": {
+      "n": 561
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_2",
+    "tier": "hard",
+    "inputs": {
+      "n": 7919
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_3",
+    "tier": "hard",
+    "inputs": {
+      "n": 104729
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_4",
+    "tier": "hard",
+    "inputs": {
+      "n": 1299709
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_5",
+    "tier": "hard",
+    "inputs": {
+      "n": 2147483647
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_6",
+    "tier": "hard",
+    "inputs": {
+      "n": 999983
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_7",
+    "tier": "hard",
+    "inputs": {
+      "n": 25
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_8",
+    "tier": "hard",
+    "inputs": {
+      "n": 1000000
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.isPrime_9",
+    "tier": "hard",
+    "inputs": {
+      "n": 600851475143
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_10",
+    "tier": "hard",
+    "inputs": {
+      "n": 360
+    },
+    "oracle": {
+      "value": 6.0,
+      "bits": "0x4018000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_11",
+    "tier": "hard",
+    "inputs": {
+      "n": 1024
+    },
+    "oracle": {
+      "value": 10.0,
+      "bits": "0x4024000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_12",
+    "tier": "hard",
+    "inputs": {
+      "n": 1000000
+    },
+    "oracle": {
+      "value": 12.0,
+      "bits": "0x4028000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_13",
+    "tier": "hard",
+    "inputs": {
+      "n": 13195
+    },
+    "oracle": {
+      "value": 4.0,
+      "bits": "0x4010000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_14",
+    "tier": "hard",
+    "inputs": {
+      "n": 600851475143
+    },
+    "oracle": {
+      "value": 4.0,
+      "bits": "0x4010000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_15",
+    "tier": "hard",
+    "inputs": {
+      "n": 2310
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_16",
+    "tier": "hard",
+    "inputs": {
+      "n": 999999
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_17",
+    "tier": "hard",
+    "inputs": {
+      "n": 123456
+    },
+    "oracle": {
+      "value": 8.0,
+      "bits": "0x4020000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_18",
+    "tier": "hard",
+    "inputs": {
+      "n": 5040
+    },
+    "oracle": {
+      "value": 8.0,
+      "bits": "0x4020000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primeFactorsCount_19",
+    "tier": "hard",
+    "inputs": {
+      "n": 987654321
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_20",
+    "tier": "hard",
+    "inputs": {
+      "n": 100
+    },
+    "oracle": {
+      "value": 25.0,
+      "bits": "0x4039000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_21",
+    "tier": "hard",
+    "inputs": {
+      "n": 1000
+    },
+    "oracle": {
+      "value": 168.0,
+      "bits": "0x4065000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_22",
+    "tier": "hard",
+    "inputs": {
+      "n": 10000
+    },
+    "oracle": {
+      "value": 1229.0,
+      "bits": "0x4093340000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_23",
+    "tier": "hard",
+    "inputs": {
+      "n": 50000
+    },
+    "oracle": {
+      "value": 5133.0,
+      "bits": "0x40B40D0000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_24",
+    "tier": "hard",
+    "inputs": {
+      "n": 100000
+    },
+    "oracle": {
+      "value": 9592.0,
+      "bits": "0x40C2BC0000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_25",
+    "tier": "hard",
+    "inputs": {
+      "n": 250
+    },
+    "oracle": {
+      "value": 53.0,
+      "bits": "0x404A800000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_26",
+    "tier": "hard",
+    "inputs": {
+      "n": 7500
+    },
+    "oracle": {
+      "value": 950.0,
+      "bits": "0x408DB00000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_27",
+    "tier": "hard",
+    "inputs": {
+      "n": 33333
+    },
+    "oracle": {
+      "value": 3569.0,
+      "bits": "0x40ABE20000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_28",
+    "tier": "hard",
+    "inputs": {
+      "n": 500
+    },
+    "oracle": {
+      "value": 95.0,
+      "bits": "0x4057C00000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.primesUpToCount_29",
+    "tier": "hard",
+    "inputs": {
+      "n": 2000
+    },
+    "oracle": {
+      "value": 303.0,
+      "bits": "0x4072F00000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_30",
+    "tier": "hard",
+    "inputs": {
+      "n": 10
+    },
+    "oracle": {
+      "value": 3628800.0,
+      "bits": "0x414BAF8000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_31",
+    "tier": "hard",
+    "inputs": {
+      "n": 12
+    },
+    "oracle": {
+      "value": 479001600.0,
+      "bits": "0x41BC8CFC00000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_32",
+    "tier": "hard",
+    "inputs": {
+      "n": 15
+    },
+    "oracle": {
+      "value": 1307674368000.0,
+      "bits": "0x4273077775800000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_33",
+    "tier": "hard",
+    "inputs": {
+      "n": 18
+    },
+    "oracle": {
+      "value": 6402373705728000.0,
+      "bits": "0x4336BEECCA730000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_34",
+    "tier": "hard",
+    "inputs": {
+      "n": 20
+    },
+    "oracle": {
+      "value": 2.43290200817664e+18,
+      "bits": "0x43C0E1B3BE415A00"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_35",
+    "tier": "hard",
+    "inputs": {
+      "n": 13
+    },
+    "oracle": {
+      "value": 6227020800.0,
+      "bits": "0x41F7328CC0000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_36",
+    "tier": "hard",
+    "inputs": {
+      "n": 16
+    },
+    "oracle": {
+      "value": 20922789888000.0,
+      "bits": "0x42B3077775800000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_37",
+    "tier": "hard",
+    "inputs": {
+      "n": 19
+    },
+    "oracle": {
+      "value": 1.21645100408832e+17,
+      "bits": "0x437B02B930689000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_38",
+    "tier": "hard",
+    "inputs": {
+      "n": 11
+    },
+    "oracle": {
+      "value": 39916800.0,
+      "bits": "0x418308A800000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.factorial_39",
+    "tier": "hard",
+    "inputs": {
+      "n": 17
+    },
+    "oracle": {
+      "value": 355687428096000.0,
+      "bits": "0x42F437EEECD80000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_40",
+    "tier": "hard",
+    "inputs": {
+      "a": 252,
+      "b": 105
+    },
+    "oracle": {
+      "value": 21.0,
+      "bits": "0x4035000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_41",
+    "tier": "hard",
+    "inputs": {
+      "a": 1071,
+      "b": 462
+    },
+    "oracle": {
+      "value": 21.0,
+      "bits": "0x4035000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_42",
+    "tier": "hard",
+    "inputs": {
+      "a": 123456,
+      "b": 789012
+    },
+    "oracle": {
+      "value": 12.0,
+      "bits": "0x4028000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_43",
+    "tier": "hard",
+    "inputs": {
+      "a": 1000000,
+      "b": 999999
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_44",
+    "tier": "hard",
+    "inputs": {
+      "a": 840,
+      "b": 1260
+    },
+    "oracle": {
+      "value": 420.0,
+      "bits": "0x407A400000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_45",
+    "tier": "hard",
+    "inputs": {
+      "a": 17,
+      "b": 5
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.gcd_46",
+    "tier": "hard",
+    "inputs": {
+      "a": 1024,
+      "b": 768
+    },
+    "oracle": {
+      "value": 256.0,
+      "bits": "0x4070000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.lcm_47",
+    "tier": "hard",
+    "inputs": {
+      "a": 21,
+      "b": 6
+    },
+    "oracle": {
+      "value": 42.0,
+      "bits": "0x4045000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "lcm"
+    ],
+    "tol": {
+      "lcm": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.lcm_48",
+    "tier": "hard",
+    "inputs": {
+      "a": 12,
+      "b": 18
+    },
+    "oracle": {
+      "value": 36.0,
+      "bits": "0x4042000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "lcm"
+    ],
+    "tol": {
+      "lcm": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.lcm_49",
+    "tier": "hard",
+    "inputs": {
+      "a": 100,
+      "b": 75
+    },
+    "oracle": {
+      "value": 300.0,
+      "bits": "0x4072C00000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "lcm"
+    ],
+    "tol": {
+      "lcm": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_50",
+    "tier": "hard",
+    "inputs": {
+      "n": 36
+    },
+    "oracle": {
+      "value": 12.0,
+      "bits": "0x4028000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_51",
+    "tier": "hard",
+    "inputs": {
+      "n": 100
+    },
+    "oracle": {
+      "value": 40.0,
+      "bits": "0x4044000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_52",
+    "tier": "hard",
+    "inputs": {
+      "n": 997
+    },
+    "oracle": {
+      "value": 996.0,
+      "bits": "0x408F200000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_53",
+    "tier": "hard",
+    "inputs": {
+      "n": 2310
+    },
+    "oracle": {
+      "value": 480.0,
+      "bits": "0x407E000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_54",
+    "tier": "hard",
+    "inputs": {
+      "n": 123456
+    },
+    "oracle": {
+      "value": 41088.0,
+      "bits": "0x40E4100000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_55",
+    "tier": "hard",
+    "inputs": {
+      "n": 1000000
+    },
+    "oracle": {
+      "value": 400000.0,
+      "bits": "0x41186A0000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_56",
+    "tier": "hard",
+    "inputs": {
+      "n": 7919
+    },
+    "oracle": {
+      "value": 7918.0,
+      "bits": "0x40BEEE0000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.eulerPhi_57",
+    "tier": "hard",
+    "inputs": {
+      "n": 360
+    },
+    "oracle": {
+      "value": 96.0,
+      "bits": "0x4058000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "eulerPhi"
+    ],
+    "tol": {
+      "eulerPhi": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_58",
+    "tier": "hard",
+    "inputs": {
+      "n": 12,
+      "k": 0
+    },
+    "oracle": {
+      "value": 6.0,
+      "bits": "0x4018000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_59",
+    "tier": "hard",
+    "inputs": {
+      "n": 12,
+      "k": 1
+    },
+    "oracle": {
+      "value": 28.0,
+      "bits": "0x403C000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_60",
+    "tier": "hard",
+    "inputs": {
+      "n": 28,
+      "k": 1
+    },
+    "oracle": {
+      "value": 56.0,
+      "bits": "0x404C000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_61",
+    "tier": "hard",
+    "inputs": {
+      "n": 100,
+      "k": 2
+    },
+    "oracle": {
+      "value": 13671.0,
+      "bits": "0x40CAB38000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_62",
+    "tier": "hard",
+    "inputs": {
+      "n": 360,
+      "k": 1
+    },
+    "oracle": {
+      "value": 1170.0,
+      "bits": "0x4092480000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_63",
+    "tier": "hard",
+    "inputs": {
+      "n": 1000,
+      "k": 0
+    },
+    "oracle": {
+      "value": 16.0,
+      "bits": "0x4030000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_64",
+    "tier": "hard",
+    "inputs": {
+      "n": 496,
+      "k": 1
+    },
+    "oracle": {
+      "value": 992.0,
+      "bits": "0x408F000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.divisorSigma_65",
+    "tier": "hard",
+    "inputs": {
+      "n": 2310,
+      "k": 1
+    },
+    "oracle": {
+      "value": 6912.0,
+      "bits": "0x40BB000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "divisorSigma"
+    ],
+    "tol": {
+      "divisorSigma": 1e-09
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_66",
+    "tier": "hard",
+    "inputs": {
+      "n": 30
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_67",
+    "tier": "hard",
+    "inputs": {
+      "n": 12
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_68",
+    "tier": "hard",
+    "inputs": {
+      "n": 1
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_69",
+    "tier": "hard",
+    "inputs": {
+      "n": 105
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_70",
+    "tier": "hard",
+    "inputs": {
+      "n": 2
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_71",
+    "tier": "hard",
+    "inputs": {
+      "n": 49
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_72",
+    "tier": "hard",
+    "inputs": {
+      "n": 510510
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.mobius_73",
+    "tier": "hard",
+    "inputs": {
+      "n": 97
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.liouville_74",
+    "tier": "hard",
+    "inputs": {
+      "n": 12
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "liouville"
+    ],
+    "tol": {
+      "liouville": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.liouville_75",
+    "tier": "hard",
+    "inputs": {
+      "n": 30
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "liouville"
+    ],
+    "tol": {
+      "liouville": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.liouville_76",
+    "tier": "hard",
+    "inputs": {
+      "n": 1
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "liouville"
+    ],
+    "tol": {
+      "liouville": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.liouville_77",
+    "tier": "hard",
+    "inputs": {
+      "n": 8
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "liouville"
+    ],
+    "tol": {
+      "liouville": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.liouville_78",
+    "tier": "hard",
+    "inputs": {
+      "n": 360
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "liouville"
+    ],
+    "tol": {
+      "liouville": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.hard.liouville_79",
+    "tier": "hard",
+    "inputs": {
+      "n": 97
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "liouville"
+    ],
+    "tol": {
+      "liouville": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.isPrime_0",
+    "tier": "edge",
+    "inputs": {
+      "n": 1
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.isPrime_1",
+    "tier": "edge",
+    "inputs": {
+      "n": 2
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "isPrime"
+    ],
+    "tol": {
+      "isPrime": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.factorial_2",
+    "tier": "edge",
+    "inputs": {
+      "n": 0
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.factorial_3",
+    "tier": "edge",
+    "inputs": {
+      "n": 1
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "factorial"
+    ],
+    "tol": {
+      "factorial": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.comb_4",
+    "tier": "edge",
+    "inputs": {
+      "n": 5,
+      "k": 0
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "comb"
+    ],
+    "tol": {
+      "comb": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.comb_5",
+    "tier": "edge",
+    "inputs": {
+      "n": 5,
+      "k": 5
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "comb"
+    ],
+    "tol": {
+      "comb": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.gcd_6",
+    "tier": "edge",
+    "inputs": {
+      "a": 0,
+      "b": 12
+    },
+    "oracle": {
+      "value": 12.0,
+      "bits": "0x4028000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "gcd"
+    ],
+    "tol": {
+      "gcd": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.mobius_7",
+    "tier": "edge",
+    "inputs": {
+      "n": 1
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "mobius"
+    ],
+    "tol": {
+      "mobius": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.primesUpToCount_8",
+    "tier": "edge",
+    "inputs": {
+      "n": 2
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primesUpToCount"
+    ],
+    "tol": {
+      "primesUpToCount": 0.0
+    }
+  },
+  {
+    "id": "numbertheory.edge.primeFactorsCount_9",
+    "tier": "edge",
+    "inputs": {
+      "n": 1
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "sympy 1.14.0 / python math (stdlib)",
+    "strategies": [
+      "primeFactorsCount"
+    ],
+    "tol": {
+      "primeFactorsCount": 0.0
+    }
+  }
+]
