@@ -156,9 +156,14 @@ public enum Workbench {
             var accuracy: [Violation] = []
             if declaredInEnvelope, let v = value, let err = absError, let tol = declaredTol {
                 // A bit-exact match is always within tolerance — this also covers
-                // non-finite oracles (±inf, NaN) where `abs(v - oracle)` is NaN even
+                // non-finite oracles (±inf) where `abs(v - oracle)` is NaN even
                 // though the library reproduced the oracle exactly (e.g. log(0) = -inf).
-                let exactMatch = v.bitPattern == wbCase.oracle.value.bitPattern
+                // Both-NaN counts as a match regardless of payload (a NaN result IS
+                // the correct answer for an undefined real expression like sqrt(-1));
+                // Python and Swift may carry different NaN bit patterns.
+                let oracleValue = wbCase.oracle.value
+                let exactMatch = v.bitPattern == oracleValue.bitPattern
+                    || (v.isNaN && oracleValue.isNaN)
                 // Prefer the case tol; only consult the registry predicate when the
                 // case did not declare one for this strategy.
                 let withinTol: Bool
