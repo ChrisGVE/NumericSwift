@@ -645,15 +645,28 @@ public func newtonMulti(
             )
         }
 
-        // Compute Jacobian numerically
+        // Compute Jacobian numerically using per-variable relative step sizing.
+        //
+        // Step formula: h_j = sqrt(eps) * max(1, |x_j|)
+        // This matches scipy.optimize.approx_fprime and prevents underflow
+        // for large-magnitude variables (where a global h would be below the
+        // floating-point ULP of x_j, making x_j + h == x_j).
+        //
+        // Reference: scipy.optimize._numdiff.approx_derivative (scipy.org)
+        //
+        // Central differences — accuracy O(h²) vs. O(h) for forward differences —
+        // are preferred here because the solver calls f once per iteration anyway
+        // and the 2n evaluations amortise well over Newton steps.
         var jacobian = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
-        let h = sqrt(Double.ulpOfOne)
+        let sqrtEps = sqrt(Double.ulpOfOne)
         for j in 0..<n {
-            var xp = x
-            xp[j] += h
+            let h_j = sqrtEps * max(1.0, abs(x[j]))
+            var xp = x; xp[j] += h_j
+            var xm = x; xm[j] -= h_j
             let fxp = f(xp); nfev += 1
+            let fxm = f(xm); nfev += 1
             for i in 0..<n {
-                jacobian[i][j] = (fxp[i] - fx[i]) / h
+                jacobian[i][j] = (fxp[i] - fxm[i]) / (2.0 * h_j)
             }
         }
 
@@ -820,17 +833,25 @@ public func leastSquares(
     var stagnantCount = 0
     let maxStagnant = 10
 
+    let sqrtEpsBounded = sqrt(Double.ulpOfOne)
     for _ in 0..<maxiter {
-        // Compute Jacobian numerically (m x n matrix)
+        // Compute Jacobian numerically using per-variable relative step sizing.
+        //
+        // Step formula: h_j = sqrt(eps) * max(1, |x_j|)
+        // See: scipy.optimize.approx_derivative (scipy.org)
+        //
+        // Central differences give O(h²) accuracy without a current-residual
+        // baseline dependency, which is safer near bounds where r may be stale.
+        // Don't project the perturbed point — we need the unconstrained derivative.
         var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
-        let h = sqrt(Double.ulpOfOne) * max(1.0, x.map { abs($0) }.max() ?? 1.0)
         for j in 0..<n {
-            var xp = x
-            xp[j] += h
-            // Don't project when computing Jacobian - we need the true derivative
+            let h_j = sqrtEpsBounded * max(1.0, abs(x[j]))
+            var xp = x; xp[j] += h_j
+            var xm = x; xm[j] -= h_j
             let rp = residuals(xp); nfev += 1
+            let rm = residuals(xm); nfev += 1
             for i in 0..<m {
-                J[i][j] = (rp[i] - r[i]) / h
+                J[i][j] = (rp[i] - rm[i]) / (2.0 * h_j)
             }
         }
         njev += 1
@@ -1047,16 +1068,24 @@ private func leastSquaresUnbounded(
     let lambdaUp = 10.0
     let lambdaDown = 0.1
 
+    let sqrtEpsUnbounded = sqrt(Double.ulpOfOne)
     for _ in 0..<maxiter {
-        // Compute Jacobian numerically (m x n matrix)
+        // Compute Jacobian numerically using per-variable relative step sizing.
+        //
+        // Step formula: h_j = sqrt(eps) * max(1, |x_j|)
+        // See: scipy.optimize.approx_derivative (scipy.org)
+        //
+        // Central differences give O(h²) accuracy; preferred over forward
+        // differences which require a fresh baseline r evaluation each step.
         var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
-        let h = sqrt(Double.ulpOfOne) * max(1.0, x.map { abs($0) }.max() ?? 1.0)
         for j in 0..<n {
-            var xp = x
-            xp[j] += h
+            let h_j = sqrtEpsUnbounded * max(1.0, abs(x[j]))
+            var xp = x; xp[j] += h_j
+            var xm = x; xm[j] -= h_j
             let rp = residuals(xp); nfev += 1
+            let rm = residuals(xm); nfev += 1
             for i in 0..<m {
-                J[i][j] = (rp[i] - r[i]) / h
+                J[i][j] = (rp[i] - rm[i]) / (2.0 * h_j)
             }
         }
         njev += 1
@@ -1210,20 +1239,22 @@ public func curveFit(
     // Run least squares
     let result = leastSquares(residuals, x0: p0, ftol: ftol, xtol: xtol, maxiter: maxiter)
 
-    // Estimate covariance matrix
-    let h = sqrt(Double.ulpOfOne) * max(1.0, result.x.map { abs($0) }.max() ?? 1.0)
+    // Estimate covariance matrix via a central-difference Jacobian at the solution.
+    //
+    // Per-variable step formula: h_j = sqrt(eps) * max(1, |p_j|)
+    // See: scipy.optimize.approx_derivative (scipy.org)
+    let sqrtEpsCov = sqrt(Double.ulpOfOne)
     var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
 
     for j in 0..<n {
-        var pp = result.x
-        var pm = result.x
-        pp[j] += h
-        pm[j] -= h
+        let h_j = sqrtEpsCov * max(1.0, abs(result.x[j]))
+        var pp = result.x; pp[j] += h_j
+        var pm = result.x; pm[j] -= h_j
 
         for i in 0..<m {
             let fp = f(pp, xdata[i])
             let fm = f(pm, xdata[i])
-            J[i][j] = (fp - fm) / (2 * h)
+            J[i][j] = (fp - fm) / (2.0 * h_j)
         }
     }
 
