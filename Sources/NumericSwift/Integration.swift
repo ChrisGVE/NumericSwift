@@ -236,6 +236,14 @@ public func quad(
     }
   }
 
+  // If the loop stopped because the subdivision limit was reached while
+  // intervals still failed their local tolerance, the integrand lies outside
+  // quad's reliable envelope (e.g. a strong endpoint singularity or high-
+  // frequency oscillation). We still process the remainder for a best-effort
+  // value, but the result is flagged unreliable — mirroring SciPy's
+  // `IntegrationWarning`. A self-aware caller inspects `diagnostics`.
+  let limitReached = subdivisions >= limit && !stack.isEmpty
+
   // Process remaining intervals if limit reached
   while !stack.isEmpty {
     let (ia, ib) = stack.removeLast()
@@ -245,7 +253,16 @@ public func quad(
     neval += 15
   }
 
-  return QuadResult(value: totalResult, error: totalError, neval: neval)
+  var diagnostics: [NumericDiagnostic] = []
+  if limitReached {
+    diagnostics.append(.outsideEnvelope(
+      method: "quad",
+      reason: "adaptive subdivision limit (\(limit)) reached; estimated error "
+        + "(\(totalError)) may exceed the requested tolerance — result may be unreliable"
+    ))
+  }
+
+  return QuadResult(value: totalResult, error: totalError, neval: neval, diagnostics: diagnostics)
 }
 
 // MARK: - Double Integration

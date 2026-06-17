@@ -241,7 +241,7 @@ final class LinAlgTests: XCTestCase {
 
     func testSVD() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4], [5, 6]])
-        let (s, U, Vt) = LinAlg.svd(a)
+        let (s, _, _) = LinAlg.svd(a)
 
         XCTAssertEqual(s.count, 2)
         XCTAssertTrue(s[0] >= s[1])  // Singular values in descending order
@@ -261,7 +261,7 @@ final class LinAlgTests: XCTestCase {
 
     func testEig() throws  {
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (values, imag, vectors) = try LinAlg.eig(a)
+        let (values, _, vectors) = try LinAlg.eig(a)
 
         XCTAssertEqual(values.count, 2)
         XCTAssertEqual(vectors.rows, 2)
@@ -480,7 +480,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtR[1, 1],  0.9238795325112867,  accuracy: 1e-10)
 
         // Defining identity: sqrtm(R)^2 ≈ R
-        let sqrtR2 = try LinAlg.dot(sqrtR, sqrtR)
+        let sqrtR2 = LinAlg.dot(sqrtR, sqrtR)
         XCTAssertEqual(sqrtR2[0, 0], c, accuracy: 1e-10)
         XCTAssertEqual(sqrtR2[0, 1], -s, accuracy: 1e-10)
         XCTAssertEqual(sqrtR2[1, 0], s, accuracy: 1e-10)
@@ -517,7 +517,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtA[1, 1],  1.272019649514069,    accuracy: 1e-10)
 
         // Defining identity: sqrtm(A)^2 ≈ A
-        let sqrtA2 = try LinAlg.dot(sqrtA, sqrtA)
+        let sqrtA2 = LinAlg.dot(sqrtA, sqrtA)
         XCTAssertEqual(sqrtA2[0, 0], 1.0, accuracy: 1e-9)
         XCTAssertEqual(sqrtA2[0, 1], 2.0, accuracy: 1e-9)
         XCTAssertEqual(sqrtA2[1, 0], -2.0, accuracy: 1e-9)
@@ -571,7 +571,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtJ[1, 1], 1.4142135623730951,  accuracy: 1e-10)
 
         // Defining identity: sqrtm(J)^2 ≈ J
-        let sqrtJ2 = try LinAlg.dot(sqrtJ, sqrtJ)
+        let sqrtJ2 = LinAlg.dot(sqrtJ, sqrtJ)
         XCTAssertEqual(sqrtJ2[0, 0], 2.0, accuracy: 1e-9)
         XCTAssertEqual(sqrtJ2[0, 1], 1.0, accuracy: 1e-9)
         XCTAssertEqual(sqrtJ2[1, 0], 0.0, accuracy: 1e-9)
@@ -661,7 +661,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtD[2, 2],  1.4142135623730951,  accuracy: 1e-10)
 
         // Defining identity: sqrtm(D)^2 ≈ D
-        let sqrtD2 = try LinAlg.dot(sqrtD, sqrtD)
+        let sqrtD2 = LinAlg.dot(sqrtD, sqrtD)
         XCTAssertEqual(sqrtD2[0, 0],  0.0, accuracy: 1e-9)
         XCTAssertEqual(sqrtD2[0, 1], -1.0, accuracy: 1e-9)
         XCTAssertEqual(sqrtD2[1, 0],  1.0, accuracy: 1e-9)
@@ -711,7 +711,7 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtA[2, 2],  1.4142135623730951,    accuracy: 1e-9)
 
         // Defining identity: logm and sqrtm are inverse-consistent.
-        let sqrtA2 = try LinAlg.dot(sqrtA, sqrtA)
+        let sqrtA2 = LinAlg.dot(sqrtA, sqrtA)
         XCTAssertEqual(sqrtA2[0, 0],  1.0, accuracy: 1e-8)
         XCTAssertEqual(sqrtA2[0, 1],  2.0, accuracy: 1e-8)
         XCTAssertEqual(sqrtA2[0, 2],  1.0, accuracy: 1e-8)
@@ -891,7 +891,7 @@ final class LinAlgTests: XCTestCase {
 
     func testCSVD() throws  {
         let m = LinAlg.ComplexMatrix(LinAlg.Matrix([[1, 0], [0, 2]]))
-        guard let (s, U, Vt) = LinAlg.csvd(m) else {
+        guard let (s, _, _) = LinAlg.csvd(m) else {
             XCTFail("csvd should succeed")
             return
         }

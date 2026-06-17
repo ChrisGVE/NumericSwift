@@ -152,11 +152,12 @@ public struct EnvelopeRegistry: Sendable {
 
 // MARK: - Violation
 
-/// A single envelope violation: a strategy result that exceeded its declared
-/// accuracy on a particular fixture case.
+/// A single **accuracy** violation: an in-envelope strategy result whose error
+/// exceeded its declared tolerance for the case tier.
 ///
-/// The workbench collects violations across all domains and cases. The
-/// `WorkbenchGateTests` XCTest asserts `violations.isEmpty`.
+/// Per WORKBENCH.md §5/§7 an accuracy violation is a *reported flag*, not the
+/// hard gate — the hard gate is ``SelfAwarenessFailure``. The workbench collects
+/// accuracy violations for the report; they do not fail CI on their own.
 public struct Violation: Sendable, CustomStringConvertible {
 
     /// The fixture case that produced the violation.
@@ -174,13 +175,22 @@ public struct Violation: Sendable, CustomStringConvertible {
     /// The declared maximum absolute error for this (strategy, tier).
     public let declaredMaxError: Double
 
-    /// Whether this is a ``SelfAwarenessFailure`` (case was in-envelope
-    /// yet got an ``NumericDiagnostic/outsideEnvelope(method:reason:)`` diagnostic).
-    public let isSelfAwarenessFailure: Bool
+    public init(
+        caseID: String,
+        strategy: String,
+        tier: CaseTier,
+        absError: Double,
+        declaredMaxError: Double
+    ) {
+        self.caseID = caseID
+        self.strategy = strategy
+        self.tier = tier
+        self.absError = absError
+        self.declaredMaxError = declaredMaxError
+    }
 
     public var description: String {
-        let kind = isSelfAwarenessFailure ? "SELF-AWARENESS" : "ENVELOPE"
-        return "[\(kind)] \(caseID)/\(strategy) (\(tier.rawValue)): "
+        "[ACCURACY] \(caseID)/\(strategy) (\(tier.rawValue)): "
             + "absError=\(absError) > declared=\(declaredMaxError)"
     }
 }
@@ -217,65 +227,8 @@ public struct SelfAwarenessFailure: Sendable, CustomStringConvertible {
     }
 }
 
-// MARK: - Integration envelope example (wave 1 worked example)
-
-/// Pre-built ``EnvelopeRegistry`` for the Integration (quadrature) domain.
-///
-/// This is the wave-1 worked example. The envelopes reflect:
-///  - `quad` (Gauss-Kronrod adaptive): full double precision on smooth integrands.
-///  - `romberg` (Richardson extrapolation): slightly looser on non-smooth integrands.
-///  - `simps` (Simpson's rule with uniform spacing): exact for polynomials ≤ degree 2;
-///    rough approximation for oscillatory or non-uniform inputs.
-///  - `trapz` (trapezoidal rule): first-order; exact only for linear functions.
-///  - `fixed_quad` (Gauss-Legendre fixed-point): depends on order; hard cases may need order ≥ 5.
-///
-/// Wave 2 will populate registries for all other domains.
-public func makeIntegrationEnvelopeRegistry() -> EnvelopeRegistry {
-    var reg = EnvelopeRegistry()
-
-    for tier: CaseTier in [.trivial, .hard, .edge] {
-        let quadTol: Double = tier == .trivial ? 1e-14 : tier == .hard ? 1e-10 : 1e-6
-        reg.register(EnvelopeEntry(
-            strategy: "quad",
-            tier: tier,
-            maxAbsError: quadTol,
-            description: "Gauss-Kronrod 15-point adaptive quadrature — \(tier.rawValue) cases"
-        ))
-
-        let rombergTol: Double = tier == .trivial ? 1e-12 : tier == .hard ? 1e-8 : 1e-4
-        reg.register(EnvelopeEntry(
-            strategy: "romberg",
-            tier: tier,
-            maxAbsError: rombergTol,
-            description: "Romberg (Richardson extrapolation) — \(tier.rawValue) cases"
-        ))
-
-        let simpsTol: Double = tier == .trivial ? 1e-12 : tier == .hard ? 1e-3 : 1e-1
-        reg.register(EnvelopeEntry(
-            strategy: "simps",
-            tier: tier,
-            maxAbsError: simpsTol,
-            description: "Simpson's rule (uniform spacing) — \(tier.rawValue) cases"
-        ))
-
-        let trapzTol: Double = tier == .trivial ? 1e-10 : tier == .hard ? 1e-2 : 1e-1
-        reg.register(EnvelopeEntry(
-            strategy: "trapz",
-            tier: tier,
-            maxAbsError: trapzTol,
-            description: "Trapezoidal rule — \(tier.rawValue) cases"
-        ))
-
-        let fixedQuadTol: Double = tier == .trivial ? 1e-12 : tier == .hard ? 1e-6 : 1e-3
-        reg.register(EnvelopeEntry(
-            strategy: "fixed_quad",
-            tier: tier,
-            maxAbsError: fixedQuadTol,
-            description: "Gauss-Legendre fixed quadrature — \(tier.rawValue) cases"
-        ))
-    }
-
-    return reg
-}
+// Per-domain envelope registries live in `Domains/<Domain>.swift`, each exposed
+// through that domain's ``DomainSuite``. See `Domains/Integration.swift` for the
+// reference implementation.
 
 

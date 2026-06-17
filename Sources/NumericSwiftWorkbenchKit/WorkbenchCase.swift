@@ -172,9 +172,69 @@ public struct WorkbenchCase: Codable, Sendable {
     /// in fixture authoring.
     public let tol: PerStrategyTolerance
 
+    /// Per-strategy in-envelope flag — the self-awareness gate driver (WORKBENCH.md §5).
+    ///
+    /// For each strategy: `true` means this case lies *inside* the strategy's
+    /// declared limitation envelope (the library must produce a within-`tol`
+    /// answer and must NOT emit a spurious limitation diagnostic); `false` means
+    /// the case is *outside* the envelope (the library MUST emit an
+    /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` diagnostic — a missing
+    /// one is the hard gate failure, regardless of numeric accuracy).
+    ///
+    /// A missing key defaults to `true` (in-envelope): the common case. Only
+    /// out-of-envelope cases need to spell the flag out explicitly.
+    public let inEnvelope: [String: Bool]
+
+    /// Whether the named strategy is declared in-envelope for this case.
+    ///
+    /// Defaults to `true` when the fixture omits the flag for that strategy.
+    public func isInEnvelope(_ strategy: String) -> Bool {
+        inEnvelope[strategy] ?? true
+    }
+
     /// Domain extracted from the case id (the part before the first `.`).
     public var domain: String {
         String(id.split(separator: ".").first ?? "unknown")
+    }
+
+    // MARK: Codable
+
+    private enum CodingKeys: String, CodingKey {
+        case id, tier, inputs, oracle, source, strategies, tol, inEnvelope
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(String.self, forKey: .id)
+        self.tier = try c.decode(CaseTier.self, forKey: .tier)
+        self.inputs = try c.decode([String: InputValue].self, forKey: .inputs)
+        self.oracle = try c.decode(OracleValue.self, forKey: .oracle)
+        self.source = try c.decode(String.self, forKey: .source)
+        self.strategies = try c.decode([String].self, forKey: .strategies)
+        self.tol = try c.decode(PerStrategyTolerance.self, forKey: .tol)
+        // inEnvelope is optional in JSON; absent means every strategy is in-envelope.
+        self.inEnvelope = try c.decodeIfPresent([String: Bool].self, forKey: .inEnvelope) ?? [:]
+    }
+
+    /// Memberwise initialiser for in-Swift authoring (tests, fixtures-in-code).
+    public init(
+        id: String,
+        tier: CaseTier,
+        inputs: [String: InputValue],
+        oracle: OracleValue,
+        source: String,
+        strategies: [String],
+        tol: PerStrategyTolerance,
+        inEnvelope: [String: Bool] = [:]
+    ) {
+        self.id = id
+        self.tier = tier
+        self.inputs = inputs
+        self.oracle = oracle
+        self.source = source
+        self.strategies = strategies
+        self.tol = tol
+        self.inEnvelope = inEnvelope
     }
 }
 

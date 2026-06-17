@@ -27,6 +27,7 @@
 
 import XCTest
 @testable import NumericSwift
+import NumericSwiftWorkbenchKit
 
 // MARK: - WorkbenchGateTests
 
