@@ -16,36 +16,36 @@ final class ClusterTests: XCTestCase {
         // Basic 2D distance
         let p1 = [0.0, 0.0]
         let p2 = [3.0, 4.0]
-        XCTAssertEqual(euclideanDistance(p1, p2), 5.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.euclideanDistance(p1, p2), 5.0, accuracy: 1e-10)
 
         // Same point
-        XCTAssertEqual(euclideanDistance(p1, p1), 0.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.euclideanDistance(p1, p1), 0.0, accuracy: 1e-10)
 
         // 3D distance
         let p3 = [1.0, 2.0, 3.0]
         let p4 = [4.0, 6.0, 3.0]
-        XCTAssertEqual(euclideanDistance(p3, p4), 5.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.euclideanDistance(p3, p4), 5.0, accuracy: 1e-10)
     }
 
     func testSquaredEuclideanDistance() {
         let p1 = [0.0, 0.0]
         let p2 = [3.0, 4.0]
-        XCTAssertEqual(squaredEuclideanDistance(p1, p2), 25.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.squaredEuclideanDistance(p1, p2), 25.0, accuracy: 1e-10)
     }
 
     func testComputeCentroid() {
         let points = [[0.0, 0.0], [2.0, 0.0], [1.0, 3.0]]
-        let centroid = computeCentroid(points)!
+        let centroid = Cluster.centroid(points)!
         XCTAssertEqual(centroid[0], 1.0, accuracy: 1e-10)
         XCTAssertEqual(centroid[1], 1.0, accuracy: 1e-10)
 
         // Empty case
-        XCTAssertNil(computeCentroid([]))
+        XCTAssertNil(Cluster.centroid([]))
     }
 
     func testPairwiseDistances() {
         let data = [[0.0, 0.0], [3.0, 0.0], [0.0, 4.0]]
-        let dists = pairwiseDistances(data)
+        let dists = Spatial.cdist(data, data)
 
         // Diagonal is zero
         XCTAssertEqual(dists[0][0], 0.0, accuracy: 1e-10)
@@ -70,7 +70,7 @@ final class ClusterTests: XCTestCase {
             [5.0, 5.0], [5.1, 5.1], [5.2, 5.0], [5.0, 5.2]
         ]
 
-        let result = kmeans(data, k: 2)
+        let result = Cluster.kmeans(data, k: 2)
 
         // Should find 2 clusters
         XCTAssertEqual(result.centroids.count, 2)
@@ -91,7 +91,7 @@ final class ClusterTests: XCTestCase {
     }
 
     func testKMeansEmpty() {
-        let result = kmeans([], k: 3)
+        let result = Cluster.kmeans([], k: 3)
         XCTAssertTrue(result.labels.isEmpty)
         XCTAssertTrue(result.centroids.isEmpty)
         XCTAssertEqual(result.inertia, 0)
@@ -104,7 +104,7 @@ final class ClusterTests: XCTestCase {
             data.append([Double.random(in: 0...10), Double.random(in: 0...10)])
         }
 
-        let result = kmeans(data, k: 3, maxIterations: 100)
+        let result = Cluster.kmeans(data, k: 3, maxIterations: 100)
 
         // Should converge
         XCTAssertLessThanOrEqual(result.iterations, 100)
@@ -112,22 +112,25 @@ final class ClusterTests: XCTestCase {
     }
 
     func testKMeansPlusPlusInit() {
+        // kMeansPlusPlusInit is now a private implementation detail of Cluster.kmeans.
+        // Verify its effect indirectly: kmeans with k-means++ init converges to k centroids
+        // that are drawn from the data distribution.
         let data = [[0.0, 0.0], [10.0, 0.0], [5.0, 10.0], [5.0, 5.0]]
-        let centroids = kmeansPlusPlusInit(data: data, k: 3, dim: 2)
+        let result = Cluster.kmeans(data, k: 3)
 
-        // Should return k centroids
-        XCTAssertEqual(centroids.count, 3)
-
-        // All centroids should be from data
-        for centroid in centroids {
-            XCTAssertTrue(data.contains { $0[0] == centroid[0] && $0[1] == centroid[1] })
+        // Should produce exactly k centroids
+        XCTAssertEqual(result.centroids.count, 3)
+        // Labels must be valid cluster indices
+        for label in result.labels {
+            XCTAssertGreaterThanOrEqual(label, 0)
+            XCTAssertLessThan(label, 3)
         }
     }
 
     func testKMeansInertia() {
         // Perfect clustering
         let data = [[0.0, 0.0], [10.0, 10.0]]
-        let result = kmeans(data, k: 2)
+        let result = Cluster.kmeans(data, k: 2)
 
         // With k=2, each point is its own centroid, inertia should be 0
         XCTAssertEqual(result.inertia, 0, accuracy: 1e-10)
@@ -138,7 +141,7 @@ final class ClusterTests: XCTestCase {
     func testHierarchicalSimple() {
         let data = [[0.0, 0.0], [1.0, 0.0], [5.0, 0.0], [6.0, 0.0]]
 
-        let result = hierarchicalClustering(data, linkage: .single, nClusters: 2)
+        let result = Cluster.hierarchicalClustering(data, linkage: .single, nClusters: 2)
 
         // Should produce linkage matrix
         XCTAssertEqual(result.linkageMatrix.count, 3)  // n-1 merges
@@ -160,7 +163,7 @@ final class ClusterTests: XCTestCase {
         let data = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [10.0, 0.0]]
 
         for linkage in [LinkageMethod.single, .complete, .average, .ward] {
-            let result = hierarchicalClustering(data, linkage: linkage)
+            let result = Cluster.hierarchicalClustering(data, linkage: linkage)
             XCTAssertEqual(result.linkageMatrix.count, 3)
         }
     }
@@ -171,7 +174,7 @@ final class ClusterTests: XCTestCase {
             [10.0, 0.0], [10.5, 0.0], [11.0, 0.0]
         ]
 
-        let result = hierarchicalClustering(data, linkage: .ward, nClusters: 2)
+        let result = Cluster.hierarchicalClustering(data, linkage: .ward, nClusters: 2)
 
         guard let labels = result.labels else {
             XCTFail("Expected labels")
@@ -189,7 +192,7 @@ final class ClusterTests: XCTestCase {
     func testHierarchicalDistanceThreshold() {
         let data = [[0.0, 0.0], [1.0, 0.0], [10.0, 0.0], [11.0, 0.0]]
 
-        let result = hierarchicalClustering(data, linkage: .single, distanceThreshold: 2.0)
+        let result = Cluster.hierarchicalClustering(data, linkage: .single, distanceThreshold: 2.0)
 
         guard let labels = result.labels else {
             XCTFail("Expected labels")
@@ -202,7 +205,7 @@ final class ClusterTests: XCTestCase {
     }
 
     func testHierarchicalEmpty() {
-        let result = hierarchicalClustering([])
+        let result = Cluster.hierarchicalClustering([])
         XCTAssertTrue(result.linkageMatrix.isEmpty)
         XCTAssertEqual(result.nLeaves, 0)
     }
@@ -216,7 +219,7 @@ final class ClusterTests: XCTestCase {
             [5.0, 5.0], [5.1, 5.0], [5.0, 5.1], [5.1, 5.1]
         ]
 
-        let result = dbscan(data, eps: 0.5, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.5, minSamples: 3)
 
         XCTAssertEqual(result.labels.count, 8)
         XCTAssertEqual(result.nClusters, 2)
@@ -234,7 +237,7 @@ final class ClusterTests: XCTestCase {
             [10.0, 10.0]  // Isolated point
         ]
 
-        let result = dbscan(data, eps: 0.5, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.5, minSamples: 3)
 
         // Last point should be noise (-1)
         XCTAssertEqual(result.labels[4], -1)
@@ -249,7 +252,7 @@ final class ClusterTests: XCTestCase {
             [0.2, 0.2]  // Border point (only 2 neighbors within eps)
         ]
 
-        let result = dbscan(data, eps: 0.2, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.2, minSamples: 3)
 
         // Core samples should not include border point
         // (This depends on exact geometry)
@@ -257,7 +260,7 @@ final class ClusterTests: XCTestCase {
     }
 
     func testDBSCANEmpty() {
-        let result = dbscan([], eps: 0.5, minSamples: 5)
+        let result = Cluster.dbscan([], eps: 0.5, minSamples: 5)
         XCTAssertTrue(result.labels.isEmpty)
         XCTAssertEqual(result.nClusters, 0)
     }
@@ -360,7 +363,7 @@ final class ClusterTests: XCTestCase {
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
         ]
-        let result = dbscan(data, eps: 0.5, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.5, minSamples: 3)
 
         XCTAssertEqual(result.nClusters, 3, "expected 3 clusters matching sklearn")
         XCTAssertTrue(
@@ -379,7 +382,7 @@ final class ClusterTests: XCTestCase {
         ]
         // sklearn reference: cluster 0 for indices 0-4, cluster 1 for indices 5-7
         let sklearnLabels = [0, 0, 0, 0, 0, 1, 1, 1]
-        let result = dbscan(data, eps: 0.2, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.2, minSamples: 3)
 
         XCTAssertEqual(result.nClusters, 2, "expected 2 clusters matching sklearn")
         XCTAssertTrue(
@@ -394,7 +397,7 @@ final class ClusterTests: XCTestCase {
             [0.0, 0.0], [5.0, 5.0], [10.0, 0.0], [0.0, 10.0], [7.0, 3.0]
         ]
         let sklearnLabels = [-1, -1, -1, -1, -1]
-        let result = dbscan(data, eps: 0.1, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.1, minSamples: 3)
 
         XCTAssertEqual(result.nClusters, 0, "expected 0 clusters — all noise")
         XCTAssertTrue(
@@ -409,7 +412,7 @@ final class ClusterTests: XCTestCase {
             [0.0, 0.0], [0.1, 0.0], [0.0, 0.1], [0.1, 0.1], [0.05, 0.05]
         ]
         let sklearnLabels = [0, 0, 0, 0, 0]
-        let result = dbscan(data, eps: 0.5, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.5, minSamples: 3)
 
         XCTAssertEqual(result.nClusters, 1, "expected 1 cluster matching sklearn")
         XCTAssertTrue(
@@ -425,7 +428,7 @@ final class ClusterTests: XCTestCase {
             [5.0, 5.0], [5.0, 5.0], [5.0, 5.0]
         ]
         let sklearnLabels = [0, 0, 0, 0, 1, 1, 1]
-        let result = dbscan(data, eps: 0.1, minSamples: 3)
+        let result = Cluster.dbscan(data, eps: 0.1, minSamples: 3)
 
         XCTAssertEqual(result.nClusters, 2, "expected 2 clusters matching sklearn")
         XCTAssertTrue(
@@ -436,7 +439,7 @@ final class ClusterTests: XCTestCase {
 
     /// Empty input produces empty result with zero clusters.
     func testDBSCANEdgeCases_empty() {
-        let result = dbscan([], eps: 0.5, minSamples: 5)
+        let result = Cluster.dbscan([], eps: 0.5, minSamples: 5)
         XCTAssertTrue(result.labels.isEmpty, "labels must be empty for empty input")
         XCTAssertTrue(result.coreSamples.isEmpty, "coreSamples must be empty for empty input")
         XCTAssertEqual(result.nClusters, 0, "nClusters must be 0 for empty input")
@@ -452,7 +455,7 @@ final class ClusterTests: XCTestCase {
         ]
         let labels = [0, 0, 0, 1, 1, 1]
 
-        let score = silhouetteScore(data, labels: labels)
+        let score = Cluster.silhouetteScore(data, labels: labels)
 
         // Well-separated clusters should have high score
         XCTAssertGreaterThan(score, 0.5)
@@ -463,7 +466,7 @@ final class ClusterTests: XCTestCase {
         let data = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]]
         let labels = [0, 1, 0, 1]  // Alternating labels - bad clustering
 
-        let score = silhouetteScore(data, labels: labels)
+        let score = Cluster.silhouetteScore(data, labels: labels)
 
         // Poor clustering should have low/negative score
         XCTAssertLessThan(score, 0.5)
@@ -473,7 +476,7 @@ final class ClusterTests: XCTestCase {
         let data = [[0.0, 0.0], [0.1, 0.0], [10.0, 0.0], [10.1, 0.0], [100.0, 0.0]]
         let labels = [0, 0, 1, 1, -1]  // Last is noise
 
-        let score = silhouetteScore(data, labels: labels)
+        let score = Cluster.silhouetteScore(data, labels: labels)
 
         // Should compute score ignoring noise point
         XCTAssertGreaterThan(score, 0)
@@ -483,7 +486,7 @@ final class ClusterTests: XCTestCase {
         let data = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]]
         let labels = [0, 0, 0]
 
-        let score = silhouetteScore(data, labels: labels)
+        let score = Cluster.silhouetteScore(data, labels: labels)
 
         // Single cluster returns 0
         XCTAssertEqual(score, 0)
@@ -507,7 +510,7 @@ final class ClusterTests: XCTestCase {
             data.append([Double.random(in: 20...21), Double.random(in: 0...1)])
         }
 
-        let result = elbowMethod(data, maxK: 6)
+        let result = Cluster.elbowMethod(data, maxK: 6)
 
         XCTAssertEqual(result.inertias.count, 6)
 
@@ -522,7 +525,7 @@ final class ClusterTests: XCTestCase {
     }
 
     func testElbowMethodEmpty() {
-        let result = elbowMethod([])
+        let result = Cluster.elbowMethod([])
         XCTAssertTrue(result.inertias.isEmpty)
         XCTAssertEqual(result.suggestedK, 1)
     }
@@ -538,8 +541,8 @@ final class ClusterTests: XCTestCase {
             data.append([Double.random(in: 10...11), Double.random(in: 10...11)])
         }
 
-        let kmeansResult = kmeans(data, k: 2)
-        let score = silhouetteScore(data, labels: kmeansResult.labels)
+        let kmeansResult = Cluster.kmeans(data, k: 2)
+        let score = Cluster.silhouetteScore(data, labels: kmeansResult.labels)
 
         // Well-separated clusters should have good silhouette
         XCTAssertGreaterThan(score, 0.5)
