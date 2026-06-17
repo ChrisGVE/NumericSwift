@@ -1,0 +1,2922 @@
+[
+  {
+    "id": "integration.trivial.polynomial_deg2_0",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.0,
+      "tag": "polynomial_deg2",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.3333333333333335,
+      "bits": "0x4002AAAAAAAAAAAB"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.polynomial_deg2_1",
+    "tier": "trivial",
+    "inputs": {
+      "a": -1.0,
+      "b": 2.0,
+      "tag": "polynomial_deg2",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 9.0,
+      "bits": "0x4022000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.sine_2",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 3.141592653589793,
+      "tag": "sine",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.0,
+      "bits": "0x4000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.cosine_3",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.5707963267948966,
+      "tag": "cosine",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.9999999999999999,
+      "bits": "0x3FEFFFFFFFFFFFFF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.exp_4",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.0,
+      "tag": "exp",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.7182818284590453,
+      "bits": "0x3FFB7E151628AED3"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.exp_5",
+    "tier": "trivial",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "exp",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.3504023872876028,
+      "bits": "0x4002CD9FC44EB982"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.sine_6",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 6.283185307179586,
+      "tag": "sine",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.221501482512777e-16,
+      "bits": "0x3CB001F26A0D5C25"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.polynomial_deg2_7",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 5.0,
+      "tag": "polynomial_deg2",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 71.66666666666669,
+      "bits": "0x4051EAAAAAAAAAAC"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.cosine_8",
+    "tier": "trivial",
+    "inputs": {
+      "a": -1.5707963267948966,
+      "b": 1.5707963267948966,
+      "tag": "cosine",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.0,
+      "bits": "0x4000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.trivial.exp_9",
+    "tier": "trivial",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "exp",
+      "n": 1000,
+      "order": 8
+    },
+    "oracle": {
+      "value": 6.3890560989306495,
+      "bits": "0x40198E64B8D4DDAD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-12,
+      "romberg": 1e-10,
+      "simps": 1e-09,
+      "trapz": 0.0001,
+      "fixed_quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_0",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "gaussian_bell",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.7724146965190424,
+      "bits": "0x3FFC5BCF8347FC1E"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_1",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "gaussian_bell",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.7724146965190424,
+      "bits": "0x3FFC5BCF8347FC1E"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_2",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "gaussian_bell",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.7724146965190424,
+      "bits": "0x3FFC5BCF8347FC1E"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_3",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "gaussian_bell",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.493648265624854,
+      "bits": "0x3FF7E5FBB9495FB8"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_4",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "gaussian_bell",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.493648265624854,
+      "bits": "0x3FF7E5FBB9495FB8"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_5",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "gaussian_bell",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.493648265624854,
+      "bits": "0x3FF7E5FBB9495FB8"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_6",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "gaussian_bell",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.8820813907624215,
+      "bits": "0x3FEC3A02C0B78375"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_7",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "gaussian_bell",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.8820813907624215,
+      "bits": "0x3FEC3A02C0B78375"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_8",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "gaussian_bell",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.8820813907624215,
+      "bits": "0x3FEC3A02C0B78375"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_9",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "gaussian_bell",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.768308316213817,
+      "bits": "0x3FFC4AFDA9362177"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_10",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "gaussian_bell",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.768308316213817,
+      "bits": "0x3FFC4AFDA9362177"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_11",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "gaussian_bell",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.768308316213817,
+      "bits": "0x3FFC4AFDA9362177"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_12",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "gaussian_bell",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.4249459053767765,
+      "bits": "0x3FDB32504F8A6433"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_13",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "gaussian_bell",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.4249459053767765,
+      "bits": "0x3FDB32504F8A6433"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.gaussian_bell_14",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "gaussian_bell",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.4249459053767765,
+      "bits": "0x3FDB32504F8A6433"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_15",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "runge",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.6016912652076291,
+      "bits": "0x3FE3410E0A4B6151"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_16",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "runge",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.6016912652076291,
+      "bits": "0x3FE3410E0A4B6151"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_17",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "runge",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.6016912652076291,
+      "bits": "0x3FE3410E0A4B6151"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_18",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "runge",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.5493603067780064,
+      "bits": "0x3FE1945C10EAA046"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_19",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "runge",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.5493603067780064,
+      "bits": "0x3FE1945C10EAA046"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_20",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "runge",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.5493603067780064,
+      "bits": "0x3FE1945C10EAA046"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_21",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "runge",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.294225534860747,
+      "bits": "0x3FD2D49756780044"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_22",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "runge",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.294225534860747,
+      "bits": "0x3FD2D49756780044"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_23",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "runge",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.294225534860747,
+      "bits": "0x3FD2D49756780044"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_24",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "runge",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.6003890627950682,
+      "bits": "0x3FE336631FB296CD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_25",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "runge",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.6003890627950682,
+      "bits": "0x3FE336631FB296CD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_26",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "runge",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.6003890627950682,
+      "bits": "0x3FE336631FB296CD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_27",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "runge",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.06610959627808442,
+      "bits": "0x3FB0EC8EF9F754AF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_28",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "runge",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.06610959627808442,
+      "bits": "0x3FB0EC8EF9F754AF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.runge_29",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "runge",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.06610959627808442,
+      "bits": "0x3FB0EC8EF9F754AF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_30",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "sine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_31",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "sine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_32",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "sine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_33",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "sine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_34",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "sine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_35",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "sine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_36",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "sine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.4161468365471424,
+      "bits": "0x3FF6A88995D4DC81"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_37",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "sine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.4161468365471424,
+      "bits": "0x3FF6A88995D4DC81"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_38",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "sine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.4161468365471424,
+      "bits": "0x3FF6A88995D4DC81"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_39",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "sine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": -0.6998090220103689,
+      "bits": "0xBFE664D5E3DF5E71"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_40",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "sine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": -0.6998090220103689,
+      "bits": "0xBFE664D5E3DF5E71"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_41",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "sine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": -0.6998090220103689,
+      "bits": "0xBFE664D5E3DF5E71"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_42",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "sine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.5312261827539848,
+      "bits": "0x3FF87FE7069B5109"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_43",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "sine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.5312261827539848,
+      "bits": "0x3FF87FE7069B5109"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.sine_44",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "sine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.5312261827539848,
+      "bits": "0x3FF87FE7069B5109"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_45",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "cosine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.2822400161197346,
+      "bits": "0x3FD210386DB6D55E"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_46",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "cosine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.2822400161197346,
+      "bits": "0x3FD210386DB6D55E"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_47",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "cosine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.2822400161197346,
+      "bits": "0x3FD210386DB6D55E"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_48",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "cosine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.6829419696157932,
+      "bits": "0x3FFAED548F090CEF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_49",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "cosine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.6829419696157932,
+      "bits": "0x3FFAED548F090CEF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_50",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "cosine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 1.6829419696157932,
+      "bits": "0x3FFAED548F090CEF"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_51",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "cosine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.9092974268256817,
+      "bits": "0x3FED18F6EAD1B446"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_52",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "cosine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.9092974268256817,
+      "bits": "0x3FED18F6EAD1B446"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_53",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "cosine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.9092974268256817,
+      "bits": "0x3FED18F6EAD1B446"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_54",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "cosine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": -0.049626847837457015,
+      "bits": "0xBFA968B0B0EE4EF7"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_55",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "cosine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": -0.049626847837457015,
+      "bits": "0xBFA968B0B0EE4EF7"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_56",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "cosine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": -0.049626847837457015,
+      "bits": "0xBFA968B0B0EE4EF7"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_57",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "cosine",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": -1.2362280339121312,
+      "bits": "0xBFF3C7970C00D0D3"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_58",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "cosine",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": -1.2362280339121312,
+      "bits": "0xBFF3C7970C00D0D3"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.cosine_59",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "cosine",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": -1.2362280339121312,
+      "bits": "0xBFF3C7970C00D0D3"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_60",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "exp",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 20.035749854819805,
+      "bits": "0x40340926E70949AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_61",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "exp",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 20.035749854819805,
+      "bits": "0x40340926E70949AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_62",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "exp",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 20.035749854819805,
+      "bits": "0x40340926E70949AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_63",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "exp",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.3504023872876028,
+      "bits": "0x4002CD9FC44EB982"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_64",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "exp",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.3504023872876028,
+      "bits": "0x4002CD9FC44EB982"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_65",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "exp",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 2.3504023872876028,
+      "bits": "0x4002CD9FC44EB982"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_66",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "exp",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 6.3890560989306495,
+      "bits": "0x40198E64B8D4DDAD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_67",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "exp",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 6.3890560989306495,
+      "bits": "0x40198E64B8D4DDAD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_68",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.0,
+      "b": 2.0,
+      "tag": "exp",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 6.3890560989306495,
+      "bits": "0x40198E64B8D4DDAD"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_69",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "exp",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 148.27782381933997,
+      "bits": "0x406288E3EEC743AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_70",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "exp",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 148.27782381933997,
+      "bits": "0x406288E3EEC743AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_71",
+    "tier": "hard",
+    "inputs": {
+      "a": -2.0,
+      "b": 5.0,
+      "tag": "exp",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 148.27782381933997,
+      "bits": "0x406288E3EEC743AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_72",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "exp",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 52.949428762444114,
+      "bits": "0x404A7986E1B64A24"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_73",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "exp",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 52.949428762444114,
+      "bits": "0x404A7986E1B64A24"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.exp_74",
+    "tier": "hard",
+    "inputs": {
+      "a": 0.5,
+      "b": 4.0,
+      "tag": "exp",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 52.949428762444114,
+      "bits": "0x404A7986E1B64A24"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 0.0001,
+      "simps": 0.01,
+      "trapz": 5.0,
+      "fixed_quad": 1.0
+    }
+  },
+  {
+    "id": "integration.hard.oscillatory_75",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "oscillatory",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.oscillatory_76",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "oscillatory",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.oscillatory_77",
+    "tier": "hard",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "oscillatory",
+      "n": 800,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.oscillatory_78",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "oscillatory",
+      "n": 200,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.hard.oscillatory_79",
+    "tier": "hard",
+    "inputs": {
+      "a": -1.0,
+      "b": 1.0,
+      "tag": "oscillatory",
+      "n": 400,
+      "order": 8
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad",
+      "romberg",
+      "simps",
+      "trapz",
+      "fixed_quad"
+    ],
+    "tol": {
+      "quad": 1e-07,
+      "romberg": 1.0,
+      "simps": 1.0,
+      "trapz": 10.0,
+      "fixed_quad": 10.0
+    }
+  },
+  {
+    "id": "integration.edge.quad_oov_0",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.0,
+      "b": 10.0,
+      "tag": "oscillatory",
+      "limit": 3
+    },
+    "oracle": {
+      "value": 0.03767698546863145,
+      "bits": "0x3FA34A65D8CC9D86"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-05
+    },
+    "inEnvelope": {
+      "quad": false
+    }
+  },
+  {
+    "id": "integration.edge.quad_oov_1",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.0,
+      "b": 1.0,
+      "tag": "inverse_sqrt",
+      "limit": 3
+    },
+    "oracle": {
+      "value": 1.9999999999999984,
+      "bits": "0x3FFFFFFFFFFFFFF9"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-05
+    },
+    "inEnvelope": {
+      "quad": false
+    }
+  },
+  {
+    "id": "integration.edge.quad_oov_2",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.0,
+      "b": 4.0,
+      "tag": "inverse_sqrt",
+      "limit": 3
+    },
+    "oracle": {
+      "value": 3.999999999999997,
+      "bits": "0x400FFFFFFFFFFFF9"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-05
+    },
+    "inEnvelope": {
+      "quad": false
+    }
+  },
+  {
+    "id": "integration.edge.quad_oov_3",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.0,
+      "b": 9.0,
+      "tag": "inverse_sqrt",
+      "limit": 3
+    },
+    "oracle": {
+      "value": 6.0,
+      "bits": "0x4018000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-05
+    },
+    "inEnvelope": {
+      "quad": false
+    }
+  },
+  {
+    "id": "integration.edge.quad_oov_4",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.3,
+      "b": 12.0,
+      "tag": "oscillatory",
+      "limit": 3
+    },
+    "oracle": {
+      "value": 0.004786711319485947,
+      "bits": "0x3F739B3B09294F0C"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-05
+    },
+    "inEnvelope": {
+      "quad": false
+    }
+  },
+  {
+    "id": "integration.edge.quad_ok_0",
+    "tier": "edge",
+    "inputs": {
+      "a": -8.0,
+      "b": 8.0,
+      "tag": "gaussian_bell"
+    },
+    "oracle": {
+      "value": 1.7724538509055157,
+      "bits": "0x3FFC5BF891B4EF69"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.edge.quad_ok_1",
+    "tier": "edge",
+    "inputs": {
+      "a": -10.0,
+      "b": 10.0,
+      "tag": "runge"
+    },
+    "oracle": {
+      "value": 0.6203195971286983,
+      "bits": "0x3FE3D9A87BD78A7C"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.edge.quad_ok_2",
+    "tier": "edge",
+    "inputs": {
+      "a": -3.0,
+      "b": 3.0,
+      "tag": "exp"
+    },
+    "oracle": {
+      "value": 20.035749854819805,
+      "bits": "0x40340926E70949AE"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.edge.quad_ok_3",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.0,
+      "b": 25.132741228718345,
+      "tag": "sine"
+    },
+    "oracle": {
+      "value": -3.587849726314971e-15,
+      "bits": "0xBCF0288254B0A196"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-06
+    }
+  },
+  {
+    "id": "integration.edge.quad_ok_4",
+    "tier": "edge",
+    "inputs": {
+      "a": 0.0,
+      "b": 25.132741228718345,
+      "tag": "cosine"
+    },
+    "oracle": {
+      "value": 3.3306690738754696e-15,
+      "bits": "0x3CEE000000000000"
+    },
+    "source": "scipy.integrate.quad 1.17.1",
+    "strategies": [
+      "quad"
+    ],
+    "tol": {
+      "quad": 1e-06
+    }
+  }
+]

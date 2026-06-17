@@ -130,13 +130,25 @@ public enum Workbench {
             }
 
             // ── Accuracy verdict (reported flag, in-envelope cases only) ──────
+            // The per-case `tol` is the authoritative envelope (WORKBENCH.md §5);
+            // the domain envelope registry is only a fallback when the fixture
+            // omits a tol for this strategy. Display and check use the SAME bound.
             let absError = value.map { abs($0 - wbCase.oracle.value) }
             let envelopeEntry = envelopes[strategy: strategyID, tier: wbCase.tier]
             let declaredTol = wbCase.tol[strategyID] ?? envelopeEntry?.maxAbsError
 
             var accuracy: [Violation] = []
             if declaredInEnvelope, let err = absError, let tol = declaredTol {
-                let withinTol = envelopeEntry.map { $0.inEnvelope(err) } ?? (err <= tol)
+                // Prefer the case tol; only consult the registry predicate when the
+                // case did not declare one for this strategy.
+                let withinTol: Bool
+                if wbCase.tol[strategyID] != nil {
+                    withinTol = err <= tol
+                } else if let entry = envelopeEntry {
+                    withinTol = entry.inEnvelope(err)
+                } else {
+                    withinTol = true
+                }
                 if !withinTol {
                     accuracy.append(Violation(
                         caseID: wbCase.id,

@@ -301,4 +301,67 @@ final class WorkbenchGateTests: XCTestCase {
         XCTAssertEqual(xs?.count, 3)
         XCTAssertEqual(xs?[0].doubleValue, 1.0)
     }
+
+    // MARK: - E2E self-awareness gate (WORKBENCH.md §5/§7)
+
+    /// The hard gate. Loads every committed fixture corpus, runs all strategies,
+    /// and asserts ZERO self-awareness failures: the library must emit an
+    /// `outsideEnvelope` diagnostic on every out-of-envelope case and must not
+    /// emit one on any in-envelope case. Accuracy deviations are reported, not
+    /// gated.
+    func testWorkbench_selfAwarenessGate_noFailures() throws {
+        guard let dir = FixtureLoader.fixturesDirectory() else {
+            XCTFail("workbench fixtures directory not found")
+            return
+        }
+        let fixtures = FixtureLoader.load(from: dir)
+        XCTAssertFalse(
+            fixtures.isEmpty,
+            "no workbench fixtures loaded — the gate would pass vacuously")
+
+        let summary = Workbench.run(fixtures: fixtures)
+        XCTAssertFalse(
+            summary.hasFailed,
+            """
+            \(summary.totalSelfAwarenessFailures) self-awareness failure(s):
+            \(summary.allSelfAwarenessFailures.map(\.description).joined(separator: "\n"))
+            """)
+    }
+
+    /// Every registered domain suite must have a committed fixture file, and every
+    /// fixture file must have a registered suite — so a domain is never silently
+    /// skipped (which would let the self-awareness gate pass vacuously for it).
+    func testWorkbench_everySuiteHasFixtures_andViceVersa() throws {
+        guard let dir = FixtureLoader.fixturesDirectory() else {
+            XCTFail("workbench fixtures directory not found")
+            return
+        }
+        let fixtureDomains = Set(FixtureLoader.load(from: dir).keys)
+        let suiteDomains = Set(Workbench.allSuites.map(\.name))
+
+        XCTAssertEqual(
+            suiteDomains.subtracting(fixtureDomains), [],
+            "registered suite(s) with no fixture file")
+        XCTAssertEqual(
+            fixtureDomains.subtracting(suiteDomains), [],
+            "fixture file(s) with no registered suite")
+    }
+
+    /// Per-tier proportions must stay near the 10/80/10 target (WORKBENCH.md §2)
+    /// so a thin tier is never silently shipped.
+    func testWorkbench_tierProportions_perDomain() throws {
+        guard let dir = FixtureLoader.fixturesDirectory() else { return }
+        let fixtures = FixtureLoader.load(from: dir)
+        for (domain, cases) in fixtures {
+            let total = cases.count
+            guard total >= 20 else { continue }   // tiny corpora exempt
+            let edge = cases.filter { $0.tier == .edge }.count
+            let trivial = cases.filter { $0.tier == .trivial }.count
+            XCTAssertGreaterThan(edge, 0, "\(domain): no edge cases")
+            XCTAssertGreaterThan(trivial, 0, "\(domain): no trivial cases")
+            // hard should dominate
+            let hard = cases.filter { $0.tier == .hard }.count
+            XCTAssertGreaterThan(hard, total / 2, "\(domain): hard tier should dominate")
+        }
+    }
 }
