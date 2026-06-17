@@ -212,12 +212,20 @@ public struct Complex: Equatable, Hashable, Sendable {
 extension Complex {
 
     /// Square root using polar form (principal square root).
+    ///
+    /// Follows C99 / IEEE-754: sqrt(-1+0i) = +i, sqrt(inf+0i) = inf+0i.
+    /// The polar formula `sqrtR * sin(halfTheta)` produces `inf * 0 = NaN`
+    /// when the magnitude is infinite and the angle is a multiple of π. We
+    /// guard that case explicitly so that `sqrt(inf + 0i) == inf + 0i`.
     public var sqrt: Complex {
         let r = self.abs
         let theta = self.arg
         let sqrtR = Darwin.sqrt(r)
         let halfTheta = theta / 2
-        return Complex(re: sqrtR * Darwin.cos(halfTheta), im: sqrtR * Darwin.sin(halfTheta))
+        let imPart = sqrtR * Darwin.sin(halfTheta)
+        // inf * sin(0) = NaN in IEEE-754; the mathematical limit is 0.
+        let safeIm = imPart.isNaN && sqrtR.isInfinite ? 0.0 : imPart
+        return Complex(re: sqrtR * Darwin.cos(halfTheta), im: safeIm)
     }
 
     /// Natural logarithm: log(z) = log|z| + i*arg(z)
