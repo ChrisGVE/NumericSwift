@@ -568,13 +568,21 @@ public func voronoi(_ points: [[Double]]) -> VoronoiResult {
       }
 
       if let nIdx = neighbour {
-        // Finite ridge: connect the two circumcenters.
-        // Only emit once (for i < nIdx direction).
-        if nIdx > i, let v2 = simplexToVertex[nIdx] {
+        if nIdx > i {
           let ridgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))-\(min(i, nIdx)),\(max(i, nIdx))"
           if !processedEdges.contains(ridgeKey) {
             processedEdges.insert(ridgeKey)
-            ridgeVertices.append([v1, v2])
+            if let v2 = simplexToVertex[nIdx] {
+              // Finite ridge: both circumcenters are valid — connect them.
+              ridgeVertices.append([v1, v2])
+            } else {
+              // Neighbour's circumcenter is degenerate (triangle is near-collinear,
+              // |determinant| ≤ 1e-10).  Per SciPy parity the ridge must still be
+              // emitted; treat it as infinite rather than silently dropping it.
+              ridgeVertices.append([-1, v1])
+              if !regions[edge[0]].contains(-1) { regions[edge[0]].append(-1) }
+              if !regions[edge[1]].contains(-1) { regions[edge[1]].append(-1) }
+            }
             ridgePoints.append([edge[0], edge[1]])
           }
         }
