@@ -1136,66 +1136,73 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
   let n = yDiff.count
   guard n > max(p, q) else { return nil }
 
-  // Initialize parameters
+  // Parameter arrays; overwritten by the estimation step below.
   var arParams = [Double](repeating: 0.0, count: p)
   var maParams = [Double](repeating: 0.0, count: q)
 
-  // Initialize AR params with small values
-  for i in 0..<p {
-    arParams[i] = 0.1 / Double(i + 1)
-  }
-
-  // CSS estimation using iterative refinement
+  // CSS estimation: minimise Q(phi, theta) = sum_{t=start}^{n} e_t^2 jointly.
+  //
+  // When q > 0, estimating AR on raw y while ignoring MA dynamics produces biased
+  // AR parameters (issue #10).  We fix this with the Hannan-Rissanen two-step
+  // estimator followed by iterated linear regression (backfitting), which converges
+  // to the CSS minimiser without requiring a nonlinear solver:
+  //
+  //   Step 1 — pre-filter: fit a long AR(m) (m = min(n/4, max(p,q)+10)) to obtain
+  //            approximate innovations e_hat.
+  //   Step 2 — joint OLS: regress y on [y_{t-1}…y_{t-p}, e_{t-1}…e_{t-q}] to
+  //            get initial AR and MA estimates.
+  //   Step 3 — iterate: re-compute residuals from current params and repeat OLS
+  //            until convergence (Cochrane-Orcutt-style).
+  //
+  // Reference: Hannan & Rissanen (1982), Biometrika 69(1); also Hamilton (1994),
+  //            "Time Series Analysis", §5.3.
   var converged = false
   var iterations = 0
 
-  for iter in 0..<maxiter {
-    iterations = iter + 1
+  if p == 0 && q == 0 {
+    converged = true
+    iterations = 1
+  } else if q == 0 {
+    // Pure AR: OLS on lagged y is exact and unbiased.
+    for iter in 0..<maxiter {
+      iterations = iter + 1
+      guard let newAR = estimateARParams(y: yDiff, p: p) else { break }
+      var maxChange = 0.0
+      for i in 0..<p { maxChange = max(maxChange, abs(newAR[i] - arParams[i])) }
+      arParams = newAR
+      if maxChange < tol { converged = true; break }
+    }
+  } else {
+    // Mixed AR+MA or pure MA: Hannan-Rissanen initialisation followed by iterated
+    // joint OLS backfitting.
 
-    // Compute residuals with current parameters
-    var resid = computeARMAResiduals(y: yDiff, ar: arParams, ma: maParams)
-
-    // Update AR parameters using least squares
-    if p > 0 {
-      if let newParams = estimateARParams(y: yDiff, p: p) {
-        var maxChange = 0.0
-        for i in 0..<p {
-          let change = abs(newParams[i] - arParams[i])
-          if change > maxChange { maxChange = change }
-        }
-        arParams = newParams
-
-        // Recompute residuals with updated AR
-        resid = computeARMAResiduals(y: yDiff, ar: arParams, ma: maParams)
-
-        if maxChange < tol && q == 0 {
-          converged = true
-          break
-        }
-      }
+    // Step 1: fit a long auxiliary AR to get approximate innovations.
+    let mAux = min(n / 4, max(p, q) + 10)
+    let auxResid: [Double]
+    if mAux > 0, let auxAR = estimateARParams(y: yDiff, p: mAux) {
+      auxResid = computeARMAResiduals(y: yDiff, ar: auxAR, ma: [])
+    } else {
+      auxResid = [Double](repeating: 0.0, count: n)
     }
 
-    // Update MA parameters using innovations algorithm approximation
-    if q > 0 {
-      if let newParams = estimateMAParams(resid: resid, q: q) {
-        var maxChange = 0.0
-        for j in 0..<q {
-          let change = abs(newParams[j] - maParams[j])
-          if change > maxChange { maxChange = change }
-        }
-        maParams = newParams
-
-        if maxChange < tol {
-          converged = true
-          break
-        }
-      }
+    // Step 2: joint OLS of y on [lagged y, lagged aux-residuals].
+    if let init_ = estimateARMAParamsJointOLS(y: yDiff, auxResid: auxResid, p: p, q: q) {
+      arParams = Array(init_[0..<p])
+      maParams = Array(init_[p..<(p + q)])
     }
 
-    // Check overall convergence
-    if p == 0 && q == 0 {
-      converged = true
-      break
+    // Step 3: iterate — recompute innovations, re-run joint OLS.
+    for iter in 0..<maxiter {
+      iterations = iter + 1
+      let resid = computeARMAResiduals(y: yDiff, ar: arParams, ma: maParams)
+      guard let newParams = estimateARMAParamsJointOLS(y: yDiff, auxResid: resid, p: p, q: q)
+      else { break }
+      var maxChange = 0.0
+      for i in 0..<p { maxChange = max(maxChange, abs(newParams[i] - arParams[i])) }
+      for j in 0..<q { maxChange = max(maxChange, abs(newParams[p + j] - maParams[j])) }
+      arParams = Array(newParams[0..<p])
+      maParams = Array(newParams[p..<(p + q)])
+      if maxChange < tol { converged = true; break }
     }
   }
 
@@ -1440,6 +1447,44 @@ private func computeARMAResiduals(y: [Double], ar: [Double], ma: [Double]) -> [D
   return resid
 }
 
+/// Estimate AR and MA parameters jointly via OLS using pre-computed innovations.
+///
+/// Constructs a design matrix whose columns are lagged `y` values (for the AR part)
+/// and lagged `auxResid` values (for the MA part), then solves for all p+q
+/// coefficients in one OLS step.  This is the core step of the Hannan-Rissanen
+/// estimator: when `auxResid` are the true innovations, the estimator is consistent;
+/// iterated with the residuals from the previous round it converges to CSS.
+///
+/// Returns a flat array [phi_1, …, phi_p, theta_1, …, theta_q], or nil if OLS fails.
+///
+/// Reference: Hannan & Rissanen (1982), Biometrika 69(1); Hamilton (1994) §5.3.
+private func estimateARMAParamsJointOLS(
+  y: [Double], auxResid: [Double], p: Int, q: Int
+) -> [Double]? {
+  let n = y.count
+  let k = p + q
+  guard k > 0 else { return [] }
+  let startRow = max(p, q)
+  let nEff = n - startRow
+  guard nEff > k else { return nil }
+
+  // Build design matrix: each row t contains [y_{t-1}…y_{t-p}, e_{t-1}…e_{t-q}].
+  var X = [[Double]](repeating: [Double](repeating: 0.0, count: k), count: nEff)
+  var yTarget = [Double](repeating: 0.0, count: nEff)
+
+  for row in 0..<nEff {
+    let t = row + startRow
+    yTarget[row] = y[t]
+    for i in 0..<p { X[row][i] = y[t - i - 1] }
+    for j in 0..<q {
+      let idx = t - j - 1
+      X[row][p + j] = idx >= 0 ? auxResid[idx] : 0.0
+    }
+  }
+
+  return solveSimpleOLS(X: X, y: yTarget)
+}
+
 /// Estimate AR parameters using OLS on lagged values.
 private func estimateARParams(y: [Double], p: Int) -> [Double]? {
   let n = y.count
@@ -1462,37 +1507,6 @@ private func estimateARParams(y: [Double], p: Int) -> [Double]? {
 
   // Solve using OLS
   return solveSimpleOLS(X: X, y: yTarget)
-}
-
-/// Estimate MA parameters using autocorrelation matching.
-private func estimateMAParams(resid: [Double], q: Int) -> [Double]? {
-  let n = resid.count
-  guard q > 0 && n > q else { return nil }
-
-  var maParams = [Double](repeating: 0.0, count: q)
-
-  // Compute autocorrelations of residuals
-  var gamma = [Double](repeating: 0.0, count: q + 1)
-  for lag in 0...q {
-    var sum = 0.0
-    var count = 0
-    for t in lag..<n {
-      sum += resid[t] * resid[t - lag]
-      count += 1
-    }
-    gamma[lag] = count > 0 ? sum / Double(count) : 0.0
-  }
-
-  // Simple estimation: theta_j ≈ -gamma[j] / gamma[0]
-  if abs(gamma[0]) > 1e-10 {
-    for j in 0..<q {
-      maParams[j] = -gamma[j + 1] / gamma[0]
-      // Bound to ensure invertibility
-      maParams[j] = max(-0.99, min(0.99, maParams[j]))
-    }
-  }
-
-  return maParams
 }
 
 /// Simple OLS solver for ARIMA.
