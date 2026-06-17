@@ -153,9 +153,23 @@ public struct Complex: Equatable, Hashable, Sendable {
     ///
     ///     if |c| ≥ |d|: r = d/c,  den = c + d·r,  re = (a + b·r)/den,  im = (b − a·r)/den
     ///     else:         r = c/d,  den = c·r + d,   re = (a·r + b)/den,  im = (b·r − a)/den
+    ///
+    /// Special case: denominator is exact zero and numerator is finite — C99
+    /// Annex G §G.5.1 requires the result to be ±inf (not NaN). We detect this
+    /// before entering Smith's branches so that `0/0 = NaN` inside Smith does
+    /// not silently win over the mathematically correct ±inf.
     public static func / (lhs: Complex, rhs: Complex) -> Complex {
         let a = lhs.re, b = lhs.im
         let c = rhs.re, d = rhs.im
+
+        // C99 Annex G §G.5.1: finite / ±0 → ±∞.
+        // Smith's r=d/c=0/0 path gives NaN; we catch exact zero denominators first.
+        if c == 0.0 && d == 0.0 {
+            // Multiply by ±∞ preserving NaN for NaN numerators.
+            let scale = Double.infinity
+            return Complex(re: a * scale, im: b * scale)
+        }
+
         if Swift.abs(c) >= Swift.abs(d) {
             let r   = d / c
             let den = c + d * r
