@@ -148,10 +148,10 @@ extension LinAlg {
         /// Transpose the matrix.
         public var T: Matrix {
             var result = [Double](repeating: 0, count: rows * cols)
-            for i in 0..<rows {
-                for j in 0..<cols {
-                    result[j * rows + i] = data[i * cols + j]
-                }
+            // vDSP_mtransD builds the M×N result as the transpose of an N×M
+            // source: here the result is cols×rows, so M = cols, N = rows.
+            if rows > 0 && cols > 0 {
+                vDSP_mtransD(data, 1, &result, 1, vDSP_Length(cols), vDSP_Length(rows))
             }
             return Matrix(rows: cols, cols: rows, data: result)
         }
