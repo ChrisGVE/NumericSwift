@@ -408,7 +408,15 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCexp_freeFunctionAlias() {
+        // cexp(iπ) = -1 + 0i  (Euler's identity)
+        // Oracle: numpy — np.exp(complex(0, np.pi)) = (-1+1.2246e-16j) ≈ -1+0j
         let z = Complex(re: 0.0, im: .pi)
+        let result = cexp(z)
+        XCTAssertEqual(result.re, -1.0, accuracy: 1e-15,
+                       "cexp(iπ).re must be -1 (Euler's identity)")
+        XCTAssertEqual(result.im,  0.0, accuracy: 1e-15,
+                       "cexp(iπ).im must be 0 (Euler's identity)")
+        // Alias agreement: cexp(z) == z.exp
         XCTAssertEqual(cexp(z), z.exp)
     }
 
@@ -455,14 +463,27 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testLog_expInverseIdentity() {
-        // log(exp(z)) = z for z with im in (-π, π]
+        // External anchor: log(1.5+0.7i) = log|z| + i·arg(z).
+        // |1.5+0.7i| = sqrt(2.74) ≈ 1.6553;  arg = atan2(0.7, 1.5) ≈ 0.4366.
+        // Oracle: Python cmath.log(complex(1.5, 0.7)) = (0.5039789601999894+0.4366271598135413j)
         let z = Complex(re: 1.5, im: 0.7)
-        let result = z.exp.log
-        assertComplexClose(result, re: 1.5, im: 0.7, tol: 1e-12)
+        assertComplexClose(z.log, re: 0.5039789601999894, im: 0.4366271598135413, tol: 1e-12,
+                           "log(1.5+0.7i) must match cmath oracle")
+        // Round-trip: log(exp(z)) = z for im in (-π, π]
+        assertComplexClose(z.exp.log, re: 1.5, im: 0.7, tol: 1e-12,
+                           "log(exp(z)) round-trip")
     }
 
     func testClog_freeFunctionAlias() {
+        // Oracle: Python cmath.log(complex(1.0, 1.0)) = (0.34657359027997264+0.7853981633974483j)
+        // = (ln(sqrt(2)), π/4)
         let z = Complex(re: 1.0, im: 1.0)
+        let result = clog(z)
+        XCTAssertEqual(result.re, 0.34657359027997264, accuracy: 1e-14,
+                       "clog(1+i).re must match cmath oracle (= ln(sqrt(2)))")
+        XCTAssertEqual(result.im, 0.7853981633974483, accuracy: 1e-14,
+                       "clog(1+i).im must match cmath oracle (= π/4)")
+        // Alias agreement
         XCTAssertEqual(clog(z), z.log)
     }
 
@@ -522,9 +543,15 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testSqrt_squaredIsOriginal() {
-        // (sqrt(z))^2 = z  for a general z
+        // External anchor first: sqrt(3-5i) must match cmath oracle.
+        // Oracle: Python cmath.sqrt(complex(3.0, -5.0)) = (2.101303392521568-1.189737764140758j)
         let z = Complex(re: 3.0, im: -5.0)
         let sq = z.sqrt
+        XCTAssertEqual(sq.re,  2.101303392521568, accuracy: 1e-12,
+                       "sqrt(3-5i).re must match cmath oracle")
+        XCTAssertEqual(sq.im, -1.189737764140758, accuracy: 1e-12,
+                       "sqrt(3-5i).im must match cmath oracle")
+        // Round-trip: (sqrt(z))^2 = z
         let back = sq * sq
         assertComplexClose(back, re: z.re, im: z.im, tol: 1e-12)
     }
@@ -535,7 +562,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCsqrt_freeFunctionAlias() {
+        // Oracle: np.sqrt(complex(-1.0, 0.0)) = 1j  → (0+1j)
         let z = Complex(re: -1.0, im: 0.0)
+        let result = csqrt(z)
+        XCTAssertEqual(result.re, 0.0, accuracy: 1e-15,
+                       "csqrt(-1+0i).re must be 0")
+        XCTAssertEqual(result.im, 1.0, accuracy: 1e-15,
+                       "csqrt(-1+0i).im must be +1 (C99 principal branch)")
+        // Alias agreement
         XCTAssertEqual(csqrt(z), z.sqrt)
     }
 
@@ -560,7 +594,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCpow_doubleExponent_freeFunctionAlias() {
+        // Oracle: numpy — (4+0j)**0.5 = (2+0j)
         let z = Complex(re: 4.0, im: 0.0)
+        let result = cpow(z, 0.5)
+        XCTAssertEqual(result.re, 2.0, accuracy: 1e-14,
+                       "cpow(4,0.5).re must be 2 (= sqrt(4))")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "cpow(4,0.5).im must be 0")
+        // Alias agreement
         XCTAssertEqual(cpow(z, 0.5), z.pow(0.5))
     }
 
@@ -574,9 +615,16 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCpow_complexExponent_freeFunctionAlias() {
+        // Oracle: numpy — (2+0j)**(3+0j) = (8+0j)
         let z = Complex(re: 2.0, im: 0.0)
         let w = Complex(re: 3.0, im: 0.0)
-        assertComplexClose(cpow(z, w), re: 8.0, im: 0.0, tol: 1e-12, "2^3 = 8")
+        let result = cpow(z, w)
+        XCTAssertEqual(result.re, 8.0, accuracy: 1e-12,
+                       "cpow(2+0i, 3+0i).re must be 8 (2^3 = 8)")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-12,
+                       "cpow(2+0i, 3+0i).im must be 0")
+        // Alias agreement
+        XCTAssertEqual(cpow(z, w), z.pow(w))
     }
 
     // MARK: - squared / cubed
@@ -635,7 +683,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCsin_freeFunctionAlias() {
+        // Oracle: np.sin(complex(1.0, 1.0)) = (1.2984575814159773+0.6349639147847361j)
         let z = Complex(re: 1.0, im: 1.0)
+        let result = csin(z)
+        XCTAssertEqual(result.re,  1.2984575814159773, accuracy: 1e-14,
+                       "csin(1+i).re must match numpy oracle")
+        XCTAssertEqual(result.im,  0.6349639147847361, accuracy: 1e-14,
+                       "csin(1+i).im must match numpy oracle")
+        // Alias agreement
         XCTAssertEqual(csin(z), z.sin)
     }
 
@@ -659,7 +714,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCcos_freeFunctionAlias() {
+        // Oracle: Python cmath.cos(complex(1.0, 1.0)) = (0.8337300251311491-0.9888977057628651j)
         let z = Complex(re: 1.0, im: 1.0)
+        let result = ccos(z)
+        XCTAssertEqual(result.re,  0.8337300251311491, accuracy: 1e-14,
+                       "ccos(1+i).re must match cmath oracle")
+        XCTAssertEqual(result.im, -0.9888977057628651, accuracy: 1e-14,
+                       "ccos(1+i).im must match cmath oracle")
+        // Alias agreement
         XCTAssertEqual(ccos(z), z.cos)
     }
 
@@ -684,7 +746,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCtan_freeFunctionAlias() {
+        // Oracle: np.tan(complex(1.0, 1.0)) = (0.2717525853195118+1.0839233273386946j)
         let z = Complex(re: 1.0, im: 1.0)
+        let result = ctan(z)
+        XCTAssertEqual(result.re, 0.2717525853195118, accuracy: 1e-14,
+                       "ctan(1+i).re must match numpy oracle")
+        XCTAssertEqual(result.im, 1.0839233273386946, accuracy: 1e-14,
+                       "ctan(1+i).im must match numpy oracle")
+        // Alias agreement
         XCTAssertEqual(ctan(z), z.tan)
     }
 
@@ -703,8 +772,15 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testAsin_inverseOfSin() {
-        // asin(sin(z)) = z  for z with re in (-π/2, π/2)
+        // External anchor first: asin(0.5+0.3i) must match cmath before testing round-trip.
+        // Oracle: Python cmath.asin(complex(0.5, 0.3)) = (0.4930392405856184+0.3342998177749379j)
         let z = Complex(re: 0.5, im: 0.3)
+        let asinZ = z.asin
+        XCTAssertEqual(asinZ.re, 0.4930392405856184, accuracy: 1e-12,
+                       "asin(0.5+0.3i).re must match cmath oracle")
+        XCTAssertEqual(asinZ.im, 0.3342998177749379, accuracy: 1e-12,
+                       "asin(0.5+0.3i).im must match cmath oracle")
+        // Round-trip: asin(sin(z)) = z for re in (-π/2, π/2)
         let result = z.sin.asin
         assertComplexClose(result, re: 0.5, im: 0.3, tol: 1e-12)
     }
@@ -717,7 +793,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCasin_freeFunctionAlias() {
+        // Oracle: Python cmath.asin(complex(0.5, 0.0)) = (0.5235987755982989+0j)  (= π/6)
         let z = Complex(re: 0.5, im: 0.0)
+        let result = casin(z)
+        XCTAssertEqual(result.re, 0.5235987755982989, accuracy: 1e-14,
+                       "casin(0.5).re must be π/6 ≈ 0.5236 (cmath oracle)")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "casin(0.5).im must be 0")
+        // Alias agreement
         XCTAssertEqual(casin(z), z.asin)
     }
 
@@ -742,7 +825,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCacos_freeFunctionAlias() {
+        // Oracle: np.arccos(complex(0.5, 0.0)) = (1.0471975511965979+0j)  (= π/3)
         let z = Complex(re: 0.5, im: 0.0)
+        let result = cacos(z)
+        XCTAssertEqual(result.re, 1.0471975511965979, accuracy: 1e-14,
+                       "cacos(0.5).re must be π/3 ≈ 1.0472 (numpy oracle)")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "cacos(0.5).im must be 0")
+        // Alias agreement
         XCTAssertEqual(cacos(z), z.acos)
     }
 
@@ -759,13 +849,28 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testAtan_inverseOfTan() {
+        // External anchor: atan(0.6+0.1i) must match cmath oracle before testing round-trip.
+        // Oracle: Python cmath.atan(complex(0.6, 0.1)) = (0.5436746626138488+0.073517967637638j)
         let z = Complex(re: 0.6, im: 0.1)
+        let atanZ = z.atan
+        XCTAssertEqual(atanZ.re, 0.5436746626138488, accuracy: 1e-12,
+                       "atan(0.6+0.1i).re must match cmath oracle")
+        XCTAssertEqual(atanZ.im, 0.07351796763763800, accuracy: 1e-12,
+                       "atan(0.6+0.1i).im must match cmath oracle")
+        // Round-trip: atan(tan(z)) = z
         let result = z.tan.atan
         assertComplexClose(result, re: 0.6, im: 0.1, tol: 1e-12)
     }
 
     func testCatan_freeFunctionAlias() {
+        // Oracle: np.arctan(complex(1.0, 0.0)) = (0.7853981633974483+0j)  (= π/4)
         let z = Complex(re: 1.0, im: 0.0)
+        let result = catan(z)
+        XCTAssertEqual(result.re, 0.7853981633974483, accuracy: 1e-14,
+                       "catan(1).re must be π/4 (numpy oracle)")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "catan(1).im must be 0")
+        // Alias agreement
         XCTAssertEqual(catan(z), z.atan)
     }
 
@@ -785,7 +890,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCsinh_freeFunctionAlias() {
+        // Oracle: np.sinh(complex(1.0, 0.0)) = (1.1752011936438014+0j)
         let z = Complex(re: 1.0, im: 0.0)
+        let result = csinh(z)
+        XCTAssertEqual(result.re, 1.1752011936438014, accuracy: 1e-14,
+                       "csinh(1).re must match numpy oracle")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "csinh(1).im must be 0")
+        // Alias agreement
         XCTAssertEqual(csinh(z), z.sinh)
     }
 
@@ -803,7 +915,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCcosh_freeFunctionAlias() {
+        // Oracle: np.cosh(complex(1.0, 0.0)) = (1.5430806348152437+0j)
         let z = Complex(re: 1.0, im: 0.0)
+        let result = ccosh(z)
+        XCTAssertEqual(result.re, 1.5430806348152437, accuracy: 1e-14,
+                       "ccosh(1).re must match numpy oracle")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "ccosh(1).im must be 0")
+        // Alias agreement
         XCTAssertEqual(ccosh(z), z.cosh)
     }
 
@@ -828,7 +947,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCtanh_freeFunctionAlias() {
+        // Oracle: np.tanh(complex(1.0, 0.0)) = (0.7615941559557649+0j)
         let z = Complex(re: 1.0, im: 0.0)
+        let result = ctanh(z)
+        XCTAssertEqual(result.re, 0.7615941559557649, accuracy: 1e-14,
+                       "ctanh(1).re must match numpy oracle")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "ctanh(1).im must be 0")
+        // Alias agreement
         XCTAssertEqual(ctanh(z), z.tanh)
     }
 
@@ -841,13 +967,28 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testAsinh_inverseOfSinh() {
+        // External anchor: asinh(0.5+0.3i) must match cmath oracle before testing round-trip.
+        // Oracle: Python cmath.asinh(complex(0.5, 0.3)) = (0.49790294283028763+0.26955564142495025j)
         let z = Complex(re: 0.5, im: 0.3)
+        let asinhZ = z.asinh
+        XCTAssertEqual(asinhZ.re, 0.49790294283028763, accuracy: 1e-12,
+                       "asinh(0.5+0.3i).re must match cmath oracle")
+        XCTAssertEqual(asinhZ.im, 0.26955564142495025, accuracy: 1e-12,
+                       "asinh(0.5+0.3i).im must match cmath oracle")
+        // Round-trip: asinh(sinh(z)) = z
         let result = z.sinh.asinh
         assertComplexClose(result, re: 0.5, im: 0.3, tol: 1e-12)
     }
 
     func testCasinh_freeFunctionAlias() {
+        // Oracle: np.arcsinh(complex(1.0, 0.0)) = (0.881373587019543+0j)
         let z = Complex(re: 1.0, im: 0.0)
+        let result = casinh(z)
+        XCTAssertEqual(result.re, 0.881373587019543, accuracy: 1e-13,
+                       "casinh(1).re must match numpy oracle")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "casinh(1).im must be 0")
+        // Alias agreement
         XCTAssertEqual(casinh(z), z.asinh)
     }
 
@@ -858,16 +999,29 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testAcosh_inverseOfCosh() {
-        // Re must be ≥ 1 to avoid branch complexity; use real z > 1
+        // External anchor first: acosh(2+0i) must match numpy oracle.
+        // Oracle: np.arccosh(complex(2.0, 0.0)) = (1.3169578969248166+0j)
         let z = Complex(re: 2.0, im: 0.0)
+        let acoshZ = z.acosh
+        XCTAssertEqual(acoshZ.re, 1.3169578969248166, accuracy: 1e-12,
+                       "acosh(2).re must match numpy oracle")
+        XCTAssertEqual(acoshZ.im, 0.0, accuracy: 1e-12,
+                       "acosh(2).im must be 0")
+        // Round-trip: acosh(cosh(z)) = z for real z > 1 (principal branch, re≥0)
         let result = z.cosh.acosh
-        // acosh(cosh(2)) = 2 (principal branch, re≥0)
         XCTAssertEqual(result.re, z.re, accuracy: 1e-12)
         XCTAssertEqual(Swift.abs(result.im), 0.0, accuracy: 1e-12)
     }
 
     func testCacosh_freeFunctionAlias() {
+        // Oracle: np.arccosh(complex(2.0, 0.0)) = (1.3169578969248166+0j)
         let z = Complex(re: 2.0, im: 0.0)
+        let result = cacosh(z)
+        XCTAssertEqual(result.re, 1.3169578969248166, accuracy: 1e-14,
+                       "cacosh(2).re must match numpy oracle")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "cacosh(2).im must be 0")
+        // Alias agreement
         XCTAssertEqual(cacosh(z), z.acosh)
     }
 
@@ -878,25 +1032,48 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testAtanh_inverseOfTanh() {
+        // External anchor first: atanh(0.3+0.2i) must match cmath oracle.
+        // Oracle: Python cmath.atanh(complex(0.3, 0.2)) = (0.29574992023641433+0.21547449370018829j)
         let z = Complex(re: 0.3, im: 0.2)
+        let atanhZ = z.atanh
+        XCTAssertEqual(atanhZ.re, 0.29574992023641433, accuracy: 1e-12,
+                       "atanh(0.3+0.2i).re must match cmath oracle")
+        XCTAssertEqual(atanhZ.im, 0.21547449370018829, accuracy: 1e-12,
+                       "atanh(0.3+0.2i).im must match cmath oracle")
+        // Round-trip: atanh(tanh(z)) = z
         let result = z.tanh.atanh
         assertComplexClose(result, re: 0.3, im: 0.2, tol: 1e-12)
     }
 
     func testCatanh_freeFunctionAlias() {
+        // Oracle: Python cmath.atanh(complex(0.5, 0.0)) = (0.5493061443340549+0j)
         let z = Complex(re: 0.5, im: 0.0)
+        let result = catanh(z)
+        XCTAssertEqual(result.re, 0.5493061443340549, accuracy: 1e-14,
+                       "catanh(0.5).re must match cmath oracle")
+        XCTAssertEqual(result.im, 0.0, accuracy: 1e-14,
+                       "catanh(0.5).im must be 0")
+        // Alias agreement
         XCTAssertEqual(catanh(z), z.atanh)
     }
 
     // MARK: - cabs / carg free functions
 
     func testCabs_freeFunctionAlias() {
+        // Oracle: abs(3+4i) = 5  (3-4-5 Pythagorean triple, exact)
         let z = Complex(re: 3.0, im: 4.0)
+        XCTAssertEqual(cabs(z), 5.0, accuracy: 1e-14,
+                       "cabs(3+4i) must equal 5 (3-4-5 triple)")
+        // Alias agreement
         XCTAssertEqual(cabs(z), z.abs, accuracy: eps)
     }
 
     func testCarg_freeFunctionAlias() {
+        // Oracle: arg(1+i) = π/4 = 0.7853981633974483
         let z = Complex(re: 1.0, im: 1.0)
+        XCTAssertEqual(carg(z), 0.7853981633974483, accuracy: 1e-15,
+                       "carg(1+i) must be π/4 (numpy oracle)")
+        // Alias agreement
         XCTAssertEqual(carg(z), z.arg, accuracy: eps)
     }
 
@@ -948,10 +1125,104 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testSqrt_infinitePositiveReal() {
-        // sqrt(+inf + 0i) = +inf
+        // C99 Annex G.6.4.2 / numpy: sqrt(+inf + 0i) = +inf + 0i
+        // np.sqrt(complex(float('inf'), 0)) = (inf+0j)
         let z = Complex(re: .infinity, im: 0.0).sqrt
         XCTAssertEqual(z.re, .infinity)
         XCTAssertEqual(z.im, 0.0, accuracy: 1e-30)
+    }
+
+    func testSqrt_infiniteNegativeReal() {
+        // C99 Annex G.6.4.2: sqrt(-inf + 0i) = 0 + inf*i
+        // np.sqrt(complex(float('-inf'), 0)) = 0j + infj  → (0+infj)
+        let z = Complex(re: -.infinity, im: 0.0).sqrt
+        XCTAssertEqual(z.re, 0.0, accuracy: 1e-30,
+                       "sqrt(-inf+0i) real part must be 0 per C99 Annex G.6.4.2")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(-inf+0i) imaginary part must be +inf per C99 Annex G.6.4.2")
+    }
+
+    func testSqrt_infinitePositiveReal_withFiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(+inf + y*i) = +inf + 0*i  for finite y
+        // np.sqrt(complex(float('inf'), 3.0)) = (inf+0j)
+        let z = Complex(re: .infinity, im: 3.0).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(+inf+3i) real part must be +inf")
+        XCTAssertEqual(z.im, 0.0, accuracy: 1e-30,
+                       "sqrt(+inf+3i) imaginary part must be 0")
+    }
+
+    func testSqrt_infiniteNegativeReal_withFiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(-inf + y*i) = 0 + inf*i  for finite y > 0
+        // np.sqrt(complex(float('-inf'), 3.0)) = 0+infj
+        let z = Complex(re: -.infinity, im: 3.0).sqrt
+        XCTAssertEqual(z.re, 0.0, accuracy: 1e-30,
+                       "sqrt(-inf+3i) real part must be 0")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(-inf+3i) imaginary part must be +inf")
+    }
+
+    func testSqrt_finiteReal_withInfiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(x + inf*i) = +inf + inf*i  for any finite x
+        // np.sqrt(complex(1.0, float('inf'))) = (inf+infj)
+        let z = Complex(re: 1.0, im: .infinity).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(1+inf*i) real part must be +inf")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(1+inf*i) imaginary part must be +inf")
+    }
+
+    func testSqrt_negativeInfiniteReal_withInfiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(-inf + inf*i) = +inf + +inf*i
+        // np.sqrt(complex(float('-inf'), float('inf'))) = (inf+infj)
+        let z = Complex(re: -.infinity, im: .infinity).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(-inf+inf*i) real part must be +inf")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(-inf+inf*i) imaginary part must be +inf")
+    }
+
+    func testSqrt_positiveInfiniteReal_withInfiniteIm() {
+        // np.sqrt(complex(float('inf'), float('inf'))) = (inf+infj)
+        let z = Complex(re: .infinity, im: .infinity).sqrt
+        XCTAssertEqual(z.re, .infinity)
+        XCTAssertEqual(z.im, .infinity)
+    }
+
+    func testSqrt_nanReal_withFiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(NaN + y*i) = NaN + NaN*i  for finite y
+        // np.sqrt(complex(float('nan'), 0.0)) → (nan+nanj)
+        let z = Complex(re: .nan, im: 0.0).sqrt
+        XCTAssertTrue(z.re.isNaN || z.im.isNaN,
+                      "sqrt(NaN+0i) must have at least one NaN component")
+    }
+
+    func testSqrt_finiteReal_withNanIm() {
+        // C99 Annex G.6.4.2: sqrt(x + NaN*i) = NaN + NaN*i  for finite x
+        // np.sqrt(complex(1.0, float('nan'))) → (nan+nanj)
+        let z = Complex(re: 1.0, im: .nan).sqrt
+        XCTAssertTrue(z.re.isNaN || z.im.isNaN,
+                      "sqrt(1+NaN*i) must have at least one NaN component")
+    }
+
+    func testSqrt_positiveInfReal_withNanIm() {
+        // C99 Annex G.6.4.2: sqrt(+∞ + NaN*i) = +∞ + NaN*i
+        // np.sqrt(complex(float('inf'), float('nan'))) = (inf+nanj)
+        let z = Complex(re: .infinity, im: .nan).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(+inf+NaN*i) real must be +inf per C99 Annex G.6.4.2")
+        XCTAssertTrue(z.im.isNaN,
+                      "sqrt(+inf+NaN*i) imaginary must be NaN per C99 Annex G.6.4.2")
+    }
+
+    func testSqrt_negativeInfReal_withNanIm() {
+        // C99 Annex G.6.4.2: sqrt(-∞ + NaN*i) = +∞ + NaN*i
+        // np.sqrt(complex(float('-inf'), float('nan'))) = (inf+nanj)
+        let z = Complex(re: -.infinity, im: .nan).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(-inf+NaN*i) real must be +inf per C99 Annex G.6.4.2")
+        XCTAssertTrue(z.im.isNaN,
+                      "sqrt(-inf+NaN*i) imaginary must be NaN per C99 Annex G.6.4.2")
     }
 
     func testLog_zero() {
@@ -967,9 +1238,20 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     // MARK: - Round-trip identities across all trig pairs
+    //
+    // Each test anchors one side with a numpy oracle *before* testing the
+    // round-trip, so two consistently-wrong implementations cannot cancel.
 
     func testSinAsinRoundTrip() {
-        // sin(asin(z)) = z for various z
+        // Oracle: Python cmath.asin(complex(0.3, 0.2)) = (0.29803439984315466+0.20772637624812307j)
+        // Anchor the asin side before testing sin(asin(z)) = z.
+        let z0 = Complex(re: 0.3, im: 0.2)
+        let asinZ0 = z0.asin
+        XCTAssertEqual(asinZ0.re, 0.29803439984315466, accuracy: 1e-12,
+                       "asin(0.3+0.2i).re must match cmath oracle (round-trip anchor)")
+        XCTAssertEqual(asinZ0.im, 0.20772637624812307, accuracy: 1e-12,
+                       "asin(0.3+0.2i).im must match cmath oracle (round-trip anchor)")
+        // Now test sin(asin(z)) = z for a few values
         for z in [Complex(re: 0.0, im: 0.0), Complex(re: 0.3, im: 0.2), Complex(re: -0.5, im: 0.1)] {
             let result = z.asin.sin
             assertComplexClose(result, re: z.re, im: z.im, tol: 1e-12, "sin(asin(z)) for \(z)")
@@ -977,6 +1259,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testCosAcosRoundTrip() {
+        // Oracle: Python cmath.acos(complex(0.4, 0.1)) = (1.1618472158012623-0.10877255116702844j)
+        // Anchor the acos side before testing cos(acos(z)) = z.
+        let z0 = Complex(re: 0.4, im: 0.1)
+        let acosZ0 = z0.acos
+        XCTAssertEqual(acosZ0.re, 1.1618472158012623, accuracy: 1e-12,
+                       "acos(0.4+0.1i).re must match cmath oracle (round-trip anchor)")
+        XCTAssertEqual(acosZ0.im, -0.10877255116702844, accuracy: 1e-12,
+                       "acos(0.4+0.1i).im must match cmath oracle (round-trip anchor)")
         for z in [Complex(re: 0.0, im: 0.0), Complex(re: 0.4, im: 0.1)] {
             let result = z.acos.cos
             assertComplexClose(result, re: z.re, im: z.im, tol: 1e-12, "cos(acos(z)) for \(z)")
@@ -984,6 +1274,14 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testTanAtanRoundTrip() {
+        // Oracle: Python cmath.atan(complex(0.5, 0.2)) = (0.476695217521662+0.1603155862977334j)
+        // Anchor the atan side before testing tan(atan(z)) = z.
+        let z0 = Complex(re: 0.5, im: 0.2)
+        let atanZ0 = z0.atan
+        XCTAssertEqual(atanZ0.re, 0.476695217521662, accuracy: 1e-12,
+                       "atan(0.5+0.2i).re must match cmath oracle (round-trip anchor)")
+        XCTAssertEqual(atanZ0.im, 0.1603155862977334, accuracy: 1e-12,
+                       "atan(0.5+0.2i).im must match cmath oracle (round-trip anchor)")
         for z in [Complex(re: 0.0, im: 0.0), Complex(re: 0.5, im: 0.2)] {
             let result = z.atan.tan
             assertComplexClose(result, re: z.re, im: z.im, tol: 1e-12, "tan(atan(z)) for \(z)")

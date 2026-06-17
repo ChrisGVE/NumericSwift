@@ -140,7 +140,12 @@ final class UtilitiesTests: XCTestCase {
     }
 
     func testRoundArray_typicalValues() {
-        // numpy: np.round([1.1, 1.5, 2.5, -0.5]) = [1., 2., 2., -0.] but Darwin.round rounds away from zero
+        // Darwin.round uses round-half-away-from-zero (C99 §7.12.9.6):
+        //   1.1 → 1.0  (below midpoint)
+        //   1.5 → 2.0  (half → away from zero, i.e. up)
+        //  -1.5 → -2.0 (half → away from zero, i.e. down)
+        //   2.9 → 3.0  (above midpoint)
+        // Input: [1.1, 1.5, -1.5, 2.9]
         let result = roundArray([1.1, 1.5, -1.5, 2.9])
         XCTAssertEqual(result, [1.0, 2.0, -2.0, 3.0])
     }

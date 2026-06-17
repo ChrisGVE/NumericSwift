@@ -140,12 +140,17 @@ final class ComplexDivisionTests: XCTestCase {
     /// so result components are inf. Not NaN.
     func testDivisionByZero() {
         let z = Complex(re: 1, im: 2) / Complex(re: 0, im: 0)
-        // Smith: |c|=|d|=0, branch |c|>=|d|, r=0/0=NaN or branch on 0.
-        // IEEE-754 from C99: both components become inf or NaN in various
-        // implementations. The key contract: result must NOT silently produce
-        // a wrong finite value.
-        XCTAssertFalse(z.re.isFinite && z.im.isFinite,
+        let re = z.re, im = z.im
+        // Smith's algorithm with |c|=|d|=0: r=d/c=0/0=NaN → falls into naive
+        // path → re = (a+b*NaN)/NaN = NaN or inf. C99 Annex G §G.5.1:
+        // finite/±0 → ±inf (not NaN); both re and im must be infinite.
+        // Negative assertion: result must NOT be a wrong finite value.
+        XCTAssertFalse(re.isFinite && im.isFinite,
                        "dividing by zero should not produce a finite result")
+        // Positive assertion: at least one component must be infinite
+        // (C99 Annex G §G.5.1: x/+0 → ±inf for x ≠ 0, not NaN).
+        XCTAssertTrue(re.isInfinite || im.isInfinite,
+                      "div-by-zero must route to ±inf per C99 Annex G §G.5.1, not NaN")
     }
 
     /// Inf numerator: (inf+0i)/(1+0i) = inf+?i
