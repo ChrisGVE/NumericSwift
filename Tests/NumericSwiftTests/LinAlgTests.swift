@@ -721,6 +721,59 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtA2[2, 2],  2.0, accuracy: 1e-8)
     }
 
+    /// Parlett recurrence: 1×1 block followed by 2×2 block — tests the
+    /// `!rowIs2x2 && colIs2x2` Sylvester branch (row 0 vs block {1,2}).
+    ///
+    /// B = [[1,5,3],[0,3,2],[0,-2,3]]: eigenvalue 1 (1×1) then 3±2i (2×2).
+    /// Already in real Schur form; T[0,1]=5, T[0,2]=3 are non-zero cross-terms.
+    /// Frozen oracle: scipy.linalg.logm.
+    func testParlettCrossTermOneByTwoSylvester() throws {
+        let B = LinAlg.Matrix([[1.0, 5.0, 3.0], [0.0, 3.0, 2.0], [0.0, -2.0, 3.0]])
+
+        guard let logB = try LinAlg.logm(B) else {
+            XCTFail("logm must succeed: all eigenvalues have positive real part")
+            return
+        }
+        // scipy.linalg.logm frozen literals:
+        XCTAssertEqual(logB[0, 0],  0.0,                     accuracy: 1e-10)
+        XCTAssertEqual(logB[0, 1],  2.8589506592353198,      accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logB[0, 2],  0.5347678677297507,      accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logB[1, 1],  1.2824746787307686,      accuracy: 1e-9)
+        XCTAssertEqual(logB[1, 2],  0.5880026035475676,      accuracy: 1e-9)
+        XCTAssertEqual(logB[2, 1], -0.5880026035475674,      accuracy: 1e-9)
+        XCTAssertEqual(logB[2, 2],  1.2824746787307681,      accuracy: 1e-9)
+    }
+
+    /// Parlett recurrence: 4×4 with two 2×2 blocks — tests the 2×2 vs 2×2
+    /// (vectorised 4×4 Sylvester) branch.
+    ///
+    /// A = [[1,2,3,4],[-2,1,5,6],[0,0,0,1],[0,0,-1,0]]: already in real Schur
+    /// form with two 2×2 blocks (eigenvalues 1±2i and 0±i); T[0:2, 2:4] are
+    /// non-zero, exercising the cross-block Sylvester solver.
+    /// Frozen oracle: scipy.linalg.logm.
+    func testParlettCrossTermTwoByTwoSylvester() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0, 3.0, 4.0],
+                               [-2.0, 1.0, 5.0, 6.0],
+                               [0.0, 0.0, 0.0, 1.0],
+                               [0.0, 0.0, -1.0, 0.0]])
+
+        guard let logA = try LinAlg.logm(A) else {
+            XCTFail("logm must succeed: all eigenvalues have positive real part")
+            return
+        }
+        // scipy.linalg.logm frozen literals:
+        XCTAssertEqual(logA[0, 0],  0.80471895621705,       accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 1],  1.1071487177940904,     accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 2], -0.7567595443934897,     accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[0, 3],  1.0778249583392425,     accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[1, 2],  6.956010175427716,      accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[1, 3],  1.6573973242576612,     accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[2, 2],  0.0,                    accuracy: 1e-9)
+        XCTAssertEqual(logA[2, 3],  1.5707963267948966,     accuracy: 1e-9)
+        XCTAssertEqual(logA[3, 2], -1.5707963267948966,     accuracy: 1e-9)
+        XCTAssertEqual(logA[3, 3],  0.0,                    accuracy: 1e-9)
+    }
+
     /// Defining identity expm(logm(A)) ≈ A for a real-logm case.
     func testExpmLogmDefiningIdentity() throws {
         // R(π/4): expm(logm(R)) ≈ R

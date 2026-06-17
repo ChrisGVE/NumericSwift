@@ -386,31 +386,32 @@ extension LinAlg {
 
                 } else if !rowIs2x2 && colIs2x2 {
                     // ── 1×1 block_i vs 2×2 block_j ─────────────────────────────
-                    // Higham 2008 eq. 4.18:
-                    //   F_ij · T_jj − T_ii · F_ij = F_ii · T_ij − T_ij · F_jj
-                    //   → (T_jj^T − λ_i·I) · F_ij^T = RHS^T   [2×1 system in F^T]
-                    // Where λ_i is the scalar eigenvalue and F_jj is the 2×2 block.
-                    // F_ij here is a 1×2 row; unknowns are F[row,p] and F[row,q].
+                    // Higham 2008 eq. 4.18 for block_i scalar (λ_i) vs block_j 2×2:
+                    //   λ_i · F_ij − F_ij · T_jj = F_ii · T_ij − T_ij · F_jj   (*)
+                    // Re-arrange: −F_ij · (T_jj − λ_i·I) = RHS
+                    //   → (T_jj − λ_i·I)^T · F_ij^T = −RHS^T    [2×1 system]
+                    // Note the NEGATION on the right-hand side: this differs from
+                    // the 2×1 case above by the direction of the Sylvester (F on
+                    // the right of T_jj instead of the left of T_ii).
+                    // F_ij is a 1×2 row; unknowns are F[row,p] and F[row,q].
                     //
-                    // RHS[col c ∈ {p,q}]:
-                    //   F[row,row]*T[row,c] − Σ_{j in block_j} T[row,j]*F[j,c]
-                    //   + Σ_{k intermediate} (F[row,k]*T[k,c] − T[row,k]*F[k,c])
-                    // Note: T[row,c] vs F_jj is T_ij scalar-to-2×2, so
-                    //   (F_ii·T_ij)[row,c] = F[row,row]*T[row,c]  (F_ii is scalar)
-                    //   (T_ij·F_jj)[row,c] = T[row,p]*F[p,c] + T[row,q]*F[q,c]
-                    // The lhs is (T_jj − λ_i·I)^T acting on the column F[row,:]^T.
+                    // RHS = F_ii · T_ij − T_ij · F_jj  (scalar F_ii since 1×1 block):
+                    //   RHS[c ∈ {p,q}] = F[row,row]*T[row,c]
+                    //                  − (T[row,p]*F[p,c] + T[row,q]*F[q,c])
+                    //                  + Σ_{k intermediate} (F[row,k]*T[k,c] − T[row,k]*F[k,c])
 
                     let p = colBlock;  let q = p + 1
                     let lamI = T[row*n+row]   // scalar eigenvalue (real)
                     let fii: C2 = (Fre[row*n+row], Fim[row*n+row])
 
-                    // RHS[p]: F[row,row]*T[row,p] − (T[row,p]*F[p,p]+T[row,q]*F[q,p]) + cross
+                    // Compute RHS (before negation):
+                    // RHS[0] ↔ column p:
                     var rhs0Re = fii.re*T[row*n+p] - T[row*n+p]*Fre[p*n+p] - T[row*n+q]*Fre[q*n+p]
                     var rhs0Im = fii.im*T[row*n+p] - T[row*n+p]*Fim[p*n+p] - T[row*n+q]*Fim[q*n+p]
-                    // RHS[q]: F[row,row]*T[row,q] − (T[row,p]*F[p,q]+T[row,q]*F[q,q]) + cross
+                    // RHS[1] ↔ column q:
                     var rhs1Re = fii.re*T[row*n+q] - T[row*n+p]*Fre[p*n+q] - T[row*n+q]*Fre[q*n+q]
                     var rhs1Im = fii.im*T[row*n+q] - T[row*n+p]*Fim[p*n+q] - T[row*n+q]*Fim[q*n+q]
-                    // Cross-block terms: k between row+1 and p-1 (exclusive of block_j)
+                    // Cross-block accumulated terms (k strictly between row and p):
                     for k in (row+1)..<p {
                         rhs0Re += Fre[row*n+k]*T[k*n+p] - T[row*n+k]*Fre[k*n+p]
                         rhs0Im += Fim[row*n+k]*T[k*n+p] - T[row*n+k]*Fim[k*n+p]
@@ -418,8 +419,8 @@ extension LinAlg {
                         rhs1Im += Fim[row*n+k]*T[k*n+q] - T[row*n+k]*Fim[k*n+q]
                     }
 
-                    // Coefficient matrix: (T_jj^T − λ_i·I), acting on [F[row,p]; F[row,q]]
-                    // T_jj^T = [[T[p,p], T[q,p]], [T[p,q], T[q,q]]]
+                    // Coefficient matrix: (T_jj − λ_i·I)^T = T_jj^T − λ_i·I
+                    // T_jj^T = [[T[p,p], T[q,p]], [T[p,q], T[q,q]]]  (rows/cols swapped)
                     let B00: C2 = (T[p*n+p] - lamI, 0.0);  let B01: C2 = (T[q*n+p], 0.0)
                     let B10: C2 = (T[p*n+q], 0.0);          let B11: C2 = (T[q*n+q] - lamI, 0.0)
                     let det2 = cSub(cMul(B00, B11), cMul(B01, B10))
@@ -432,9 +433,10 @@ extension LinAlg {
                         Fim[row*n+q] = (cMul(fp0, (T[row*n+q], 0.0))).im
                         continue
                     }
-                    let rhs0: C2 = (rhs0Re, rhs0Im); let rhs1: C2 = (rhs1Re, rhs1Im)
-                    let x0 = cDiv(cSub(cMul(B11, rhs0), cMul(B01, rhs1)), det2)
-                    let x1 = cDiv(cSub(cMul(B00, rhs1), cMul(B10, rhs0)), det2)
+                    // Solve (T_jj^T − λ_i·I)·[x0;x1] = −[rhs0;rhs1] (note negation).
+                    let nrhs0: C2 = (-rhs0Re, -rhs0Im);  let nrhs1: C2 = (-rhs1Re, -rhs1Im)
+                    let x0 = cDiv(cSub(cMul(B11, nrhs0), cMul(B01, nrhs1)), det2)
+                    let x1 = cDiv(cSub(cMul(B00, nrhs1), cMul(B10, nrhs0)), det2)
                     Fre[row*n+p] = x0.re; Fim[row*n+p] = x0.im
                     Fre[row*n+q] = x1.re; Fim[row*n+q] = x1.im
 
