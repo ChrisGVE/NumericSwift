@@ -11,7 +11,7 @@
 import Accelerate
 import Foundation
 
-// MARK: - KDTree
+// MARK: - KDTree (public types, top-level)
 
 /// KDTree node for efficient spatial queries.
 public class KDTreeNode {
@@ -56,7 +56,6 @@ public class KDTree {
 
     let axis = depth % dim
 
-    // Sort by axis
     indices.sort { points[$0][axis] < points[$1][axis] }
 
     let mid = indices.count / 2
@@ -83,9 +82,8 @@ public class KDTree {
     func search(_ node: KDTreeNode?) {
       guard let node = node else { return }
 
-      let dist = euclideanDistance(point, node.point)
+      let dist = Spatial.euclideanDistance(point, node.point)
 
-      // Insert into best list maintaining sorted order
       if best.count < k || dist < best.last!.dist {
         var pos = best.count
         for i in 0..<best.count {
@@ -106,7 +104,6 @@ public class KDTree {
 
       search(near)
 
-      // Check if we need to search far branch
       if best.count < k || abs(diff) < best.last!.dist {
         search(far)
       }
@@ -131,7 +128,7 @@ public class KDTree {
     func search(_ node: KDTreeNode?) {
       guard let node = node else { return }
 
-      let dist = euclideanDistance(point, node.point)
+      let dist = Spatial.euclideanDistance(point, node.point)
       if dist <= radius {
         result.append((node.index, dist))
       }
@@ -148,7 +145,6 @@ public class KDTree {
 
     search(root)
 
-    // Sort by distance
     result.sort { $0.dist < $1.dist }
 
     return (result.map { $0.idx }, result.map { $0.dist })
@@ -174,7 +170,7 @@ public class KDTree {
   }
 }
 
-// MARK: - Delaunay Triangulation
+// MARK: - Result Types (public, top-level)
 
 /// Result of Delaunay triangulation.
 public struct DelaunayResult {
@@ -185,253 +181,6 @@ public struct DelaunayResult {
   /// Neighbor indices for each triangle.
   public let neighbors: [[Int]]
 }
-
-/// Compute Delaunay triangulation of 2D points.
-///
-/// Uses the Bowyer-Watson algorithm to compute the Delaunay triangulation,
-/// which maximizes the minimum angle of all triangles.
-///
-/// When all input points are collinear (degenerate configuration), no valid
-/// triangulation exists and an empty simplex list is returned — matching the
-/// behaviour of `scipy.spatial.Delaunay`, which raises `QhullError` for
-/// fully-collinear inputs.
-///
-/// Degeneracy is detected by checking whether **all** points lie on the same
-/// line via a relative-area test (max triangle area / bounding-box area < ε),
-/// making the check scale-independent and order-independent.
-///
-/// - Parameter points: Array of 2D points
-/// - Returns: DelaunayResult with triangles and neighbor information
-public func delaunay(_ points: [[Double]]) -> DelaunayResult {
-  let n = points.count
-
-  guard n >= 3 else {
-    return DelaunayResult(points: points, simplices: [], neighbors: [])
-  }
-
-  // Robust collinearity check across ALL points.
-  //
-  // All n points are collinear iff every triple has zero signed area.  We use
-  // the anchor pair (points[0], points[1]) and check each remaining point
-  // against it. The area is normalised by the bounding-box diagonal so the
-  // threshold is scale-independent.  (A purely first-3-point check is
-  // order-dependent and misses sets whose first 3 happen to be non-collinear.)
-  if allPointsCollinear(points) {
-    return DelaunayResult(points: points, simplices: [], neighbors: [])
-  }
-
-  let (simplices, neighbors) = bowyerWatson(points: points)
-
-  return DelaunayResult(
-    points: points,
-    simplices: simplices,
-    neighbors: neighbors
-  )
-}
-
-/// Return `true` when all points in `pts` lie on a single line.
-///
-/// Selects the pair of points with maximum squared distance as the anchor
-/// (robust against duplicate leading points) and tests every other point
-/// via the 2-D cross-product (signed triangle area × 2).  The test threshold
-/// is relative to the bounding-box area so the result is scale-independent.
-///
-/// - Reference: Shamos & Hoey (1976); computational-geometry collinearity test.
-private func allPointsCollinear(_ pts: [[Double]]) -> Bool {
-  // Bounding box for scale normalisation.
-  var minX = pts[0][0], maxX = pts[0][0]
-  var minY = pts[0][1], maxY = pts[0][1]
-  for p in pts {
-    if p[0] < minX { minX = p[0] }
-    if p[0] > maxX { maxX = p[0] }
-    if p[1] < minY { minY = p[1] }
-    if p[1] > maxY { maxY = p[1] }
-  }
-  let bboxDiag = (maxX - minX) * (maxX - minX) + (maxY - minY) * (maxY - minY)
-
-  // If the bounding box has zero area, all points are coincident → collinear.
-  if bboxDiag < 1e-30 { return true }
-
-  // Relative epsilon: cross-product² threshold scales with bbox area.
-  let eps = 1e-10 * bboxDiag
-
-  // Choose the pair with the largest squared distance as the anchor to avoid
-  // the degenerate case where pts[0] == pts[1] produces a zero-length direction.
-  // We pick the two extreme x-range or y-range points (bounding box corners).
-  let anchorA: [Double]
-  let anchorB: [Double]
-  let xRange = maxX - minX
-  let yRange = maxY - minY
-  if xRange >= yRange {
-    // Anchor on widest dimension: leftmost and rightmost.
-    anchorA = pts.min(by: { $0[0] < $1[0] })!
-    anchorB = pts.max(by: { $0[0] < $1[0] })!
-  } else {
-    // Anchor on tallest dimension: bottommost and topmost.
-    anchorA = pts.min(by: { $0[1] < $1[1] })!
-    anchorB = pts.max(by: { $0[1] < $1[1] })!
-  }
-
-  let ax = anchorA[0], ay = anchorA[1]
-  let dx = anchorB[0] - ax, dy = anchorB[1] - ay
-
-  for p in pts {
-    // Cross product (anchorB-anchorA) × (p-anchorA) = signed area × 2.
-    let cross = dx * (p[1] - ay) - dy * (p[0] - ax)
-    if cross * cross > eps {
-      return false
-    }
-  }
-  return true
-}
-
-/// Bowyer-Watson algorithm for Delaunay triangulation.
-private func bowyerWatson(points: [[Double]]) -> (simplices: [[Int]], neighbors: [[Int]]) {
-  let n = points.count
-
-  // Find bounding box
-  var minX = points[0][0]
-  var maxX = points[0][0]
-  var minY = points[0][1]
-  var maxY = points[0][1]
-
-  for p in points {
-    minX = min(minX, p[0])
-    maxX = max(maxX, p[0])
-    minY = min(minY, p[1])
-    maxY = max(maxY, p[1])
-  }
-
-  // Create super-triangle
-  let dx = maxX - minX
-  let dy = maxY - minY
-  let delta: Double = max(dx, dy) * 10.0
-
-  let superTriangle: [[Double]] = [
-    [minX - delta, minY - delta],
-    [minX + dx / 2.0, maxY + delta * 2.0],
-    [maxX + delta, minY - delta],
-  ]
-
-  // All points including super-triangle vertices
-  let allPoints = points + superTriangle
-
-  // Initial triangulation with super-triangle (0-indexed)
-  var triangles: [[Int]] = [[n, n + 1, n + 2]]
-
-  // Insert each point
-  for i in 0..<n {
-    let px = points[i][0]
-    let py = points[i][1]
-
-    var badTriangles: [Int] = []
-
-    // Find triangles whose circumcircle contains the point
-    for (j, tri) in triangles.enumerated() {
-      if inCircumcircle(px: px, py: py, tri: tri, points: allPoints) {
-        badTriangles.append(j)
-      }
-    }
-
-    // Find boundary edges of the hole
-    var edgeCount: [String: Int] = [:]
-    for j in badTriangles {
-      let tri = triangles[j]
-      let edges = [[tri[0], tri[1]], [tri[1], tri[2]], [tri[2], tri[0]]]
-      for e in edges {
-        let key = "\(min(e[0], e[1])),\(max(e[0], e[1]))"
-        edgeCount[key, default: 0] += 1
-      }
-    }
-
-    // Collect boundary edges (appearing only once)
-    var polygon: [[Int]] = []
-    for j in badTriangles {
-      let tri = triangles[j]
-      let edges = [[tri[0], tri[1]], [tri[1], tri[2]], [tri[2], tri[0]]]
-      for e in edges {
-        let key = "\(min(e[0], e[1])),\(max(e[0], e[1]))"
-        if edgeCount[key] == 1 {
-          polygon.append(e)
-        }
-      }
-    }
-
-    // Remove bad triangles (in reverse order)
-    for j in badTriangles.sorted().reversed() {
-      triangles.remove(at: j)
-    }
-
-    // Create new triangles
-    for e in polygon {
-      triangles.append([e[0], e[1], i])
-    }
-  }
-
-  // Remove triangles containing super-triangle vertices
-  var finalTriangles: [[Int]] = []
-  for tri in triangles {
-    var valid = true
-    for v in tri {
-      if v >= n {
-        valid = false
-        break
-      }
-    }
-    if valid {
-      finalTriangles.append(tri)
-    }
-  }
-
-  // Build neighbor information
-  var neighbors: [[Int]] = Array(repeating: [], count: finalTriangles.count)
-  for i in 0..<finalTriangles.count {
-    let triI = finalTriangles[i]
-    for j in (i + 1)..<finalTriangles.count {
-      let triJ = finalTriangles[j]
-      // Count shared vertices
-      var shared = 0
-      for vi in triI {
-        for vj in triJ {
-          if vi == vj { shared += 1 }
-        }
-      }
-      if shared == 2 {
-        neighbors[i].append(j)
-        neighbors[j].append(i)
-      }
-    }
-  }
-
-  return (finalTriangles, neighbors)
-}
-
-/// Check if point is inside circumcircle of triangle.
-private func inCircumcircle(px: Double, py: Double, tri: [Int], points: [[Double]]) -> Bool {
-  let ax = points[tri[0]][0]
-  let ay = points[tri[0]][1]
-  let bx = points[tri[1]][0]
-  let by = points[tri[1]][1]
-  let cx = points[tri[2]][0]
-  let cy = points[tri[2]][1]
-
-  let d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
-  if abs(d) < 1e-15 { return false }
-
-  let a2 = ax * ax + ay * ay
-  let b2 = bx * bx + by * by
-  let c2 = cx * cx + cy * cy
-
-  let ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
-  let uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
-
-  let r2 = (ax - ux) * (ax - ux) + (ay - uy) * (ay - uy)
-  let dist2 = (px - ux) * (px - ux) + (py - uy) * (py - uy)
-
-  return dist2 < r2
-}
-
-// MARK: - Voronoi Diagram
 
 /// Result of Voronoi diagram computation.
 ///
@@ -462,156 +211,6 @@ public struct VoronoiResult {
   public let ridgePoints: [[Int]]
 }
 
-/// Compute Voronoi diagram of 2D points.
-///
-/// The Voronoi diagram is the dual of the Delaunay triangulation, computed
-/// from circumcenters of Delaunay triangles.
-///
-/// ## Infinite regions
-///
-/// Generators on the convex hull of the input have Voronoi cells that extend
-/// to infinity.  These are **not silently dropped**: `ridgeVertices` uses
-/// `-1` as a sentinel for the infinite endpoint (matching
-/// `scipy.spatial.Voronoi`), and `regions[i]` contains `-1` when generator
-/// `i` has an unbounded cell.  See ``VoronoiResult`` for details.
-///
-/// - Parameter points: Array of 2D points (at least 3 for a non-trivial diagram).
-/// - Returns: ``VoronoiResult`` with vertices, regions, and ridges.
-public func voronoi(_ points: [[Double]]) -> VoronoiResult {
-  guard !points.isEmpty else {
-    return VoronoiResult(
-      points: [],
-      vertices: [],
-      regions: [],
-      ridgeVertices: [],
-      ridgePoints: []
-    )
-  }
-
-  let n = points.count
-
-  // Voronoi is the dual of the Delaunay triangulation.
-  // Each Delaunay triangle's circumcenter is a Voronoi vertex.
-  let (delaunaySimplices, delaunayNeighbors) = bowyerWatson(points: points)
-
-  // ── Step 1: compute circumcenters (Voronoi vertices) ──────────────────────
-  var vertices: [[Double]] = []
-  // Maps Delaunay triangle index → Voronoi vertex index (-1 if degenerate).
-  var simplexToVertex: [Int: Int] = [:]
-
-  for (i, simplex) in delaunaySimplices.enumerated() {
-    guard simplex.count == 3 else { continue }
-    let p1 = points[simplex[0]], p2 = points[simplex[1]], p3 = points[simplex[2]]
-    let ax = p1[0], ay = p1[1]
-    let bx = p2[0], by = p2[1]
-    let cx = p3[0], cy = p3[1]
-
-    // Denominator of the circumcenter formula; near-zero means a degenerate triangle.
-    let d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
-    if abs(d) > 1e-10 {
-      let a2 = ax * ax + ay * ay
-      let b2 = bx * bx + by * by
-      let c2 = cx * cx + cy * cy
-      let ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
-      let uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
-      vertices.append([ux, uy])
-      simplexToVertex[i] = vertices.count - 1
-    }
-  }
-
-  // ── Step 2: build regions for each generator ──────────────────────────────
-  //
-  // regions[ptIdx] accumulates the indices of the Voronoi vertices that
-  // surround generator ptIdx.  Hull generators additionally get a -1 entry
-  // for each Delaunay triangle edge that borders the exterior (no neighbour on
-  // that side → the corresponding Voronoi ray goes to infinity).
-  var regions: [[Int]] = Array(repeating: [], count: n)
-
-  for (i, simplex) in delaunaySimplices.enumerated() {
-    guard let vIdx = simplexToVertex[i] else { continue }
-    for ptIdx in simplex {
-      regions[ptIdx].append(vIdx)
-    }
-  }
-
-  // ── Step 3: build ridge information, inserting -1 for infinite ridges ─────
-  //
-  // A Delaunay edge shared by two triangles (i, j) maps to the finite Voronoi
-  // ridge [circumcenter(i), circumcenter(j)].  A hull edge (triangle i with no
-  // neighbour on one side) maps to an infinite Voronoi ridge [-1, circumcenter(i)].
-  //
-  // We iterate over all Delaunay triangle pairs and also over each triangle's
-  // edges that have no matching neighbour.
-  var ridgeVertices: [[Int]] = []
-  var ridgePoints: [[Int]] = []
-
-  // Tracks processed edge pairs to avoid duplicates (key = sorted generator pair).
-  var processedEdges: Set<String> = []
-
-  for (i, simplex) in delaunaySimplices.enumerated() {
-    guard let v1 = simplexToVertex[i] else { continue }
-
-    // Edges of this triangle as (p0, p1) pairs (CCW order: [0-1], [1-2], [2-0]).
-    let edges: [[Int]] = [
-      [simplex[0], simplex[1]],
-      [simplex[1], simplex[2]],
-      [simplex[2], simplex[0]],
-    ]
-
-    for edge in edges {
-      let edgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))"
-
-      // Find the neighbour that shares this edge.
-      let neighbour = delaunayNeighbors[i].first { nIdx in
-        let nSimplex = delaunaySimplices[nIdx]
-        return nSimplex.contains(edge[0]) && nSimplex.contains(edge[1])
-      }
-
-      if let nIdx = neighbour {
-        if nIdx > i {
-          let ridgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))-\(min(i, nIdx)),\(max(i, nIdx))"
-          if !processedEdges.contains(ridgeKey) {
-            processedEdges.insert(ridgeKey)
-            if let v2 = simplexToVertex[nIdx] {
-              // Finite ridge: both circumcenters are valid — connect them.
-              ridgeVertices.append([v1, v2])
-            } else {
-              // Neighbour's circumcenter is degenerate (triangle is near-collinear,
-              // |determinant| ≤ 1e-10).  Per SciPy parity the ridge must still be
-              // emitted; treat it as infinite rather than silently dropping it.
-              ridgeVertices.append([-1, v1])
-              if !regions[edge[0]].contains(-1) { regions[edge[0]].append(-1) }
-              if !regions[edge[1]].contains(-1) { regions[edge[1]].append(-1) }
-            }
-            ridgePoints.append([edge[0], edge[1]])
-          }
-        }
-      } else {
-        // Hull edge: no neighbour → the Voronoi ridge extends to infinity.
-        // Emit [-1, v1] and mark the two hull generators as having infinite regions.
-        if !processedEdges.contains(edgeKey) {
-          processedEdges.insert(edgeKey)
-          ridgeVertices.append([-1, v1])
-          ridgePoints.append([edge[0], edge[1]])
-          // Add the -1 sentinel to both hull generators' region lists.
-          if !regions[edge[0]].contains(-1) { regions[edge[0]].append(-1) }
-          if !regions[edge[1]].contains(-1) { regions[edge[1]].append(-1) }
-        }
-      }
-    }
-  }
-
-  return VoronoiResult(
-    points: points,
-    vertices: vertices,
-    regions: regions,
-    ridgeVertices: ridgeVertices,
-    ridgePoints: ridgePoints
-  )
-}
-
-// MARK: - Convex Hull
-
 /// Result of convex hull computation.
 public struct ConvexHullResult {
   /// Original points.
@@ -624,85 +223,425 @@ public struct ConvexHullResult {
   public let area: Double
 }
 
-/// Compute convex hull of 2D points using Graham scan.
-///
-/// - Parameter points: Array of 2D points
-/// - Returns: ConvexHullResult with vertices and edges
+// MARK: - Spatial Namespace (free functions)
+
+extension Spatial {
+
+    // MARK: - Delaunay Triangulation
+
+    /// Compute Delaunay triangulation of 2D points.
+    ///
+    /// Uses the Bowyer-Watson algorithm, which maximizes the minimum angle of all triangles.
+    ///
+    /// When all input points are collinear, no valid triangulation exists and an empty
+    /// simplex list is returned — matching the behaviour of `scipy.spatial.Delaunay`.
+    ///
+    /// - Parameter points: Array of 2D points
+    /// - Returns: ``DelaunayResult`` with triangles and neighbor information
+    public static func delaunay(_ points: [[Double]]) -> DelaunayResult {
+        let n = points.count
+
+        guard n >= 3 else {
+            return DelaunayResult(points: points, simplices: [], neighbors: [])
+        }
+
+        if allPointsCollinear(points) {
+            return DelaunayResult(points: points, simplices: [], neighbors: [])
+        }
+
+        let (simplices, neighbors) = bowyerWatson(points: points)
+
+        return DelaunayResult(
+            points: points,
+            simplices: simplices,
+            neighbors: neighbors
+        )
+    }
+
+    // MARK: - Voronoi Diagram
+
+    /// Compute Voronoi diagram of 2D points.
+    ///
+    /// The Voronoi diagram is the dual of the Delaunay triangulation, computed
+    /// from circumcenters of Delaunay triangles.
+    ///
+    /// Generators on the convex hull have cells that extend to infinity.
+    /// `ridgeVertices` uses `-1` as a sentinel for the infinite endpoint.
+    ///
+    /// - Parameter points: Array of 2D points (at least 3 for a non-trivial diagram).
+    /// - Returns: ``VoronoiResult`` with vertices, regions, and ridges.
+    public static func voronoi(_ points: [[Double]]) -> VoronoiResult {
+        guard !points.isEmpty else {
+            return VoronoiResult(
+                points: [],
+                vertices: [],
+                regions: [],
+                ridgeVertices: [],
+                ridgePoints: []
+            )
+        }
+
+        let n = points.count
+
+        let (delaunaySimplices, delaunayNeighbors) = bowyerWatson(points: points)
+
+        var vertices: [[Double]] = []
+        var simplexToVertex: [Int: Int] = [:]
+
+        for (i, simplex) in delaunaySimplices.enumerated() {
+            guard simplex.count == 3 else { continue }
+            let p1 = points[simplex[0]], p2 = points[simplex[1]], p3 = points[simplex[2]]
+            let ax = p1[0], ay = p1[1]
+            let bx = p2[0], by = p2[1]
+            let cx = p3[0], cy = p3[1]
+
+            let d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+            if abs(d) > 1e-10 {
+                let a2 = ax * ax + ay * ay
+                let b2 = bx * bx + by * by
+                let c2 = cx * cx + cy * cy
+                let ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
+                let uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
+                vertices.append([ux, uy])
+                simplexToVertex[i] = vertices.count - 1
+            }
+        }
+
+        var regions: [[Int]] = Array(repeating: [], count: n)
+
+        for (i, simplex) in delaunaySimplices.enumerated() {
+            guard let vIdx = simplexToVertex[i] else { continue }
+            for ptIdx in simplex {
+                regions[ptIdx].append(vIdx)
+            }
+        }
+
+        var ridgeVertices: [[Int]] = []
+        var ridgePoints: [[Int]] = []
+        var processedEdges: Set<String> = []
+
+        for (i, simplex) in delaunaySimplices.enumerated() {
+            guard let v1 = simplexToVertex[i] else { continue }
+
+            let edges: [[Int]] = [
+                [simplex[0], simplex[1]],
+                [simplex[1], simplex[2]],
+                [simplex[2], simplex[0]],
+            ]
+
+            for edge in edges {
+                let edgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))"
+
+                let neighbour = delaunayNeighbors[i].first { nIdx in
+                    let nSimplex = delaunaySimplices[nIdx]
+                    return nSimplex.contains(edge[0]) && nSimplex.contains(edge[1])
+                }
+
+                if let nIdx = neighbour {
+                    if nIdx > i {
+                        let ridgeKey = "\(min(edge[0], edge[1])),\(max(edge[0], edge[1]))-\(min(i, nIdx)),\(max(i, nIdx))"
+                        if !processedEdges.contains(ridgeKey) {
+                            processedEdges.insert(ridgeKey)
+                            if let v2 = simplexToVertex[nIdx] {
+                                ridgeVertices.append([v1, v2])
+                            } else {
+                                ridgeVertices.append([-1, v1])
+                                if !regions[edge[0]].contains(-1) { regions[edge[0]].append(-1) }
+                                if !regions[edge[1]].contains(-1) { regions[edge[1]].append(-1) }
+                            }
+                            ridgePoints.append([edge[0], edge[1]])
+                        }
+                    }
+                } else {
+                    if !processedEdges.contains(edgeKey) {
+                        processedEdges.insert(edgeKey)
+                        ridgeVertices.append([-1, v1])
+                        ridgePoints.append([edge[0], edge[1]])
+                        if !regions[edge[0]].contains(-1) { regions[edge[0]].append(-1) }
+                        if !regions[edge[1]].contains(-1) { regions[edge[1]].append(-1) }
+                    }
+                }
+            }
+        }
+
+        return VoronoiResult(
+            points: points,
+            vertices: vertices,
+            regions: regions,
+            ridgeVertices: ridgeVertices,
+            ridgePoints: ridgePoints
+        )
+    }
+
+    // MARK: - Convex Hull
+
+    /// Compute convex hull of 2D points using Graham scan.
+    ///
+    /// - Parameter points: Array of 2D points
+    /// - Returns: ``ConvexHullResult`` with vertices and edges
+    public static func convexHull(_ points: [[Double]]) -> ConvexHullResult {
+        let n = points.count
+
+        guard n >= 3 else {
+            let vertices = Array(0..<n)
+            return ConvexHullResult(
+                points: points,
+                vertices: vertices,
+                simplices: [],
+                area: 0
+            )
+        }
+
+        var startIdx = 0
+        for i in 1..<n {
+            if points[i][1] < points[startIdx][1]
+                || (points[i][1] == points[startIdx][1] && points[i][0] < points[startIdx][0])
+            {
+                startIdx = i
+            }
+        }
+
+        let start = points[startIdx]
+
+        var indices = Array(0..<n).filter { $0 != startIdx }
+        indices.sort { a, b in
+            let angleA = Darwin.atan2(points[a][1] - start[1], points[a][0] - start[0])
+            let angleB = Darwin.atan2(points[b][1] - start[1], points[b][0] - start[0])
+            if abs(angleA - angleB) < 1e-10 {
+                let distA = Spatial.squaredEuclideanDistance(points[a], start)
+                let distB = Spatial.squaredEuclideanDistance(points[b], start)
+                return distA < distB
+            }
+            return angleA < angleB
+        }
+
+        func ccw(_ p1: [Double], _ p2: [Double], _ p3: [Double]) -> Double {
+            return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+        }
+
+        var hull = [startIdx]
+        for idx in indices {
+            while hull.count >= 2
+                && ccw(points[hull[hull.count - 2]], points[hull[hull.count - 1]], points[idx]) <= 0
+            {
+                hull.removeLast()
+            }
+            hull.append(idx)
+        }
+
+        var simplices: [[Int]] = []
+        for i in 0..<hull.count {
+            let nextI = (i + 1) % hull.count
+            simplices.append([hull[i], hull[nextI]])
+        }
+
+        var area: Double = 0
+        for i in 0..<hull.count {
+            let j = (i + 1) % hull.count
+            let p1 = points[hull[i]]
+            let p2 = points[hull[j]]
+            area += p1[0] * p2[1]
+            area -= p2[0] * p1[1]
+        }
+        area = abs(area) / 2
+
+        return ConvexHullResult(
+            points: points,
+            vertices: hull,
+            simplices: simplices,
+            area: area
+        )
+    }
+
+    // MARK: - Private helpers
+
+    private static func allPointsCollinear(_ pts: [[Double]]) -> Bool {
+        var minX = pts[0][0], maxX = pts[0][0]
+        var minY = pts[0][1], maxY = pts[0][1]
+        for p in pts {
+            if p[0] < minX { minX = p[0] }
+            if p[0] > maxX { maxX = p[0] }
+            if p[1] < minY { minY = p[1] }
+            if p[1] > maxY { maxY = p[1] }
+        }
+        let bboxDiag = (maxX - minX) * (maxX - minX) + (maxY - minY) * (maxY - minY)
+
+        if bboxDiag < 1e-30 { return true }
+
+        let eps = 1e-10 * bboxDiag
+
+        let anchorA: [Double]
+        let anchorB: [Double]
+        let xRange = maxX - minX
+        let yRange = maxY - minY
+        if xRange >= yRange {
+            anchorA = pts.min(by: { $0[0] < $1[0] })!
+            anchorB = pts.max(by: { $0[0] < $1[0] })!
+        } else {
+            anchorA = pts.min(by: { $0[1] < $1[1] })!
+            anchorB = pts.max(by: { $0[1] < $1[1] })!
+        }
+
+        let ax = anchorA[0], ay = anchorA[1]
+        let dx = anchorB[0] - ax, dy = anchorB[1] - ay
+
+        for p in pts {
+            let cross = dx * (p[1] - ay) - dy * (p[0] - ax)
+            if cross * cross > eps {
+                return false
+            }
+        }
+        return true
+    }
+
+    private static func bowyerWatson(points: [[Double]]) -> (simplices: [[Int]], neighbors: [[Int]]) {
+        let n = points.count
+
+        var minX = points[0][0]
+        var maxX = points[0][0]
+        var minY = points[0][1]
+        var maxY = points[0][1]
+
+        for p in points {
+            minX = min(minX, p[0])
+            maxX = max(maxX, p[0])
+            minY = min(minY, p[1])
+            maxY = max(maxY, p[1])
+        }
+
+        let dx = maxX - minX
+        let dy = maxY - minY
+        let delta: Double = max(dx, dy) * 10.0
+
+        let superTriangle: [[Double]] = [
+            [minX - delta, minY - delta],
+            [minX + dx / 2.0, maxY + delta * 2.0],
+            [maxX + delta, minY - delta],
+        ]
+
+        let allPoints = points + superTriangle
+
+        var triangles: [[Int]] = [[n, n + 1, n + 2]]
+
+        for i in 0..<n {
+            let px = points[i][0]
+            let py = points[i][1]
+
+            var badTriangles: [Int] = []
+
+            for (j, tri) in triangles.enumerated() {
+                if inCircumcircle(px: px, py: py, tri: tri, points: allPoints) {
+                    badTriangles.append(j)
+                }
+            }
+
+            var edgeCount: [String: Int] = [:]
+            for j in badTriangles {
+                let tri = triangles[j]
+                let edges = [[tri[0], tri[1]], [tri[1], tri[2]], [tri[2], tri[0]]]
+                for e in edges {
+                    let key = "\(min(e[0], e[1])),\(max(e[0], e[1]))"
+                    edgeCount[key, default: 0] += 1
+                }
+            }
+
+            var polygon: [[Int]] = []
+            for j in badTriangles {
+                let tri = triangles[j]
+                let edges = [[tri[0], tri[1]], [tri[1], tri[2]], [tri[2], tri[0]]]
+                for e in edges {
+                    let key = "\(min(e[0], e[1])),\(max(e[0], e[1]))"
+                    if edgeCount[key] == 1 {
+                        polygon.append(e)
+                    }
+                }
+            }
+
+            for j in badTriangles.sorted().reversed() {
+                triangles.remove(at: j)
+            }
+
+            for e in polygon {
+                triangles.append([e[0], e[1], i])
+            }
+        }
+
+        var finalTriangles: [[Int]] = []
+        for tri in triangles {
+            var valid = true
+            for v in tri {
+                if v >= n {
+                    valid = false
+                    break
+                }
+            }
+            if valid {
+                finalTriangles.append(tri)
+            }
+        }
+
+        var neighbors: [[Int]] = Array(repeating: [], count: finalTriangles.count)
+        for i in 0..<finalTriangles.count {
+            let triI = finalTriangles[i]
+            for j in (i + 1)..<finalTriangles.count {
+                let triJ = finalTriangles[j]
+                var shared = 0
+                for vi in triI {
+                    for vj in triJ {
+                        if vi == vj { shared += 1 }
+                    }
+                }
+                if shared == 2 {
+                    neighbors[i].append(j)
+                    neighbors[j].append(i)
+                }
+            }
+        }
+
+        return (finalTriangles, neighbors)
+    }
+
+    private static func inCircumcircle(px: Double, py: Double, tri: [Int], points: [[Double]]) -> Bool {
+        let ax = points[tri[0]][0]
+        let ay = points[tri[0]][1]
+        let bx = points[tri[1]][0]
+        let by = points[tri[1]][1]
+        let cx = points[tri[2]][0]
+        let cy = points[tri[2]][1]
+
+        let d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+        if abs(d) < 1e-15 { return false }
+
+        let a2 = ax * ax + ay * ay
+        let b2 = bx * bx + by * by
+        let c2 = cx * cx + cy * cy
+
+        let ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
+        let uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
+
+        let r2 = (ax - ux) * (ax - ux) + (ay - uy) * (ay - uy)
+        let dist2 = (px - ux) * (px - ux) + (py - uy) * (py - uy)
+
+        return dist2 < r2
+    }
+}
+
+// MARK: - Deprecated shims (backward compatibility)
+
+/// - Note: Deprecated. Use ``Spatial/delaunay(_:)`` instead.
+@available(*, deprecated, message: "Use Spatial.delaunay(_:) instead")
+public func delaunay(_ points: [[Double]]) -> DelaunayResult {
+    Spatial.delaunay(points)
+}
+
+/// - Note: Deprecated. Use ``Spatial/voronoi(_:)`` instead.
+@available(*, deprecated, message: "Use Spatial.voronoi(_:) instead")
+public func voronoi(_ points: [[Double]]) -> VoronoiResult {
+    Spatial.voronoi(points)
+}
+
+/// - Note: Deprecated. Use ``Spatial/convexHull(_:)`` instead.
+@available(*, deprecated, message: "Use Spatial.convexHull(_:) instead")
 public func convexHull(_ points: [[Double]]) -> ConvexHullResult {
-  let n = points.count
-
-  guard n >= 3 else {
-    let vertices = Array(0..<n)
-    return ConvexHullResult(
-      points: points,
-      vertices: vertices,
-      simplices: [],
-      area: 0
-    )
-  }
-
-  // Find lowest point (and leftmost if tie)
-  var startIdx = 0
-  for i in 1..<n {
-    if points[i][1] < points[startIdx][1]
-      || (points[i][1] == points[startIdx][1] && points[i][0] < points[startIdx][0])
-    {
-      startIdx = i
-    }
-  }
-
-  let start = points[startIdx]
-
-  // Sort by polar angle
-  var indices = Array(0..<n).filter { $0 != startIdx }
-  indices.sort { a, b in
-    let angleA = Darwin.atan2(points[a][1] - start[1], points[a][0] - start[0])
-    let angleB = Darwin.atan2(points[b][1] - start[1], points[b][0] - start[0])
-    if abs(angleA - angleB) < 1e-10 {
-      let distA = squaredEuclideanDistance(points[a], start)
-      let distB = squaredEuclideanDistance(points[b], start)
-      return distA < distB
-    }
-    return angleA < angleB
-  }
-
-  // Graham scan with CCW check
-  func ccw(_ p1: [Double], _ p2: [Double], _ p3: [Double]) -> Double {
-    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
-  }
-
-  var hull = [startIdx]
-  for idx in indices {
-    while hull.count >= 2
-      && ccw(points[hull[hull.count - 2]], points[hull[hull.count - 1]], points[idx]) <= 0
-    {
-      hull.removeLast()
-    }
-    hull.append(idx)
-  }
-
-  // Build simplices (edges)
-  var simplices: [[Int]] = []
-  for i in 0..<hull.count {
-    let nextI = (i + 1) % hull.count
-    simplices.append([hull[i], hull[nextI]])
-  }
-
-  // Compute area using shoelace formula
-  var area: Double = 0
-  for i in 0..<hull.count {
-    let j = (i + 1) % hull.count
-    let p1 = points[hull[i]]
-    let p2 = points[hull[j]]
-    area += p1[0] * p2[1]
-    area -= p2[0] * p1[1]
-  }
-  area = abs(area) / 2
-
-  return ConvexHullResult(
-    points: points,
-    vertices: hull,
-    simplices: simplices,
-    area: area
-  )
+    Spatial.convexHull(points)
 }

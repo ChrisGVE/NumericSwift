@@ -44,7 +44,7 @@ final class SpatialDistanceTests: XCTestCase {
   func testMahalanobisIdentical() {
     let a = [1.0, 2.0, 3.0]
     let identity = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    XCTAssertEqual(mahalanobisDistance(a, a, invCov: identity), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.mahalanobisDistance(a, a, invCov: identity), 0.0, accuracy: eps)
   }
 
   func testMahalanobisIdentityEqualsEuclidean() {
@@ -52,8 +52,8 @@ final class SpatialDistanceTests: XCTestCase {
     let a = [1.0, 0.0, 0.0]
     let b = [4.0, 4.0, 0.0]
     let identity = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    let expected = euclideanDistance(a, b)
-    XCTAssertEqual(mahalanobisDistance(a, b, invCov: identity), expected, accuracy: eps)
+    let expected = Spatial.euclideanDistance(a, b)
+    XCTAssertEqual(Spatial.mahalanobisDistance(a, b, invCov: identity), expected, accuracy: eps)
   }
 
   func testMahalanobisKnownValue() {
@@ -62,7 +62,7 @@ final class SpatialDistanceTests: XCTestCase {
     let a = [1.0, 1.0]
     let b = [0.0, 0.0]
     let invCov = [[2.0, 0.0], [0.0, 1.0]]
-    XCTAssertEqual(mahalanobisDistance(a, b, invCov: invCov), 3.0.squareRoot(), accuracy: eps)
+    XCTAssertEqual(Spatial.mahalanobisDistance(a, b, invCov: invCov), 3.0.squareRoot(), accuracy: eps)
   }
 
   func testMahalanobisSymmetry() {
@@ -70,15 +70,15 @@ final class SpatialDistanceTests: XCTestCase {
     let b = [4.0, 5.0, 6.0]
     let invCov = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
     XCTAssertEqual(
-      mahalanobisDistance(a, b, invCov: invCov),
-      mahalanobisDistance(b, a, invCov: invCov),
+      Spatial.mahalanobisDistance(a, b, invCov: invCov),
+      Spatial.mahalanobisDistance(b, a, invCov: invCov),
       accuracy: eps
     )
   }
 
   func testMahalanobisEmptyInput() {
     let invCov: [[Double]] = []
-    XCTAssertEqual(mahalanobisDistance([], [], invCov: invCov), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.mahalanobisDistance([], [], invCov: invCov), 0.0, accuracy: eps)
   }
 
   func testMahalanobisInvalidInvCov() {
@@ -86,33 +86,33 @@ final class SpatialDistanceTests: XCTestCase {
     let a = [1.0, 2.0]
     let b = [3.0, 4.0]
     let invCov = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    XCTAssertEqual(mahalanobisDistance(a, b, invCov: invCov), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.mahalanobisDistance(a, b, invCov: invCov), 0.0, accuracy: eps)
   }
 
   // MARK: - Jaccard Distance
 
   func testJaccardIdentical() {
     let a = [1.0, 0.0, 1.0, 1.0]
-    XCTAssertEqual(jaccardDistance(a, a), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.jaccardDistance(a, a), 0.0, accuracy: eps)
   }
 
   func testJaccardKnownValue() {
     // a=[1,1,0,0], b=[1,0,1,0]: intersection=1, union=3 => 1 - 1/3 = 2/3
     let a = [1.0, 1.0, 0.0, 0.0]
     let b = [1.0, 0.0, 1.0, 0.0]
-    XCTAssertEqual(jaccardDistance(a, b), 2.0 / 3.0, accuracy: eps)
+    XCTAssertEqual(Spatial.jaccardDistance(a, b), 2.0 / 3.0, accuracy: eps)
   }
 
   func testJaccardDisjoint() {
     // No shared non-zero elements => distance = 1.0
     let a = [1.0, 0.0, 0.0]
     let b = [0.0, 1.0, 0.0]
-    XCTAssertEqual(jaccardDistance(a, b), 1.0, accuracy: eps)
+    XCTAssertEqual(Spatial.jaccardDistance(a, b), 1.0, accuracy: eps)
   }
 
   func testJaccardBothZero() {
     // Both all-zero => defined as 0
-    XCTAssertEqual(jaccardDistance([0.0, 0.0], [0.0, 0.0]), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.jaccardDistance([0.0, 0.0], [0.0, 0.0]), 0.0, accuracy: eps)
   }
 
   func testJaccardSymmetry() {
@@ -131,27 +131,27 @@ final class SpatialDistanceTests: XCTestCase {
   func testJaccardUnitVectors() {
     // Single-element non-zero vectors: identical direction => 0
     let a = [1.0]
-    XCTAssertEqual(jaccardDistance(a, a), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.jaccardDistance(a, a), 0.0, accuracy: eps)
   }
 
   // MARK: - Hamming Distance
 
   func testHammingIdentical() {
     let a = [1.0, 2.0, 3.0, 4.0]
-    XCTAssertEqual(hammingDistance(a, a), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.hammingDistance(a, a), 0.0, accuracy: eps)
   }
 
   func testHammingKnownValue() {
     // [1,2,3,4] vs [1,0,3,0]: 2 differ out of 4 => 0.5
     let a = [1.0, 2.0, 3.0, 4.0]
     let b = [1.0, 0.0, 3.0, 0.0]
-    XCTAssertEqual(hammingDistance(a, b), 0.5, accuracy: eps)
+    XCTAssertEqual(Spatial.hammingDistance(a, b), 0.5, accuracy: eps)
   }
 
   func testHammingAllDifferent() {
     let a = [1.0, 2.0, 3.0]
     let b = [4.0, 5.0, 6.0]
-    XCTAssertEqual(hammingDistance(a, b), 1.0, accuracy: eps)
+    XCTAssertEqual(Spatial.hammingDistance(a, b), 1.0, accuracy: eps)
   }
 
   func testHammingSymmetry() {
@@ -168,13 +168,13 @@ final class SpatialDistanceTests: XCTestCase {
   }
 
   func testHammingZeroVectors() {
-    XCTAssertEqual(hammingDistance([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.hammingDistance([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]), 0.0, accuracy: eps)
   }
 
   func testHammingRangeIsZeroToOne() {
     let a = [1.0, 2.0, 3.0, 4.0, 5.0]
     let b = [5.0, 4.0, 3.0, 2.0, 1.0]
-    let d = hammingDistance(a, b)
+    let d = Spatial.hammingDistance(a, b)
     XCTAssertGreaterThanOrEqual(d, 0.0)
     XCTAssertLessThanOrEqual(d, 1.0)
   }
@@ -183,7 +183,7 @@ final class SpatialDistanceTests: XCTestCase {
 
   func testCanberraIdentical() {
     let a = [1.0, 2.0, 3.0]
-    XCTAssertEqual(canberraDistance(a, a), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.canberraDistance(a, a), 0.0, accuracy: eps)
   }
 
   func testCanberraKnownValue() {
@@ -192,7 +192,7 @@ final class SpatialDistanceTests: XCTestCase {
     let a = [1.0, 2.0]
     let b = [3.0, 4.0]
     let expected = 2.0 / 4.0 + 2.0 / 6.0
-    XCTAssertEqual(canberraDistance(a, b), expected, accuracy: eps)
+    XCTAssertEqual(Spatial.canberraDistance(a, b), expected, accuracy: eps)
   }
 
   func testCanberraSkipsBothZeroTerms() {
@@ -200,7 +200,7 @@ final class SpatialDistanceTests: XCTestCase {
     let a = [1.0, 0.0, 1.0]
     let b = [0.0, 0.0, 0.0]
     // |1-0|/(1+0) + skip + |1-0|/(1+0) = 1 + 1 = 2
-    XCTAssertEqual(canberraDistance(a, b), 2.0, accuracy: eps)
+    XCTAssertEqual(Spatial.canberraDistance(a, b), 2.0, accuracy: eps)
   }
 
   func testCanberraSymmetry() {
@@ -220,14 +220,14 @@ final class SpatialDistanceTests: XCTestCase {
     let a = [0.0, 0.0, 0.0]
     let b = [1.0, 2.0, 3.0]
     // Each term: |0-x|/(0+|x|) = 1 => sum = 3
-    XCTAssertEqual(canberraDistance(a, b), 3.0, accuracy: eps)
+    XCTAssertEqual(Spatial.canberraDistance(a, b), 3.0, accuracy: eps)
   }
 
   // MARK: - Bray-Curtis Distance
 
   func testBrayCurtisIdentical() {
     let a = [1.0, 2.0, 3.0]
-    XCTAssertEqual(braycurtisDistance(a, a), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.braycurtisDistance(a, a), 0.0, accuracy: eps)
   }
 
   func testBrayCurtisKnownValue() {
@@ -237,11 +237,11 @@ final class SpatialDistanceTests: XCTestCase {
     // distance = 4/10 = 0.4
     let a = [1.0, 2.0]
     let b = [3.0, 4.0]
-    XCTAssertEqual(braycurtisDistance(a, b), 0.4, accuracy: eps)
+    XCTAssertEqual(Spatial.braycurtisDistance(a, b), 0.4, accuracy: eps)
   }
 
   func testBrayCurtisBothZero() {
-    XCTAssertEqual(braycurtisDistance([0.0, 0.0], [0.0, 0.0]), 0.0, accuracy: eps)
+    XCTAssertEqual(Spatial.braycurtisDistance([0.0, 0.0], [0.0, 0.0]), 0.0, accuracy: eps)
   }
 
   func testBrayCurtisSymmetry() {
@@ -260,7 +260,7 @@ final class SpatialDistanceTests: XCTestCase {
   func testBrayCurtisRangeIsZeroToOne() {
     let a = [1.0, 0.0, 0.0]
     let b = [0.0, 1.0, 0.0]
-    let d = braycurtisDistance(a, b)
+    let d = Spatial.braycurtisDistance(a, b)
     XCTAssertGreaterThanOrEqual(d, 0.0)
     XCTAssertLessThanOrEqual(d, 1.0 + eps)
   }
@@ -269,7 +269,7 @@ final class SpatialDistanceTests: XCTestCase {
     // sum|a-b| = |1-0| + |0-1| = 2; sum|a+b| = |1+0| + |0+1| = 2 => 1.0
     let a = [1.0, 0.0]
     let b = [0.0, 1.0]
-    XCTAssertEqual(braycurtisDistance(a, b), 1.0, accuracy: eps)
+    XCTAssertEqual(Spatial.braycurtisDistance(a, b), 1.0, accuracy: eps)
   }
 
   // MARK: - DistanceMetric enum integration (cdist / pdist)
@@ -277,36 +277,36 @@ final class SpatialDistanceTests: XCTestCase {
   func testCdistJaccard() {
     let XA = [[1.0, 0.0, 1.0], [0.0, 1.0, 0.0]]
     let XB = [[1.0, 1.0, 0.0]]
-    let result = cdist(XA, XB, metric: .jaccard)
+    let result = Spatial.cdist(XA, XB, metric: .jaccard)
     XCTAssertEqual(result.count, 2)
     XCTAssertEqual(result[0].count, 1)
-    // Row 0: jaccardDistance([1,0,1],[1,1,0]) = 1 - 1/3 = 2/3
-    XCTAssertEqual(result[0][0], jaccardDistance(XA[0], XB[0]), accuracy: eps)
-    // Row 1: jaccardDistance([0,1,0],[1,1,0]) = 1 - 1/2 = 0.5
-    XCTAssertEqual(result[1][0], jaccardDistance(XA[1], XB[0]), accuracy: eps)
+    // Row 0: Spatial.jaccardDistance([1,0,1],[1,1,0]) = 1 - 1/3 = 2/3
+    XCTAssertEqual(result[0][0], Spatial.jaccardDistance(XA[0], XB[0]), accuracy: eps)
+    // Row 1: Spatial.jaccardDistance([0,1,0],[1,1,0]) = 1 - 1/2 = 0.5
+    XCTAssertEqual(result[1][0], Spatial.jaccardDistance(XA[1], XB[0]), accuracy: eps)
   }
 
   func testPdistHamming() {
     let X = [[1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    let result = pdist(X, metric: .hamming)
+    let result = Spatial.pdist(X, metric: .hamming)
     // 3 points => 3 pairs
     XCTAssertEqual(result.count, 3)
-    XCTAssertEqual(result[0], hammingDistance(X[0], X[1]), accuracy: eps)
-    XCTAssertEqual(result[1], hammingDistance(X[0], X[2]), accuracy: eps)
-    XCTAssertEqual(result[2], hammingDistance(X[1], X[2]), accuracy: eps)
+    XCTAssertEqual(result[0], Spatial.hammingDistance(X[0], X[1]), accuracy: eps)
+    XCTAssertEqual(result[1], Spatial.hammingDistance(X[0], X[2]), accuracy: eps)
+    XCTAssertEqual(result[2], Spatial.hammingDistance(X[1], X[2]), accuracy: eps)
   }
 
   func testCdistCanberra() {
     let XA = [[1.0, 2.0]]
     let XB = [[3.0, 4.0]]
-    let result = cdist(XA, XB, metric: .canberra)
-    XCTAssertEqual(result[0][0], canberraDistance([1.0, 2.0], [3.0, 4.0]), accuracy: eps)
+    let result = Spatial.cdist(XA, XB, metric: .canberra)
+    XCTAssertEqual(result[0][0], Spatial.canberraDistance([1.0, 2.0], [3.0, 4.0]), accuracy: eps)
   }
 
   func testCdistBrayCurtis() {
     let XA = [[1.0, 2.0]]
     let XB = [[3.0, 4.0]]
-    let result = cdist(XA, XB, metric: .braycurtis)
-    XCTAssertEqual(result[0][0], braycurtisDistance([1.0, 2.0], [3.0, 4.0]), accuracy: eps)
+    let result = Spatial.cdist(XA, XB, metric: .braycurtis)
+    XCTAssertEqual(result[0][0], Spatial.braycurtisDistance([1.0, 2.0], [3.0, 4.0]), accuracy: eps)
   }
 }

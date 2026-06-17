@@ -15,20 +15,20 @@ final class SpatialTests: XCTestCase {
     func testManhattanDistance() {
         let p1 = [0.0, 0.0]
         let p2 = [3.0, 4.0]
-        XCTAssertEqual(manhattanDistance(p1, p2), 7.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.manhattanDistance(p1, p2), 7.0, accuracy: 1e-10)
 
         // Same point
-        XCTAssertEqual(manhattanDistance(p1, p1), 0.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.manhattanDistance(p1, p1), 0.0, accuracy: 1e-10)
     }
 
     func testChebyshevDistance() {
         let p1 = [0.0, 0.0]
         let p2 = [3.0, 7.0]
-        XCTAssertEqual(chebyshevDistance(p1, p2), 7.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.chebyshevDistance(p1, p2), 7.0, accuracy: 1e-10)
 
         let p3 = [1.0, 2.0, 3.0]
         let p4 = [4.0, 6.0, 3.0]
-        XCTAssertEqual(chebyshevDistance(p3, p4), 4.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.chebyshevDistance(p3, p4), 4.0, accuracy: 1e-10)
     }
 
     func testMinkowskiDistance() {
@@ -36,42 +36,42 @@ final class SpatialTests: XCTestCase {
         let p2 = [3.0, 4.0]
 
         // p=1 should equal Manhattan
-        XCTAssertEqual(minkowskiDistance(p1, p2, p: 1), manhattanDistance(p1, p2), accuracy: 1e-10)
+        XCTAssertEqual(Spatial.minkowskiDistance(p1, p2, p: 1), Spatial.manhattanDistance(p1, p2), accuracy: 1e-10)
 
         // p=2 should equal Euclidean
-        XCTAssertEqual(minkowskiDistance(p1, p2, p: 2), euclideanDistance(p1, p2), accuracy: 1e-10)
+        XCTAssertEqual(Spatial.minkowskiDistance(p1, p2, p: 2), Spatial.euclideanDistance(p1, p2), accuracy: 1e-10)
 
         // p=infinity should equal Chebyshev
-        XCTAssertEqual(minkowskiDistance(p1, p2, p: .infinity), chebyshevDistance(p1, p2), accuracy: 1e-10)
+        XCTAssertEqual(Spatial.minkowskiDistance(p1, p2, p: .infinity), Spatial.chebyshevDistance(p1, p2), accuracy: 1e-10)
     }
 
     func testCosineDistance() {
         // Same direction = distance 0
         let p1 = [1.0, 0.0]
         let p2 = [2.0, 0.0]
-        XCTAssertEqual(cosineDistance(p1, p2), 0.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.cosineDistance(p1, p2), 0.0, accuracy: 1e-10)
 
         // Perpendicular = distance 1
         let p3 = [1.0, 0.0]
         let p4 = [0.0, 1.0]
-        XCTAssertEqual(cosineDistance(p3, p4), 1.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.cosineDistance(p3, p4), 1.0, accuracy: 1e-10)
 
         // Opposite direction = distance 2
         let p5 = [1.0, 0.0]
         let p6 = [-1.0, 0.0]
-        XCTAssertEqual(cosineDistance(p5, p6), 2.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.cosineDistance(p5, p6), 2.0, accuracy: 1e-10)
     }
 
     func testCorrelationDistance() {
         // Perfect positive correlation
         let p1 = [1.0, 2.0, 3.0]
         let p2 = [2.0, 4.0, 6.0]
-        XCTAssertEqual(correlationDistance(p1, p2), 0.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.correlationDistance(p1, p2), 0.0, accuracy: 1e-10)
 
         // Perfect negative correlation
         let p3 = [1.0, 2.0, 3.0]
         let p4 = [3.0, 2.0, 1.0]
-        XCTAssertEqual(correlationDistance(p3, p4), 2.0, accuracy: 1e-10)
+        XCTAssertEqual(Spatial.correlationDistance(p3, p4), 2.0, accuracy: 1e-10)
     }
 
     // MARK: - Batch Distance Tests
@@ -80,7 +80,7 @@ final class SpatialTests: XCTestCase {
         let XA = [[0.0, 0.0], [1.0, 0.0]]
         let XB = [[0.0, 0.0], [0.0, 1.0], [1.0, 1.0]]
 
-        let dists = cdist(XA, XB)
+        let dists = Spatial.cdist(XA, XB)
 
         XCTAssertEqual(dists.count, 2)
         XCTAssertEqual(dists[0].count, 3)
@@ -94,7 +94,7 @@ final class SpatialTests: XCTestCase {
     func testPdist() {
         let X = [[0.0, 0.0], [3.0, 0.0], [0.0, 4.0]]
 
-        let dists = pdist(X)
+        let dists = Spatial.pdist(X)
 
         // n=3 => n*(n-1)/2 = 3 distances
         XCTAssertEqual(dists.count, 3)
@@ -110,14 +110,14 @@ final class SpatialTests: XCTestCase {
             [2.0, 3.0, 0.0]
         ]
 
-        let condensed = squareform(matrix)
+        let condensed = Spatial.squareform(matrix)
         XCTAssertEqual(condensed.count, 3)
         XCTAssertEqual(condensed[0], 1.0, accuracy: 1e-10)
         XCTAssertEqual(condensed[1], 2.0, accuracy: 1e-10)
         XCTAssertEqual(condensed[2], 3.0, accuracy: 1e-10)
 
         // Round trip
-        let back = squareformToMatrix(condensed)
+        let back = Spatial.squareformToMatrix(condensed)
         XCTAssertEqual(back.count, 3)
         for i in 0..<3 {
             for j in 0..<3 {
@@ -136,7 +136,7 @@ final class SpatialTests: XCTestCase {
         let (indices, distances) = tree.query([0.1, 0.1], k: 1)
         XCTAssertEqual(indices.count, 1)
         XCTAssertEqual(indices[0], 0)  // Closest to (0,0)
-        XCTAssertEqual(distances[0], euclideanDistance([0.1, 0.1], [0.0, 0.0]), accuracy: 1e-10)
+        XCTAssertEqual(distances[0], Spatial.euclideanDistance([0.1, 0.1], [0.0, 0.0]), accuracy: 1e-10)
 
         // Query 2 nearest
         let (indices2, _) = tree.query([0.5, 0.5], k: 2)
@@ -175,7 +175,7 @@ final class SpatialTests: XCTestCase {
     func testDelaunayTriangle() {
         // Simple triangle
         let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 1.0]]
-        let result = delaunay(points)
+        let result = Spatial.delaunay(points)
 
         XCTAssertEqual(result.simplices.count, 1)
         XCTAssertEqual(result.simplices[0].count, 3)
@@ -190,13 +190,13 @@ final class SpatialTests: XCTestCase {
     func testDelaunaySquare() {
         // Square should produce 2 triangles
         let points = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
-        let result = delaunay(points)
+        let result = Spatial.delaunay(points)
 
         XCTAssertEqual(result.simplices.count, 2)
     }
 
     func testDelaunayEmpty() {
-        let result = delaunay([[0.0, 0.0], [1.0, 0.0]])
+        let result = Spatial.delaunay([[0.0, 0.0], [1.0, 0.0]])
         XCTAssertTrue(result.simplices.isEmpty)
     }
 
@@ -207,7 +207,7 @@ final class SpatialTests: XCTestCase {
     /// Oracle: scipy.spatial.Delaunay([[0,0],[1,0],[2,0],[3,0]]) → QhullError
     func testDelaunayFullyCollinear() {
         let points = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]]
-        let result = delaunay(points)
+        let result = Spatial.delaunay(points)
         XCTAssertTrue(
             result.simplices.isEmpty,
             "Fully collinear set must produce empty triangulation")
@@ -223,7 +223,7 @@ final class SpatialTests: XCTestCase {
         // Points [1,0],[2,0],[3,0] ARE collinear, but the full set is NOT fully collinear.
         // Valid Delaunay triangulation exists (2 triangles).
         let points = [[0.0, 1.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]]
-        let result = delaunay(points)
+        let result = Spatial.delaunay(points)
         XCTAssertEqual(
             result.simplices.count, 2,
             "Partially-collinear (but not fully) set must produce 2 triangles")
@@ -246,7 +246,7 @@ final class SpatialTests: XCTestCase {
             [base[1], base[3], base[2], base[0]],
         ]
         for perm in permutations {
-            let result = delaunay(perm)
+            let result = Spatial.delaunay(perm)
             XCTAssertTrue(
                 result.simplices.isEmpty,
                 "Fully collinear set (any ordering) must produce empty triangulation")
@@ -257,7 +257,7 @@ final class SpatialTests: XCTestCase {
 
     func testVoronoiBasic() {
         let points = [[0.0, 0.0], [2.0, 0.0], [1.0, 2.0]]
-        let result = voronoi(points)
+        let result = Spatial.voronoi(points)
 
         XCTAssertEqual(result.points.count, 3)
         // Should have at least one vertex (circumcenter)
@@ -265,7 +265,7 @@ final class SpatialTests: XCTestCase {
     }
 
     func testVoronoiEmpty() {
-        let result = voronoi([])
+        let result = Spatial.voronoi([])
         XCTAssertTrue(result.vertices.isEmpty)
     }
 
@@ -284,7 +284,7 @@ final class SpatialTests: XCTestCase {
     func testVoronoiThreePointsInfiniteRegions() {
         // Triangle: all 3 generators on convex hull → all regions are infinite.
         let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.866]]
-        let result = voronoi(points)
+        let result = Spatial.voronoi(points)
 
         // Must produce exactly 1 Voronoi vertex (the circumcenter of the triangle).
         XCTAssertEqual(result.vertices.count, 1, "Triangle Voronoi must have 1 circumcenter vertex")
@@ -322,7 +322,7 @@ final class SpatialTests: XCTestCase {
     /// contains -1, and at least the 4 hull edges produce infinite ridges.
     func testVoronoiFourPointsSquareInfiniteRegions() {
         let points = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
-        let result = voronoi(points)
+        let result = Spatial.voronoi(points)
 
         // Both Delaunay triangles of a square have circumcenter [0.5, 0.5].
         // Implementations may emit 1 or 2 entries; all must be near [0.5, 0.5].
@@ -360,7 +360,7 @@ final class SpatialTests: XCTestCase {
     /// may return 3).  The frozen circumcenter coordinates are verified against SciPy.
     func testVoronoiFivePointsMixedRegions() {
         let points = [[0.0, 0.0], [4.0, 0.0], [2.0, 3.0], [0.5, 2.0], [3.5, 2.0]]
-        let result = voronoi(points)
+        let result = Spatial.voronoi(points)
 
         // Exactly 2 or 3 Voronoi vertices (scipy has 2 after dedup; non-dedup impls may return 3).
         XCTAssertTrue(
@@ -410,7 +410,7 @@ final class SpatialTests: XCTestCase {
         // Three nearly-collinear points + one well-separated point.
         // The nearly-collinear triangle has |d| = 2*1e-12 ≤ 1e-10 → degenerate.
         let points = [[0.0, 0.0], [2.0, 0.0], [4.0, 1e-12], [2.0, 2.0]]
-        let result = voronoi(points)
+        let result = Spatial.voronoi(points)
 
         // Every Delaunay edge must appear as either a finite or an infinite ridge.
         // At minimum, the input set produces at least one infinite ridge.
@@ -431,7 +431,7 @@ final class SpatialTests: XCTestCase {
 
     func testConvexHullTriangle() {
         let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 1.0]]
-        let result = convexHull(points)
+        let result = Spatial.convexHull(points)
 
         XCTAssertEqual(result.vertices.count, 3)
         XCTAssertEqual(result.simplices.count, 3)
@@ -440,7 +440,7 @@ final class SpatialTests: XCTestCase {
 
     func testConvexHullSquare() {
         let points = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]
-        let result = convexHull(points)
+        let result = Spatial.convexHull(points)
 
         XCTAssertEqual(result.vertices.count, 4)
         XCTAssertEqual(result.simplices.count, 4)
@@ -450,7 +450,7 @@ final class SpatialTests: XCTestCase {
     func testConvexHullWithInterior() {
         // Square with center point
         let points = [[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0], [1.0, 1.0]]
-        let result = convexHull(points)
+        let result = Spatial.convexHull(points)
 
         // Hull should only contain 4 vertices (not the center)
         XCTAssertEqual(result.vertices.count, 4)
@@ -489,8 +489,8 @@ final class SpatialTests: XCTestCase {
         let manDist = distanceFunction(for: .manhattan)(p1, p2)
         let cheDist = distanceFunction(for: .chebyshev)(p1, p2)
 
-        XCTAssertEqual(eucDist, euclideanDistance(p1, p2), accuracy: 1e-10)
-        XCTAssertEqual(manDist, manhattanDistance(p1, p2), accuracy: 1e-10)
-        XCTAssertEqual(cheDist, chebyshevDistance(p1, p2), accuracy: 1e-10)
+        XCTAssertEqual(eucDist, Spatial.euclideanDistance(p1, p2), accuracy: 1e-10)
+        XCTAssertEqual(manDist, Spatial.manhattanDistance(p1, p2), accuracy: 1e-10)
+        XCTAssertEqual(cheDist, Spatial.chebyshevDistance(p1, p2), accuracy: 1e-10)
     }
 }
