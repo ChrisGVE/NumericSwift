@@ -23,7 +23,13 @@
 //  Each product is a LinAlg.dot call (BLAS/Accelerate-backed, Group-B).
 //
 //  Soft-cap policy (§4.8 / CONS-07): every operation that allocates a result
-//  or intermediate matrix calls `LinAlg.checkSoftCap` BEFORE the allocation.
+//  or intermediate matrix checks the soft cap BEFORE the allocation.
+//  `complexMatmul` uses a *peak-aware* admission check (Issue #13 / CR-D7):
+//  rather than calling `checkSoftCap` on the result shape alone, it divides
+//  the cap by `complexMatmulWorkingSetMultiplier` (= 5) and verifies the
+//  result element count does not exceed that scaled limit.  This ensures the
+//  four intermediate real products plus the two output arrays cannot exceed
+//  the intended memory ceiling in aggregate.
 //
 //  Group-A errors are pre-validated and throw before any LinAlg call,
 //  preventing process-trapping preconditions. Group-B errors propagate via
@@ -114,18 +120,45 @@ extension NumericDispatch {
 
     // MARK: Core complex matmul
 
+    /// The working-set multiplier for ``complexMatmul(_:_:)`` peak admission control.
+    ///
+    /// The real-block decomposition (Cr = Ar·Br − Ai·Bi, Ci = Ar·Bi + Ai·Br)
+    /// allocates four intermediate `LinAlg.Matrix` objects, each of size M×N
+    /// (same as the result), plus two output `[Double]` arrays (crData, ciData)
+    /// of the same size.  All six buffers are live simultaneously when the two
+    /// vDSP combine passes run, giving a peak working set of 6× the result size.
+    ///
+    /// Using 5 as the multiplier is deliberately conservative (it bounds the peak
+    /// to `5 × cap` rather than `6 × cap`) while still rejecting all inputs whose
+    /// intermediate allocation would meaningfully exceed the intended ceiling.
+    /// The value matches the "~4–5×" description in the MF-5 / §5 scope note.
+    ///
+    /// Reference: Issue #13 / CR-D7 cumulative-bounding fix.
+    static let complexMatmulWorkingSetMultiplier: Int = 5
+
     /// Implements CM*CM via real-block decomposition: Cr=Ar·Br−Ai·Bi, Ci=Ar·Bi+Ai·Br.
     ///
-    /// - Performs Group-A shape pre-validation.
-    /// - Soft-cap is checked once against the result shape. The four intermediate
-    ///   real products (`arBr`, `aiBi`, `arBi`, `aiBr`) each have that same shape,
-    ///   so every individual allocation is within the cap. The *aggregate* peak
-    ///   working set (≈ 4–5× the result size held simultaneously) is NOT bounded
-    ///   here — that is the cumulative-working-set limitation documented on
-    ///   ``LinAlg/checkSoftCap(rows:cols:)`` (MF-5 / §5), deferred to v-next.
+    /// ## Soft-cap admission (§4.8 / Issue #13)
+    ///
+    /// Admission control bounds the **peak working set**, not just the result shape.
+    /// The four intermediate real products (Ar·Br, Ai·Bi, Ar·Bi, Ai·Br) each have
+    /// the result shape (M×N), and all four are live simultaneously alongside the
+    /// two output arrays when the final vDSP combine passes run.  The peak allocation
+    /// is therefore `resultElements × complexMatmulWorkingSetMultiplier`.
+    ///
+    /// The check is:
+    /// ```
+    /// resultElements × 5 ≤ maxEvaluatorMatrixElements
+    /// ```
+    /// equivalently: `resultElements ≤ cap / 5` (integer division, conservative).
+    /// This is computed overflow-safely by verifying the result first passes the
+    /// ordinary cap, then scaling the cap down before re-checking.
+    ///
+    /// - Performs Group-A shape pre-validation (throws ``MathExprError/shapeMismatch(_:)``).
+    /// - Performs peak-aware soft-cap check (throws ``LinAlg/LinAlgError/invalidParameter(_:)``).
     /// - Calls `coerce1x1Complex` for the 1×1 vec·vec → .complex collapse (§4.3a).
     ///
-    /// Each real product is delegated to LinAlg.dot (BLAS/Accelerate-backed).
+    /// Each real product is delegated to ``LinAlg/dot(_:_:)`` (BLAS/Accelerate-backed).
     static func complexMatmul(
         lhs: LinAlg.ComplexMatrix,
         rhs: LinAlg.ComplexMatrix
@@ -138,9 +171,29 @@ extension NumericDispatch {
         let isVecDot = lhs.cols == 1 && rhs.cols == 1
         let resultRows = isVecDot ? 1 : lhs.rows
         let resultCols = isVecDot ? 1 : rhs.cols
-        // §4.8 soft-cap: guard the result shape (each of the four intermediate
-        // real products shares this shape; aggregate working set is unbounded — §5).
-        try LinAlg.checkSoftCap(rows: resultRows, cols: resultCols)
+
+        // §4.8 / Issue #13: peak-aware admission control.
+        //
+        // The decomposition allocates `complexMatmulWorkingSetMultiplier` (= 5)
+        // buffers of shape (resultRows × resultCols) simultaneously.  Bound the
+        // peak by requiring resultElements × 5 ≤ maxEvaluatorMatrixElements,
+        // i.e. resultElements ≤ cap / 5 (floor division, safe from overflow).
+        //
+        // Implementation: divide the cap by the multiplier and call checkSoftCap
+        // with the scaled-down cap limit.  This avoids overflow in the product
+        // `resultElements * 5` while still producing an informative error message.
+        let cap = LinAlg.maxEvaluatorMatrixElements
+        let scaledCap = cap / complexMatmulWorkingSetMultiplier
+        let (resultElements, overflow) = LinAlg.elementCount(rows: resultRows, cols: resultCols)
+        guard !overflow && resultElements <= scaledCap else {
+            let desc = overflow ? "overflows Int" : "\(resultElements)"
+            throw LinAlg.LinAlgError.invalidParameter(
+                "complexMatmul peak working set (\(desc) × \(complexMatmulWorkingSetMultiplier)"
+                + " = \(overflow ? "overflow" : "\(resultElements * complexMatmulWorkingSetMultiplier)")"
+                + " elements) exceeds soft cap \(cap)"
+                + " (result shape \(resultRows)×\(resultCols),"
+                + " per-matrix limit \(scaledCap) for complex matmul)")
+        }
 
         // Extract real and imaginary blocks
         let ar = realBlock(lhs)

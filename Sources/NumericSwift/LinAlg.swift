@@ -201,8 +201,18 @@ public enum LinAlg {
     /// This guard bounds the element count of **each individual result matrix**.
     /// It does **not** bound the cumulative working set of a chained expression:
     /// *k* at-cap intermediates held simultaneously consume *k × maxEvaluatorMatrixElements*
-    /// doubles, which is neither detected nor rejected by this function.
-    /// Cumulative working-set bounding is deferred to a future release (§14 / v-next).
+    /// doubles, which is neither detected nor rejected by this function alone.
+    ///
+    /// Operations that allocate multiple simultaneous buffers per logical result
+    /// are responsible for applying a *scaled* cap check before delegating here.
+    /// ``NumericDispatch/complexMatmul(lhs:rhs:)`` is the first such operation:
+    /// it divides the cap by ``NumericDispatch/complexMatmulWorkingSetMultiplier``
+    /// (= 5) and checks the result element count against that scaled limit,
+    /// preventing the four intermediate real products from exceeding the ceiling
+    /// in aggregate (Issue #13 / CR-D7).
+    ///
+    /// General chained-expression cumulative-bounding remains a future concern
+    /// (§14 / v-next) for expressions that hold *k* independent at-cap matrices.
     ///
     /// - Parameters:
     ///   - rows: Prospective row count.
