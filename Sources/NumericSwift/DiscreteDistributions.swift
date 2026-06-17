@@ -90,7 +90,7 @@ public struct BinomialDistribution {
     if p == 0.0 { return k == 0 ? 1.0 : 0.0 }
     if p == 1.0 { return k == n ? 1.0 : 0.0 }
     let logPmf =
-      Darwin.log(comb(n, k))
+      Darwin.log(NumberTheory.comb(n, k))
       + Double(k) * Darwin.log(p)
       + Double(n - k) * Darwin.log(1.0 - p)
     return Darwin.exp(logPmf)

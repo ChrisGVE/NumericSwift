@@ -364,10 +364,10 @@ final class NumericDispatchScalarComplexTests: XCTestCase {
     }
 
     func testScalarUnary_factorial_fractional_usesGamma() throws {
-        // factorial(0.5) = tgamma(1.5) = sqrt(pi)/2 ≈ 0.8862...
+        // NumberTheory.factorial(0.5) = tgamma(1.5) = sqrt(pi)/2 ≈ 0.8862...
         let r = try NumericDispatch.applyUnary(.factorial, operand: .scalar(0.5))
         guard case .scalar(let v) = r else { XCTFail("Expected scalar"); return }
-        XCTAssertEqual(v, tgamma(1.5), accuracy: 1e-12, "factorial(0.5)=Γ(1.5)")
+        XCTAssertEqual(v, tgamma(1.5), accuracy: 1e-12, "NumberTheory.factorial(0.5)=Γ(1.5)")
     }
 
     func testScalarUnary_transpose_returnsScalar() throws {
@@ -555,7 +555,7 @@ final class NumericDispatchScalarComplexTests: XCTestCase {
         let z = Complex(re: 5, im: 0)
         let r = try NumericDispatch.applyUnary(.factorial, operand: .complex(z))
         guard case .complex(let v) = r else { XCTFail("Expected complex"); return }
-        XCTAssertEqual(v.re, 120.0, accuracy: 1e-9, "factorial(5) via complex")
+        XCTAssertEqual(v.re, 120.0, accuracy: 1e-9, "NumberTheory.factorial(5) via complex")
         XCTAssertEqual(v.im, 0.0, accuracy: 1e-15, "Im=0")
     }
 

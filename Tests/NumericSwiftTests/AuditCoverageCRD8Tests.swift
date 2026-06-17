@@ -68,7 +68,7 @@ final class AuditCoverageCRD8Tests: XCTestCase {
                 args: [.scalar(2), .matrix(m1(3))]))
     }
 
-    // MARK: - factorial(complexMatrix): unsupported-kind error path
+    // MARK: - NumberTheory.factorial(complexMatrix): unsupported-kind error path
 
     func testFactorial_complexMatrix_throwsInvalidArguments() {
         XCTAssertThrowsError(
