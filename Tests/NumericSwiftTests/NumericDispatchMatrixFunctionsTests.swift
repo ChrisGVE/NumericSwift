@@ -218,9 +218,9 @@ final class NumericDispatchMatrixFunctionsTests: XCTestCase {
         guard case .matrix(let m) = result else {
             XCTFail("Expected .matrix"); return
         }
-        XCTAssertEqual(m[0, 0], exp(1.0), accuracy: 1e-4,
+        XCTAssertEqual(m[0, 0], exp(1.0), accuracy: 1e-11,
             "expm([[1,0],[0,2]])[0,0] should be e")
-        XCTAssertEqual(m[1, 1], exp(2.0), accuracy: 1e-4,
+        XCTAssertEqual(m[1, 1], exp(2.0), accuracy: 1e-11,
             "expm([[1,0],[0,2]])[1,1] should be e²")
         XCTAssertEqual(m[0, 1], 0.0, accuracy: 1e-10)
         XCTAssertEqual(m[1, 0], 0.0, accuracy: 1e-10)

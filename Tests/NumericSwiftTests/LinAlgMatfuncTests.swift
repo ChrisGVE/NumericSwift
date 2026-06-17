@@ -45,14 +45,14 @@ final class LinAlgMatfuncTests: XCTestCase {
   }
 
   func testExpmIdentity() throws  {
-    // expm(I) = e * I; Padé approximation accuracy ~1e-6 for this input
+    // expm(I) = e * I; scaling-and-squaring Padé is full double precision.
     let identity = LinAlg.eye(3)
     let result = try LinAlg.expm(identity)
     let eVal = exp(1.0)
     for i in 0..<3 {
-      XCTAssertEqual(result[i, i], eVal, accuracy: 1e-5)
+      XCTAssertEqual(result[i, i], eVal, accuracy: 1e-12)
     }
-    XCTAssertEqual(result[0, 1], 0.0, accuracy: 1e-10)
+    XCTAssertEqual(result[0, 1], 0.0, accuracy: 1e-13)
   }
 
   // MARK: - Known Value Tests: sqrtm
@@ -91,8 +91,8 @@ final class LinAlgMatfuncTests: XCTestCase {
     let logA = try LinAlg.logm(A)
     XCTAssertNotNil(logA)
     let recovered = try LinAlg.expm(logA!)
-    // expm uses Padé; logm uses eigendecomposition — combined error ~1e-5
-    assertMatrixEqual(recovered, A, tolerance: 1e-4)
+    // expm is full-precision Padé; logm uses eigendecomposition — combined ~1e-9
+    assertMatrixEqual(recovered, A, tolerance: 1e-9)
   }
 
   func testSqrtmSquaredRoundTrip() throws  {
@@ -107,10 +107,10 @@ final class LinAlgMatfuncTests: XCTestCase {
   // MARK: - 1x1 Edge Cases
 
   func testExpm1x1() throws  {
-    // Padé approximation accuracy for expm([[2]]) is ~1e-4
+    // Full double precision after the Higham 2005 scaling-and-squaring rewrite.
     let m = LinAlg.Matrix([[2.0]])
     let result = try LinAlg.expm(m)
-    XCTAssertEqual(result[0, 0], exp(2.0), accuracy: 1e-3)
+    XCTAssertEqual(result[0, 0], exp(2.0), accuracy: 1e-12)
   }
 
   func testLogm1x1() throws  {
@@ -140,10 +140,10 @@ final class LinAlgMatfuncTests: XCTestCase {
     // expm(diag(a,b,c)) = diag(exp(a), exp(b), exp(c)); Padé accuracy ~1e-4 for these values
     let d = LinAlg.diag([1.0, 2.0, 3.0])
     let result = try LinAlg.expm(d)
-    XCTAssertEqual(result[0, 0], exp(1.0), accuracy: 1e-3)
-    XCTAssertEqual(result[1, 1], exp(2.0), accuracy: 1e-3)
-    XCTAssertEqual(result[2, 2], exp(3.0), accuracy: 1e-3)
-    XCTAssertEqual(result[0, 1], 0.0, accuracy: 1e-10)
+    XCTAssertEqual(result[0, 0], exp(1.0), accuracy: 1e-11)
+    XCTAssertEqual(result[1, 1], exp(2.0), accuracy: 1e-11)
+    XCTAssertEqual(result[2, 2], exp(3.0), accuracy: 1e-11)
+    XCTAssertEqual(result[0, 1], 0.0, accuracy: 1e-13)
   }
 
   func testLogmDiagonal() throws  {
@@ -199,8 +199,9 @@ final class LinAlgMatfuncTests: XCTestCase {
     let funmResult = try LinAlg.funm(A, .exp)
     XCTAssertNotNil(funmResult)
     let expmResult = try LinAlg.expm(A)
-    // funm uses eigendecomposition; expm uses Padé — algorithmic difference ~5e-4
-    assertMatrixEqual(funmResult!, expmResult, tolerance: 1e-3)
+    // Both paths now agree to near double precision (independent algorithms:
+    // eigendecomposition vs full-precision Padé scaling-and-squaring).
+    assertMatrixEqual(funmResult!, expmResult, tolerance: 1e-9)
   }
 
   func testFunmLogMatchesLogm() throws  {
@@ -219,5 +220,43 @@ final class LinAlgMatfuncTests: XCTestCase {
     XCTAssertNotNil(funmResult)
     XCTAssertNotNil(sqrtmResult)
     assertMatrixEqual(funmResult!, sqrtmResult!, tolerance: 1e-10)
+  }
+
+  // MARK: - expm reference-value precision (CR-D1, Higham 2005 / scipy parity)
+  //
+  // The scaling-and-squaring expm (Higham, "The Scaling and Squaring Method for
+  // the Matrix Exponential Revisited", SIAM J. Matrix Anal. Appl. 26(4), 2005,
+  // Algorithm 10.20 — the algorithm scipy.linalg.expm uses) achieves full
+  // double-precision accuracy, not the ~5 digits of the old fixed-order Padé[6/6].
+  // Reference values below are scipy.linalg.expm outputs.
+
+  /// Non-normal matrix that triggers degree-13 Padé with one squaring
+  /// (‖A‖₁ = 6 > θ₁₃ = 5.3719). scipy.linalg.expm([[1,2],[3,4]]).
+  func testExpmNonNormal2x2_referenceValue() throws {
+    let A = LinAlg.Matrix([[1.0, 2.0], [3.0, 4.0]])
+    let result = try LinAlg.expm(A)
+    let expected = LinAlg.Matrix([
+      [51.968956198705724, 74.73656456700328],
+      [112.10484685050491, 164.0738030492106],
+    ])
+    assertMatrixEqual(result, expected, tolerance: 1e-8)
+  }
+
+  /// Nilpotent matrix: expm([[0,1],[0,0]]) = [[1,1],[0,1]] exactly.
+  /// Eigendecomposition-based funm cannot do this (defective); Padé can.
+  func testExpmNilpotent_exact() throws {
+    let A = LinAlg.Matrix([[0.0, 1.0], [0.0, 0.0]])
+    let result = try LinAlg.expm(A)
+    assertMatrixEqual(result, LinAlg.Matrix([[1.0, 1.0], [0.0, 1.0]]), tolerance: 1e-13)
+  }
+
+  /// Skew-symmetric rotation generator: expm([[0,-1],[1,0]]) is the rotation
+  /// matrix by 1 rad = [[cos1, -sin1],[sin1, cos1]]. Complex eigenvalues ±i, so
+  /// the real-eigendecomposition path is unavailable — Padé exercised directly.
+  func testExpmRotationGenerator_referenceValue() throws {
+    let A = LinAlg.Matrix([[0.0, -1.0], [1.0, 0.0]])
+    let result = try LinAlg.expm(A)
+    let c = cos(1.0), s = sin(1.0)
+    assertMatrixEqual(result, LinAlg.Matrix([[c, -s], [s, c]]), tolerance: 1e-12)
   }
 }

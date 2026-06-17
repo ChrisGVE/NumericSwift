@@ -377,8 +377,8 @@ final class LinAlgTests: XCTestCase {
         // exp(diag(a, b)) = diag(exp(a), exp(b))
         let D = LinAlg.Matrix([[1, 0], [0, 2]])
         let expD = try LinAlg.expm(D)
-        XCTAssertEqual(expD[0, 0], exp(1.0), accuracy: 1e-5)
-        XCTAssertEqual(expD[1, 1], exp(2.0), accuracy: 1e-5)
+        XCTAssertEqual(expD[0, 0], exp(1.0), accuracy: 1e-12)
+        XCTAssertEqual(expD[1, 1], exp(2.0), accuracy: 1e-12)
     }
 
     func testLogm() throws  {
