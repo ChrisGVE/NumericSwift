@@ -242,21 +242,47 @@ public struct Complex: Equatable, Hashable, Sendable {
 
 extension Complex {
 
-    /// Square root using polar form (principal square root).
+    /// Square root using rectangular special-casing then polar form (principal square root).
     ///
-    /// Follows C99 / IEEE-754: sqrt(-1+0i) = +i, sqrt(inf+0i) = inf+0i.
-    /// The polar formula `sqrtR * sin(halfTheta)` produces `inf * 0 = NaN`
-    /// when the magnitude is infinite and the angle is a multiple of π. We
-    /// guard that case explicitly so that `sqrt(inf + 0i) == inf + 0i`.
+    /// Follows C99 Annex G.6.4.2 and IEEE-754-2008 for all exceptional operands:
+    ///
+    /// | Input (re, im) | Output (re, im) |
+    /// |---|---|
+    /// | (±∞, NaN) | (+∞, NaN) |
+    /// | (∞, y) for finite y | (+∞, 0) |
+    /// | (-∞, y) for finite y | (0, +∞) |
+    /// | (x, ∞) for any x including ±∞ | (+∞, +∞) |
+    /// | (NaN, …) or (…, NaN) | (NaN, NaN) |
+    ///
+    /// For the general finite case the standard polar formula is used.
+    /// Oracle: numpy.complex128 principal square root, C99 cmath sqrtf.
     public var sqrt: Complex {
+        let x = re, y = im
+
+        // C99 Annex G.6.4.2 — handle exceptional operands first.
+        // Any infinite imaginary part → (+∞, +∞) regardless of real part.
+        if y.isInfinite {
+            return Complex(re: .infinity, im: .infinity)
+        }
+        // +∞ real, finite imaginary → (+∞, 0)
+        if x == .infinity {
+            return Complex(re: .infinity, im: 0.0)
+        }
+        // -∞ real, finite imaginary → (0, +∞)
+        if x == -.infinity {
+            return Complex(re: 0.0, im: .infinity)
+        }
+        // NaN in either component — propagate as (NaN, NaN).
+        if x.isNaN || y.isNaN {
+            return Complex(re: .nan, im: .nan)
+        }
+
+        // General finite case: polar form for the principal square root.
         let r = self.abs
         let theta = self.arg
         let sqrtR = Darwin.sqrt(r)
-        let halfTheta = theta / 2
-        let imPart = sqrtR * Darwin.sin(halfTheta)
-        // inf * sin(0) = NaN in IEEE-754; the mathematical limit is 0.
-        let safeIm = imPart.isNaN && sqrtR.isInfinite ? 0.0 : imPart
-        return Complex(re: sqrtR * Darwin.cos(halfTheta), im: safeIm)
+        return Complex(re: sqrtR * Darwin.cos(theta / 2),
+                       im: sqrtR * Darwin.sin(theta / 2))
     }
 
     /// Natural logarithm: log(z) = log|z| + i*arg(z)

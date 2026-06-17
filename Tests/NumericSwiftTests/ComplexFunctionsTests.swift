@@ -948,10 +948,83 @@ final class ComplexFunctionsTests: XCTestCase {
     }
 
     func testSqrt_infinitePositiveReal() {
-        // sqrt(+inf + 0i) = +inf
+        // C99 Annex G.6.4.2 / numpy: sqrt(+inf + 0i) = +inf + 0i
+        // np.sqrt(complex(float('inf'), 0)) = (inf+0j)
         let z = Complex(re: .infinity, im: 0.0).sqrt
         XCTAssertEqual(z.re, .infinity)
         XCTAssertEqual(z.im, 0.0, accuracy: 1e-30)
+    }
+
+    func testSqrt_infiniteNegativeReal() {
+        // C99 Annex G.6.4.2: sqrt(-inf + 0i) = 0 + inf*i
+        // np.sqrt(complex(float('-inf'), 0)) = 0j + infj  → (0+infj)
+        let z = Complex(re: -.infinity, im: 0.0).sqrt
+        XCTAssertEqual(z.re, 0.0, accuracy: 1e-30,
+                       "sqrt(-inf+0i) real part must be 0 per C99 Annex G.6.4.2")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(-inf+0i) imaginary part must be +inf per C99 Annex G.6.4.2")
+    }
+
+    func testSqrt_infinitePositiveReal_withFiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(+inf + y*i) = +inf + 0*i  for finite y
+        // np.sqrt(complex(float('inf'), 3.0)) = (inf+0j)
+        let z = Complex(re: .infinity, im: 3.0).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(+inf+3i) real part must be +inf")
+        XCTAssertEqual(z.im, 0.0, accuracy: 1e-30,
+                       "sqrt(+inf+3i) imaginary part must be 0")
+    }
+
+    func testSqrt_infiniteNegativeReal_withFiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(-inf + y*i) = 0 + inf*i  for finite y > 0
+        // np.sqrt(complex(float('-inf'), 3.0)) = 0+infj
+        let z = Complex(re: -.infinity, im: 3.0).sqrt
+        XCTAssertEqual(z.re, 0.0, accuracy: 1e-30,
+                       "sqrt(-inf+3i) real part must be 0")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(-inf+3i) imaginary part must be +inf")
+    }
+
+    func testSqrt_finiteReal_withInfiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(x + inf*i) = +inf + inf*i  for any finite x
+        // np.sqrt(complex(1.0, float('inf'))) = (inf+infj)
+        let z = Complex(re: 1.0, im: .infinity).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(1+inf*i) real part must be +inf")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(1+inf*i) imaginary part must be +inf")
+    }
+
+    func testSqrt_negativeInfiniteReal_withInfiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(-inf + inf*i) = +inf + +inf*i
+        // np.sqrt(complex(float('-inf'), float('inf'))) = (inf+infj)
+        let z = Complex(re: -.infinity, im: .infinity).sqrt
+        XCTAssertEqual(z.re, .infinity,
+                       "sqrt(-inf+inf*i) real part must be +inf")
+        XCTAssertEqual(z.im, .infinity,
+                       "sqrt(-inf+inf*i) imaginary part must be +inf")
+    }
+
+    func testSqrt_positiveInfiniteReal_withInfiniteIm() {
+        // np.sqrt(complex(float('inf'), float('inf'))) = (inf+infj)
+        let z = Complex(re: .infinity, im: .infinity).sqrt
+        XCTAssertEqual(z.re, .infinity)
+        XCTAssertEqual(z.im, .infinity)
+    }
+
+    func testSqrt_nanReal_withFiniteIm() {
+        // C99 Annex G.6.4.2: sqrt(NaN + y*i) = NaN + NaN*i  for finite y
+        // np.sqrt(complex(float('nan'), 0.0)) → (nan+nanj)
+        let z = Complex(re: .nan, im: 0.0).sqrt
+        XCTAssertTrue(z.re.isNaN || z.im.isNaN,
+                      "sqrt(NaN+0i) must have at least one NaN component")
+    }
+
+    func testSqrt_finiteReal_withNanIm() {
+        // np.sqrt(complex(1.0, float('nan'))) → (nan+nanj)
+        let z = Complex(re: 1.0, im: .nan).sqrt
+        XCTAssertTrue(z.re.isNaN || z.im.isNaN,
+                      "sqrt(1+NaN*i) must have at least one NaN component")
     }
 
     func testLog_zero() {
