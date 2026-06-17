@@ -83,6 +83,7 @@ public enum Workbench {
         linsolveSuite,
         spatialknnSuite,
         circlefitSuite,
+        clusterSuite,
     ]
 
     /// Look up a suite by domain name.

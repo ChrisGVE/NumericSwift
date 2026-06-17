@@ -22,6 +22,28 @@ public struct KMeansResult {
     public let inertia: Double
     /// Number of iterations run.
     public let iterations: Int
+    /// Non-fatal diagnostics produced during clustering.
+    ///
+    /// Empty for a well-posed request. A degenerate request — `k <= 0`,
+    /// `k` greater than the number of points, or empty input — attaches a
+    /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` so a self-aware
+    /// caller can tell that the (best-effort, possibly empty) result lies
+    /// outside k-means' valid envelope. See the workbench self-awareness gate.
+    public let diagnostics: [NumericDiagnostic]
+
+    public init(
+        labels: [Int],
+        centroids: [[Double]],
+        inertia: Double,
+        iterations: Int,
+        diagnostics: [NumericDiagnostic] = []
+    ) {
+        self.labels = labels
+        self.centroids = centroids
+        self.inertia = inertia
+        self.iterations = iterations
+        self.diagnostics = diagnostics
+    }
 }
 
 /// Result of hierarchical clustering.
@@ -32,6 +54,24 @@ public struct HierarchicalResult {
     public let labels: [Int]?
     /// Number of original samples.
     public let nLeaves: Int
+    /// Non-fatal diagnostics produced during clustering.
+    ///
+    /// Empty for a well-posed request. A degenerate cut request —
+    /// `nClusters <= 0`, `nClusters` greater than the number of leaves, or
+    /// empty input — attaches a ``NumericDiagnostic/outsideEnvelope(method:reason:)``.
+    public let diagnostics: [NumericDiagnostic]
+
+    public init(
+        linkageMatrix: [[Double]],
+        labels: [Int]?,
+        nLeaves: Int,
+        diagnostics: [NumericDiagnostic] = []
+    ) {
+        self.linkageMatrix = linkageMatrix
+        self.labels = labels
+        self.nLeaves = nLeaves
+        self.diagnostics = diagnostics
+    }
 }
 
 /// Linkage method for hierarchical clustering.
@@ -54,6 +94,24 @@ public struct DBSCANResult {
     public let coreSamples: [Int]
     /// Number of clusters found.
     public let nClusters: Int
+    /// Non-fatal diagnostics produced during clustering.
+    ///
+    /// Empty for a well-posed request. A degenerate request — empty input or
+    /// parameters that label every point as noise (zero clusters) — attaches a
+    /// ``NumericDiagnostic/outsideEnvelope(method:reason:)``.
+    public let diagnostics: [NumericDiagnostic]
+
+    public init(
+        labels: [Int],
+        coreSamples: [Int],
+        nClusters: Int,
+        diagnostics: [NumericDiagnostic] = []
+    ) {
+        self.labels = labels
+        self.coreSamples = coreSamples
+        self.nClusters = nClusters
+        self.diagnostics = diagnostics
+    }
 }
 
 /// Result of elbow method analysis.
@@ -102,8 +160,9 @@ public enum Cluster {
         nInit: Int = 10,
         initMethod: String = "kmeans++"
     ) -> KMeansResult {
-        guard !data.isEmpty, k > 0 else {
-            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0)
+        if let diag = kmeansEnvelopeDiagnostic(n: data.count, k: k) {
+            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
+                                diagnostics: [diag])
         }
 
         let dim = data[0].count
@@ -143,6 +202,69 @@ public enum Cluster {
         )
     }
 
+    /// K-means clustering from a caller-supplied set of initial centroids.
+    ///
+    /// Unlike ``kmeans(_:k:maxIterations:tolerance:nInit:initMethod:)`` — which
+    /// seeds randomly (k-means++ or random) and is therefore non-deterministic —
+    /// this overload runs a single Lloyd iteration sequence from the exact
+    /// `initialCentroids` provided, so the result (labels, centroids, inertia) is
+    /// fully reproducible. It mirrors `sklearn.cluster.KMeans(init=<array>,
+    /// n_init=1)`, which makes the two directly comparable for parity testing.
+    ///
+    /// - Parameters:
+    ///   - data: Array of data points (each point is an array of coordinates).
+    ///   - initialCentroids: The exact starting centroids; `k` is `initialCentroids.count`.
+    ///   - maxIterations: Maximum Lloyd iterations (default 300).
+    ///   - tolerance: Convergence tolerance for centroid movement (default 1e-4).
+    /// - Returns: ``KMeansResult``. A degenerate request (`k <= 0`, `k` greater
+    ///   than the number of points, or empty input) returns an empty best-effort
+    ///   result carrying an ``NumericDiagnostic/outsideEnvelope(method:reason:)``.
+    public static func kmeans(
+        _ data: [[Double]],
+        initialCentroids: [[Double]],
+        maxIterations: Int = 300,
+        tolerance: Double = 1e-4
+    ) -> KMeansResult {
+        let k = initialCentroids.count
+        if let diag = kmeansEnvelopeDiagnostic(n: data.count, k: k) {
+            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
+                                diagnostics: [diag])
+        }
+
+        let result = runKMeans(
+            data: data, k: k, initialCentroids: initialCentroids,
+            maxIter: maxIterations, tol: tolerance
+        )
+        return KMeansResult(
+            labels: result.labels,
+            centroids: result.centroids,
+            inertia: result.inertia,
+            iterations: result.iterations
+        )
+    }
+
+    /// Degenerate-request detector shared by both `kmeans` entry points.
+    ///
+    /// Returns an ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the
+    /// request lies outside k-means' valid envelope (empty data, `k <= 0`, or
+    /// more clusters than points), else `nil`.
+    static func kmeansEnvelopeDiagnostic(n: Int, k: Int) -> NumericDiagnostic? {
+        if n == 0 {
+            return .outsideEnvelope(method: "kmeans",
+                reason: "empty input — no points to cluster")
+        }
+        if k <= 0 {
+            return .outsideEnvelope(method: "kmeans",
+                reason: "k=\(k) is not positive — clustering is undefined")
+        }
+        if k > n {
+            return .outsideEnvelope(method: "kmeans",
+                reason: "k=\(k) exceeds the number of points (\(n)) — at least one "
+                    + "cluster must stay empty")
+        }
+        return nil
+    }
+
     // MARK: - Hierarchical Clustering
 
     /// Hierarchical (agglomerative) clustering.
@@ -164,7 +286,9 @@ public enum Cluster {
     ) -> HierarchicalResult {
         let n = data.count
         guard n > 0 else {
-            return HierarchicalResult(linkageMatrix: [], labels: nil, nLeaves: 0)
+            return HierarchicalResult(linkageMatrix: [], labels: nil, nLeaves: 0,
+                diagnostics: [.outsideEnvelope(method: "hierarchical",
+                    reason: "empty input — no points to cluster")])
         }
 
         var clusters: [HierarchicalCluster] = []
@@ -231,10 +355,20 @@ public enum Cluster {
             nextClusterId += 1
         }
 
+        var diagnostics: [NumericDiagnostic] = []
         var labels: [Int]? = nil
         if nClusters != nil || distanceThreshold != nil {
             let cutIdx: Int
             if let nc = nClusters {
+                if nc <= 0 {
+                    diagnostics.append(.outsideEnvelope(method: "hierarchical",
+                        reason: "nClusters=\(nc) is not positive — a cut must leave at "
+                            + "least one cluster"))
+                } else if nc > n {
+                    diagnostics.append(.outsideEnvelope(method: "hierarchical",
+                        reason: "nClusters=\(nc) exceeds the number of leaves (\(n)) — "
+                            + "the tree cannot be cut into that many clusters"))
+                }
                 cutIdx = max(0, n - nc)
             } else if let dt = distanceThreshold {
                 var idx = 0
@@ -256,7 +390,8 @@ public enum Cluster {
         return HierarchicalResult(
             linkageMatrix: linkageMatrix,
             labels: labels,
-            nLeaves: n
+            nLeaves: n,
+            diagnostics: diagnostics
         )
     }
 
@@ -285,7 +420,9 @@ public enum Cluster {
     ) -> DBSCANResult {
         let n = data.count
         guard n > 0 else {
-            return DBSCANResult(labels: [], coreSamples: [], nClusters: 0)
+            return DBSCANResult(labels: [], coreSamples: [], nClusters: 0,
+                diagnostics: [.outsideEnvelope(method: "dbscan",
+                    reason: "empty input — no points to cluster")])
         }
 
         let tree = KDTree(data)
@@ -337,10 +474,22 @@ public enum Cluster {
             }
         }
 
+        let nClusters = currentCluster + 1
+        // All-noise: eps/minSamples are too strict to form a single dense region.
+        // The result (every point labelled -1) is technically correct but lies
+        // outside DBSCAN's useful envelope, so flag it for a self-aware caller.
+        var diagnostics: [NumericDiagnostic] = []
+        if nClusters == 0 {
+            diagnostics.append(.outsideEnvelope(method: "dbscan",
+                reason: "no clusters formed — every point is noise; eps=\(eps) / "
+                    + "minSamples=\(minSamples) are too strict for this data"))
+        }
+
         return DBSCANResult(
             labels: labels,
             coreSamples: coreSamples,
-            nClusters: currentCluster + 1
+            nClusters: nClusters,
+            diagnostics: diagnostics
         )
     }
 
