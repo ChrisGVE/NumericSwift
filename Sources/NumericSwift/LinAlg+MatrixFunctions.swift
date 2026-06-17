@@ -150,166 +150,150 @@ extension LinAlg {
     ///      Because T may have 2×2 diagonal blocks (complex-conjugate pairs), we
     ///      treat each such block as a tiny 2×2 complex eigendecomposition.
     ///   3. Back-transform: f(A) = Q F Qᵀ  (real multiply since Q is orthogonal).
+    /// Top-level Schur-Parlett driver.
+    ///
+    /// Algorithm (Higham 2008, §4.3):
+    ///   1. Real Schur form A = Q T Qᵀ via dgees.
+    ///   2. Detect 1×1 vs 2×2 diagonal blocks in T (``schurBlockStructure``).
+    ///   3. Apply f to each diagonal block (``applyFunctionToDiagonalBlocks``).
+    ///   4. Fill the strict upper triangle by the Parlett recurrence
+    ///      (``parlettUpperTriangle``).
+    ///   5. Back-transform f(A) = Q F Qᵀ (``multiplyQFQT``).
     private static func schurParlett(
         _ data: [Double], n: Int, fn: MatrixFunction
     ) -> (re: [Double], im: [Double])? {
-
         guard let (Q, T) = realSchurDecomposition(data, n) else { return nil }
-
-        // Build a complex version of T to run the Parlett recurrence uniformly.
-        // F starts as a copy of the Schur form; we overwrite its upper triangle.
+        let blockOf = schurBlockStructure(T: T, n: n)
         var Fre = T
         var Fim = [Double](repeating: 0, count: n * n)
+        guard applyFunctionToDiagonalBlocks(fn: fn, T: T, n: n, blockOf: blockOf,
+                                            Fre: &Fre, Fim: &Fim) else { return nil }
+        guard parlettUpperTriangle(fn: fn, T: T, n: n, blockOf: blockOf,
+                                   Fre: &Fre, Fim: &Fim) else { return nil }
+        return multiplyQFQT(Q: Q, Fre: Fre, Fim: Fim, n: n)
+    }
 
-        // Determine block structure of T: each diagonal position is either a
-        // 1×1 block (|T[i+1,i]| ≈ 0) or the start of a 2×2 block.
-        // 'blockStart[k]' = the row index of the block containing column k.
-        var blockOf = [Int](repeating: -1, count: n)   // block-start index for each column
+    /// Map each column index to the row-index of its diagonal block start.
+    ///
+    /// A sub-diagonal entry |T[i+1,i]| > 1e-12 marks a 2×2 block at rows i,i+1;
+    /// otherwise the block at column i is the 1×1 scalar T[i,i].
+    private static func schurBlockStructure(T: [Double], n: Int) -> [Int] {
+        var blockOf = [Int](repeating: -1, count: n)
         var i = 0
         while i < n {
             if i + 1 < n && abs(T[(i+1)*n + i]) > 1e-12 {
-                // 2×2 block at (i, i)
-                blockOf[i] = i
-                blockOf[i+1] = i
-                i += 2
+                blockOf[i] = i; blockOf[i+1] = i; i += 2
             } else {
-                blockOf[i] = i
-                i += 1
+                blockOf[i] = i; i += 1
             }
         }
+        return blockOf
+    }
 
-        // Apply f to each diagonal block to get the diagonal entries of F.
-        i = 0
+    /// Apply f to each diagonal block of the Schur form T, writing results into F.
+    ///
+    /// - 1×1 block: F[i,i] = f(T[i,i]) directly.
+    /// - 2×2 block: eigenvalues computed via the quadratic formula; then
+    ///   f(B) = dd·(B−λ₂I) + f(λ₂)I  where dd = (f(λ₁)−f(λ₂))/(λ₁−λ₂)
+    ///   (Higham 2008, eq. 4.11). Returns `false` when f is undefined on an eigenvalue.
+    private static func applyFunctionToDiagonalBlocks(
+        fn: MatrixFunction, T: [Double], n: Int, blockOf: [Int],
+        Fre: inout [Double], Fim: inout [Double]
+    ) -> Bool {
+        var i = 0
         while i < n {
-            let bs = blockOf[i]
-            if bs == i && (i+1 < n && blockOf[i+1] == i) {
-                // 2×2 block — diagonalize in complex arithmetic to apply f.
-                let a00 = T[i*n+i], a01 = T[i*n+(i+1)]
-                let a10 = T[(i+1)*n+i], a11 = T[(i+1)*n+(i+1)]
-                // Eigenvalues of the 2×2 block via quadratic formula.
-                let tr   = a00 + a11
-                let disc = (a00 - a11)*(a00 - a11) + 4.0*a01*a10  // may be negative
+            if i+1 < n && blockOf[i+1] == i {
+                let a00 = T[i*n+i], a01 = T[i*n+i+1]
+                let a10 = T[(i+1)*n+i], a11 = T[(i+1)*n+i+1]
+                let disc = (a00-a11)*(a00-a11) + 4.0*a01*a10
                 let sqrtDisc = cSqrt((disc, 0.0))
-                let lam1 = cMul((0.5, 0.0), cAdd((tr, 0.0), sqrtDisc))
-                let lam2 = cMul((0.5, 0.0), cSub((tr, 0.0), sqrtDisc))
+                let lam1 = cMul((0.5, 0.0), cAdd((a00+a11, 0.0), sqrtDisc))
+                let lam2 = cMul((0.5, 0.0), cSub((a00+a11, 0.0), sqrtDisc))
                 guard let fl1 = applyComplexFunction(fn, lam1),
-                      let fl2 = applyComplexFunction(fn, lam2) else { return nil }
-                // f(B) for a 2×2 with eigenvalues λ₁,λ₂ and eigenvectors derived
-                // from the quadratic: f(B) = ((f(λ₁)−f(λ₂))/(λ₁−λ₂))·(B − λ₂·I) + f(λ₂)·I
-                // (Higham 2008, eq. 4.11; uses divided-difference formulation).
+                      let fl2 = applyComplexFunction(fn, lam2) else { return false }
                 let dLam = cSub(lam1, lam2)
                 if cAbs(dLam) < 1e-12 {
-                    // Repeated eigenvalue (defective block): use f(λ)·I (diagonal approximation).
-                    Fre[i*n+i]     = fl1.re; Fim[i*n+i]     = fl1.im
-                    Fre[i*n+i+1]   = 0.0;    Fim[i*n+i+1]   = 0.0
-                    Fre[(i+1)*n+i] = 0.0;    Fim[(i+1)*n+i] = 0.0
+                    // Repeated (defective) block: diagonal approximation f(λ)·I.
+                    Fre[i*n+i] = fl1.re;   Fim[i*n+i] = fl1.im
+                    Fre[i*n+i+1] = 0.0;   Fim[i*n+i+1] = 0.0
+                    Fre[(i+1)*n+i] = 0.0; Fim[(i+1)*n+i] = 0.0
                     Fre[(i+1)*n+i+1] = fl1.re; Fim[(i+1)*n+i+1] = fl1.im
                 } else {
-                    // Divided difference (f(λ₁)−f(λ₂))/(λ₁−λ₂).
                     let dd = cDiv(cSub(fl1, fl2), dLam)
-                    // B − λ₂·I (as complex 2×2).
-                    let b00 = cSub((a00, 0.0), lam2)
-                    let b01: C2 = (a01, 0.0)
-                    let b10: C2 = (a10, 0.0)
-                    let b11 = cSub((a11, 0.0), lam2)
-                    // f(B) = dd*(B-λ₂I) + f(λ₂)I
-                    let f00 = cAdd(cMul(dd, b00), fl2)
-                    let f01 = cMul(dd, b01)
-                    let f10 = cMul(dd, b10)
-                    let f11 = cAdd(cMul(dd, b11), fl2)
-                    Fre[i*n+i]       = f00.re; Fim[i*n+i]       = f00.im
-                    Fre[i*n+i+1]     = f01.re; Fim[i*n+i+1]     = f01.im
-                    Fre[(i+1)*n+i]   = f10.re; Fim[(i+1)*n+i]   = f10.im
-                    Fre[(i+1)*n+i+1] = f11.re; Fim[(i+1)*n+i+1] = f11.im
+                    let f00 = cAdd(cMul(dd, cSub((a00, 0.0), lam2)), fl2)
+                    let f01 = cMul(dd, (a01, 0.0))
+                    let f10 = cMul(dd, (a10, 0.0))
+                    let f11 = cAdd(cMul(dd, cSub((a11, 0.0), lam2)), fl2)
+                    Fre[i*n+i] = f00.re;         Fim[i*n+i] = f00.im
+                    Fre[i*n+i+1] = f01.re;       Fim[i*n+i+1] = f01.im
+                    Fre[(i+1)*n+i] = f10.re;     Fim[(i+1)*n+i] = f10.im
+                    Fre[(i+1)*n+i+1] = f11.re;   Fim[(i+1)*n+i+1] = f11.im
                 }
                 i += 2
             } else {
-                // 1×1 block — apply f to the scalar eigenvalue.
-                guard let fval = applyComplexFunction(fn, (T[i*n+i], 0.0)) else { return nil }
-                Fre[i*n+i] = fval.re
-                Fim[i*n+i] = fval.im
+                guard let fval = applyComplexFunction(fn, (T[i*n+i], 0.0)) else { return false }
+                Fre[i*n+i] = fval.re; Fim[i*n+i] = fval.im
                 i += 1
             }
         }
+        return true
+    }
 
-        // Parlett recurrence for the strict upper triangle.
-        // For each superdiagonal distance d = 1, 2, ..., n-1:
-        //   F[i,j] = T[i,j]·(F[i,i]−F[j,j])/(T[i,i]−T[j,j])
-        //           + Σ_{k=i+1}^{j−1} (T[i,k]·F[k,j] − F[i,k]·T[k,j]) / (T[i,i]−T[j,j])
-        // (Parlett 1974, eq. 2.4; Higham 2008, Alg. 4.6)
-        // We skip entries (i,j) where both i and j belong to the same 2×2 block
-        // (those are already set above).
+    /// Parlett recurrence for the strict upper triangle of F.
+    ///
+    /// Formula (Parlett 1974, eq. 2.4; Higham 2008, Alg. 4.6):
+    ///   F[i,j] = (T[i,j]·(F[i,i]−F[j,j]) + Σ_{k=i+1}^{j−1}(T[i,k]·F[k,j]−F[i,k]·T[k,j]))
+    ///            / (T[i,i]−T[j,j])
+    /// When eigenvalues coincide (|T[i,i]−T[j,j]| < 1e-12), the limit is
+    ///   f'(λ)·T[i,j]  (Higham 2008, §4.2, eq. 4.6).
+    /// Entries inside the same 2×2 block are skipped (already set by the diagonal pass).
+    private static func parlettUpperTriangle(
+        fn: MatrixFunction, T: [Double], n: Int, blockOf: [Int],
+        Fre: inout [Double], Fim: inout [Double]
+    ) -> Bool {
         for d in 1..<n {
             for col in d..<n {
                 let row = col - d
-                // Skip if this cell is inside the same 2×2 diagonal block.
-                if blockOf[row] == blockOf[col] && blockOf[row] != row { continue }
-                if blockOf[row] == blockOf[col] && blockOf[col] != col { continue }
-                // Eigenvalue difference T[row,row] − T[col,col] (complex).
-                let tRR: C2 = (Fre[row*n+row], Fim[row*n+row])  // f(T[row,row]) for diagonal
+                if blockOf[row] == blockOf[col] { continue }  // same 2×2 block — skip
+                let tRR: C2 = (Fre[row*n+row], Fim[row*n+row])
                 let tCC: C2 = (Fre[col*n+col], Fim[col*n+col])
-                // Raw Schur diagonal entries (eigenvalues of 1×1 blocks).
-                let eigR: C2 = (T[row*n+row], 0.0)
-                let eigC: C2 = (T[col*n+col], 0.0)
-                let dEig = cSub(eigR, eigC)
-
-                // Numerator: T[row,col]·(f(T[row,row]) − f(T[col,col])) + Σ cross terms.
+                let dEig = cSub((T[row*n+row], 0.0), (T[col*n+col], 0.0))
                 var numRe = T[row*n+col] * (tRR.re - tCC.re)
                 var numIm = T[row*n+col] * (tRR.im - tCC.im)
                 for k in (row+1)..<col {
-                    // T[row,k]·F[k,col] − F[row,k]·T[k,col]
-                    let tRowK = T[row*n+k]
-                    let fKCol: C2 = (Fre[k*n+col], Fim[k*n+col])
-                    let fRowK: C2 = (Fre[row*n+k], Fim[row*n+k])
-                    let tKCol = T[k*n+col]
-                    numRe += tRowK * fKCol.re - fRowK.re * tKCol
-                    numIm += tRowK * fKCol.im - fRowK.im * tKCol
+                    numRe += T[row*n+k] * Fre[k*n+col] - Fre[row*n+k] * T[k*n+col]
+                    numIm += T[row*n+k] * Fim[k*n+col] - Fim[row*n+k] * T[k*n+col]
                 }
-
-                let dEigAbs = cAbs(dEig)
-                if dEigAbs < 1e-12 {
-                    // Degenerate denominator: Parlett limit is f'(λ)·T[row,col]
-                    // (Higham 2008, §4.2, eq. 4.6). Use the exact analytic derivative
-                    // to avoid finite-difference cancellation errors.
-                    let eigVal: C2 = (T[row*n+row], 0.0)
-                    guard let fprime = applyComplexDerivative(fn, eigVal) else { return nil }
+                if cAbs(dEig) < 1e-12 {
+                    guard let fprime = applyComplexDerivative(fn, (T[row*n+row], 0.0)) else {
+                        return false
+                    }
                     let deriv = cMul(fprime, (T[row*n+col], 0.0))
-                    Fre[row*n+col] = deriv.re
-                    Fim[row*n+col] = deriv.im
+                    Fre[row*n+col] = deriv.re; Fim[row*n+col] = deriv.im
                 } else {
                     let val = cDiv((numRe, numIm), dEig)
-                    Fre[row*n+col] = val.re
-                    Fim[row*n+col] = val.im
+                    Fre[row*n+col] = val.re; Fim[row*n+col] = val.im
                 }
             }
         }
-
-        // Back-transform: f(A) = Q F Qᵀ  (real multiplication, Q is orthogonal).
-        // Compute Q * F and then (Q * F) * Qᵀ in the real and imaginary parts separately.
-        let (resRe, resIm) = multiplyQFQT(Q: Q, Fre: Fre, Fim: Fim, n: n)
-        return (resRe, resIm)
+        return true
     }
 
     /// Compute Q · F · Qᵀ where Q is real-orthogonal and F is complex (separate real/imag).
     private static func multiplyQFQT(
         Q: [Double], Fre: [Double], Fim: [Double], n: Int
     ) -> (re: [Double], im: [Double]) {
-        // QF_re = Q * Fre,  QF_im = Q * Fim  (real BLAS dgemm)
         let QFre = matmulInternal(Q, Fre, n)
         let QFim = matmulInternal(Q, Fim, n)
-
-        // (QF) * Qᵀ: since Q is orthogonal, Qᵀ[i,j] = Q[j,i].
-        // Use dgemm with transposed Q: C = A * Bᵀ.
         var resRe = [Double](repeating: 0, count: n * n)
         var resIm = [Double](repeating: 0, count: n * n)
+        // (Q·F)·Qᵀ via dgemm with transposed Q (Q is row-major, Qᵀ = Q with CblasTrans).
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                     Int32(n), Int32(n), Int32(n),
-                    1.0, QFre, Int32(n), Q, Int32(n),
-                    0.0, &resRe, Int32(n))
+                    1.0, QFre, Int32(n), Q, Int32(n), 0.0, &resRe, Int32(n))
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
                     Int32(n), Int32(n), Int32(n),
-                    1.0, QFim, Int32(n), Q, Int32(n),
-                    0.0, &resIm, Int32(n))
+                    1.0, QFim, Int32(n), Q, Int32(n), 0.0, &resIm, Int32(n))
         return (resRe, resIm)
     }
 }
