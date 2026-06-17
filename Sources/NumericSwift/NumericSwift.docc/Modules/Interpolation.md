@@ -27,9 +27,10 @@ let integral = integrateCubicSpline(x: x, coeffs: coeffs, a: 0, b: 4)
 
 ### Boundary Conditions
 
-- `.natural` - Second derivative is zero at boundaries
-- `.clamped` - Specify first derivative at boundaries
-- `.notAKnot` - Not-a-knot condition (default)
+- `.natural` - Second derivative is zero at boundaries (f″ = 0)
+- `.clamped` - Zero first derivative at both ends (f′ = 0); shorthand for `.clamped(dStart: 0, dEnd: 0)`
+- `.clamped(dStart:dEnd:)` - User-supplied first derivatives at each end; matches SciPy `CubicSpline(bc_type=((1, d0), (1, d1)))`
+- `.notAKnot` - Not-a-knot condition (default; requires ≥ 4 points)
 
 ## PCHIP Interpolation
 
