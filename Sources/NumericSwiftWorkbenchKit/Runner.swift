@@ -78,6 +78,7 @@ public enum Workbench {
     public static let allSuites: [DomainSuite] = [
         integrationSuite,
         optrootSuite,
+        interpSuite,
     ]
 
     /// Look up a suite by domain name.
