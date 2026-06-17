@@ -265,7 +265,9 @@ extension LinAlg {
     ///     2×2 block whose true eigenvalue is a±bi.
     ///
     ///   • 2×2 vs 2×2 cross-term: general 2×2 Sylvester equation
-    ///       T_ii · F_ij − F_ij · T_jj = RHS        (solved via LAPACK dtrsyl below)
+    ///       T_ii · F_ij − F_ij · T_jj = RHS
+    ///     Vectorised via Kronecker product into a 4×4 complex system and solved
+    ///     by Gaussian elimination with partial pivoting (``solve4x4Complex``).
     ///     Both blocks have complex-conjugate eigenvalue pairs so neither diagonal
     ///     entry alone represents a true eigenvalue.
     ///
