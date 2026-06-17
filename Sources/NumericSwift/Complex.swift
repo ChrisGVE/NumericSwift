@@ -197,19 +197,25 @@ public struct Complex: Equatable, Hashable, Sendable {
         Complex(re: lhs.re / rhs, im: lhs.im / rhs)
     }
 
-    /// Scalar-divided-by-complex using Smith's algorithm (same overflow rationale as `/(_:_:)`).
+    /// Scalar-divided-by-complex: `a / (c + di)` using Smith's algorithm.
+    ///
+    /// Equivalent to `Complex(re: lhs, im: 0) / rhs` but avoids the zero imaginary
+    /// part carrying through the general path. Smith's branch on |c| vs |d| applies
+    /// identically; the imaginary numerator term vanishes (b = 0):
+    ///
+    ///     if |c| ≥ |d|: r = d/c, den = c + d·r, re = a/den, im = −a·r/den
+    ///     else:         r = c/d, den = c·r + d,  re = a·r/den, im = −a/den
     public static func / (lhs: Double, rhs: Complex) -> Complex {
-        // Treat lhs as Complex(re: lhs, im: 0) and apply Smith's algorithm directly.
-        let a = lhs,    b = 0.0
+        let a = lhs
         let c = rhs.re, d = rhs.im
         if Swift.abs(c) >= Swift.abs(d) {
             let r   = d / c
             let den = c + d * r
-            return Complex(re: (a + b * r) / den, im: (b - a * r) / den)
+            return Complex(re: a / den, im: -(a * r) / den)
         } else {
             let r   = c / d
             let den = c * r + d
-            return Complex(re: (a * r + b) / den, im: (b * r - a) / den)
+            return Complex(re: (a * r) / den, im: -a / den)
         }
     }
 
