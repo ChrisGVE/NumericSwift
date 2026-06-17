@@ -895,14 +895,11 @@ private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
   let s = (t - step.tStart) / step.h
 
   // Horner-form evaluation of the 4th-degree polynomial in s:
-  //   c₁·s + c₂·s² + c₃·s³ + c₄·s⁴
-  // where c₁..c₄ are the stage-weighted column sums of P.
-  // We evaluate as s·(c₁ + s·(c₂ + s·(c₃ + s·c₄))).
+  //   c₀·s + c₁·s² + c₂·s³ + c₃·s⁴
+  // where cⱼ = dot(P[:,j], K[:,i]) for each state component i.
+  // P column 0 = [1,0,...,0] so c₀ = k[0][i] directly (no dot product needed).
+  // P row 1 = [0,0,0,0] so stage k[1] never contributes; the j-loop skips it.
 
-  // P column 0 (coefficient of s):
-  let p0: [Double] = [
-    1, 0, 0, 0, 0, 0, 0,
-  ]
   // P column 1 (coefficient of s²):
   let p1: [Double] = [
     -8048581381.0 / 2820520608.0,
@@ -938,16 +935,20 @@ private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
   var y = [Double](repeating: 0, count: n)
 
   for i in 0..<n {
-    // Compute c₁[i], c₂[i], c₃[i], c₄[i] = dot products of K column i with P columns
-    var c0 = 0.0, c1 = 0.0, c2 = 0.0, c3 = 0.0
-    for j in 0..<7 {
+    // c0 = dot(P[:,0], K[:,i]).  P[:,0] = [1,0,0,0,0,0,0] so c0 = k[0][i].
+    let c0 = step.stages[0][i]
+
+    // c1..c3 = dot products of K column i with P columns 1..3.
+    // Start from j=2 because P[1,:] = 0 for all columns (row for stage k[1]).
+    var c1 = 0.0, c2 = 0.0, c3 = 0.0
+    for j in [0, 2, 3, 4, 5, 6] {
       let kji = step.stages[j][i]
-      c0 += p0[j] * kji
       c1 += p1[j] * kji
       c2 += p2[j] * kji
       c3 += p3[j] * kji
     }
-    // Horner: s*(c0 + s*(c1 + s*(c2 + s*c3)))
+
+    // Horner evaluation: s·(c0 + s·(c1 + s·(c2 + s·c3)))
     let poly = s * (c0 + s * (c1 + s * (c2 + s * c3)))
     y[i] = step.yStart[i] + step.h * poly
   }
@@ -1086,15 +1087,13 @@ public func solveIVP(
       t += h
       tList.append(t)
       yList.append(y)
-      // RK4 has no built-in dense output; record a trivial step (tEval
-      // falls back to linear interpolation for this method only).
-      let f0 = fun(yOld, tOld)
-      let f1 = fun(y, t)
-      nfev += 2
+      // RK4 provides no higher-order dense output; the tEval path uses
+      // linear interpolation between the step's start and end values.
+      // No extra function evaluations are needed.
       denseSteps.append(DenseStep(
         tStart: tOld, tEnd: t,
         yStart: yOld, yEnd: y,
-        stages: [f0, f1],   // Only endpoints available; signals linear fallback
+        stages: [],   // Empty: RK4 branch uses linear interpolation only
         h: h
       ))
     } else {
