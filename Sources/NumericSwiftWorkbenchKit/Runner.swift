@@ -92,6 +92,7 @@ public enum Workbench {
         constantsSuite,
         numbertheorySuite,
         seriesSuite,
+        mathexprSuite,
     ]
 
     /// Look up a suite by domain name.
@@ -153,11 +154,17 @@ public enum Workbench {
             let declaredTol = wbCase.tol[strategyID] ?? envelopeEntry?.maxAbsError
 
             var accuracy: [Violation] = []
-            if declaredInEnvelope, let err = absError, let tol = declaredTol {
+            if declaredInEnvelope, let v = value, let err = absError, let tol = declaredTol {
+                // A bit-exact match is always within tolerance — this also covers
+                // non-finite oracles (±inf, NaN) where `abs(v - oracle)` is NaN even
+                // though the library reproduced the oracle exactly (e.g. log(0) = -inf).
+                let exactMatch = v.bitPattern == wbCase.oracle.value.bitPattern
                 // Prefer the case tol; only consult the registry predicate when the
                 // case did not declare one for this strategy.
                 let withinTol: Bool
-                if wbCase.tol[strategyID] != nil {
+                if exactMatch {
+                    withinTol = true
+                } else if wbCase.tol[strategyID] != nil {
                     withinTol = err <= tol
                 } else if let entry = envelopeEntry {
                     withinTol = entry.inEnvelope(err)
