@@ -77,6 +77,7 @@ public enum Workbench {
     /// set of active domains is auditable in one place.
     public static let allSuites: [DomainSuite] = [
         integrationSuite,
+        interpSuite,
     ]
 
     /// Look up a suite by domain name.

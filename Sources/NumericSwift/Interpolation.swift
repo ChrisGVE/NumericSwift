@@ -817,3 +817,126 @@ public func interp1d(
       boundsError: boundsError, coeffs: coeffs)
   }
 }
+
+// MARK: - Extrapolation-aware evaluators (limitation diagnostics)
+
+/// Reports whether a query point lies outside the closed knot interval `[x[0], x[n-1]]`.
+///
+/// All 1-D interpolants in this module are constructed to *interpolate* — their
+/// documented accuracy holds only inside the convex hull of the sample abscissae.
+/// Past the endpoints they fall back to extrapolation (typically a linear or
+/// last-segment-cubic continuation), where no accuracy guarantee applies. This
+/// helper is the single predicate the diagnosed evaluators below share.
+///
+/// - Parameters:
+///   - x: Sample abscissae (assumed sorted, strictly increasing).
+///   - xNew: Query point.
+/// - Returns: `true` when `xNew < x[0]` or `xNew > x[n-1]`.
+@usableFromInline
+internal func interpQueryOutsideKnots(_ x: [Double], _ xNew: Double) -> Bool {
+  guard let lo = x.first, let hi = x.last else { return false }
+  return xNew < lo || xNew > hi
+}
+
+/// Build the `outsideEnvelope` diagnostic for an out-of-range interpolation query.
+private func interpExtrapolationDiagnostic(
+  method: String, x: [Double], xNew: Double
+) -> NumericDiagnostic {
+  let lo = x.first ?? .nan
+  let hi = x.last ?? .nan
+  return .outsideEnvelope(
+    method: method,
+    reason: "query point \(xNew) is outside the knot range [\(lo), \(hi)] — "
+      + "the interpolant is extrapolating and its accuracy guarantee does not hold"
+  )
+}
+
+/// Evaluate a cubic spline at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalCubicSpline(x:coeffs:xNew:extrapolate:)``:
+/// it returns the same best-effort value wrapped in a ``Diagnosed`` so a caller
+/// can detect when the query point lies outside `[x[0], x[n-1]]`. Inside the knot
+/// range the returned ``Diagnosed/diagnostics`` is empty; outside it carries a
+/// single ``NumericDiagnostic/outsideEnvelope(method:reason:)``. The bare
+/// evaluator is unchanged and remains the right call when extrapolation is
+/// intended and the warning is unwanted.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - coeffs: Spline coefficients from ``computeSplineCoeffs(x:y:bc:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalCubicSplineDiagnosed(
+  x: [Double], coeffs: [CubicCoeffs], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalCubicSpline(x: x, coeffs: coeffs, xNew: xNew, extrapolate: true)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "cubicSpline", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
+
+/// Evaluate PCHIP at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalPchip(x:y:d:xNew:)`` — see
+/// ``evalCubicSplineDiagnosed(x:coeffs:xNew:)`` for the envelope contract.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - y: Sample ordinates.
+///   - d: PCHIP derivatives from ``computePchipDerivatives(x:y:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalPchipDiagnosed(
+  x: [Double], y: [Double], d: [Double], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalPchip(x: x, y: y, d: d, xNew: xNew)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "pchip", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
+
+/// Evaluate Akima interpolation at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalAkima(x:coeffs:xNew:)`` — see
+/// ``evalCubicSplineDiagnosed(x:coeffs:xNew:)`` for the envelope contract.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - coeffs: Akima coefficients from ``computeAkimaCoeffs(x:y:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalAkimaDiagnosed(
+  x: [Double], coeffs: [CubicCoeffs], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalAkima(x: x, coeffs: coeffs, xNew: xNew)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "akima", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
+
+/// Evaluate barycentric interpolation at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalBarycentric(x:y:w:xNew:)`` —
+/// see ``evalCubicSplineDiagnosed(x:coeffs:xNew:)`` for the envelope contract.
+/// Barycentric (global polynomial) extrapolation is especially unreliable — the
+/// Runge phenomenon makes values past the endpoints diverge rapidly — so the
+/// diagnostic is particularly important here.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - y: Sample ordinates.
+///   - w: Barycentric weights from ``computeBarycentricWeights(x:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalBarycentricDiagnosed(
+  x: [Double], y: [Double], w: [Double], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalBarycentric(x: x, y: y, w: w, xNew: xNew)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "barycentric", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
