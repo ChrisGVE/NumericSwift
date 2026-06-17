@@ -351,20 +351,33 @@ final class SpatialTests: XCTestCase {
     /// Five-point set with 3 Delaunay triangles (2 unique circumcenters after dedup)
     /// and a mix of bounded/infinite ridges.
     ///
-    /// scipy: pts5 = [[0,0],[4,0],[2,3],[0.5,2],[3.5,2]]
+    /// SciPy oracle (scipy.spatial.Voronoi, scipy 1.x):
+    ///   pts5 = [[0,0],[4,0],[2,3],[0.5,2],[3.5,2]]
     ///   vertices: [[2.0, 1.375], [2.0, 0.5625]]  (scipy deduplicates; impls may return 3)
     ///   ridge_vertices include both finite pairs and -1 pairs
     ///
-    /// Our contract: at least 2 vertices (the two unique circumcenters); implementations that
-    /// do not deduplicate may return 3.  The key correctness property is the presence of both
-    /// finite and infinite ridges.
+    /// Our contract: 2 or 3 Voronoi vertices (2 unique circumcenters; non-dedup impls
+    /// may return 3).  The frozen circumcenter coordinates are verified against SciPy.
     func testVoronoiFivePointsMixedRegions() {
         let points = [[0.0, 0.0], [4.0, 0.0], [2.0, 3.0], [0.5, 2.0], [3.5, 2.0]]
         let result = voronoi(points)
 
-        // At least 2 distinct Voronoi vertices (scipy has 2 after dedup; non-dedup impls may have 3).
-        XCTAssertGreaterThanOrEqual(
-            result.vertices.count, 2, "5-point set must have at least 2 Voronoi vertices")
+        // Exactly 2 or 3 Voronoi vertices (scipy has 2 after dedup; non-dedup impls may return 3).
+        XCTAssertTrue(
+            result.vertices.count == 2 || result.vertices.count == 3,
+            "5-point set must have 2 or 3 Voronoi vertices, got \(result.vertices.count)")
+
+        // The two unique circumcenters from SciPy (frozen oracle).
+        // Every vertex returned must match one of these two coordinates within 1e-6.
+        let scipyVertices: [[Double]] = [[2.0, 1.375], [2.0, 0.5625]]
+        for v in result.vertices {
+            let matchesScipy = scipyVertices.contains { ref in
+                abs(v[0] - ref[0]) < 1e-6 && abs(v[1] - ref[1]) < 1e-6
+            }
+            XCTAssertTrue(
+                matchesScipy,
+                "Voronoi vertex \(v) does not match any SciPy circumcenter \(scipyVertices)")
+        }
 
         // At least some ridges must be infinite (the hull generators' ridges).
         let infiniteRidges = result.ridgeVertices.filter { $0.contains(-1) }
@@ -378,6 +391,40 @@ final class SpatialTests: XCTestCase {
 
         // 5 regions, one per generator.
         XCTAssertEqual(result.regions.count, 5)
+    }
+
+    /// Regression test for the silent-ridge-drop bug (audit finding #1).
+    ///
+    /// When a Delaunay neighbour triangle has a degenerate circumcenter
+    /// (|determinant| ≤ 1e-10, i.e. the three vertices are nearly collinear),
+    /// the shared ridge must NOT be silently discarded.  Instead it must be
+    /// emitted as an infinite ridge `[-1, v]` so that the SciPy-parity contract
+    /// (every Delaunay edge maps to a Voronoi ridge) is maintained.
+    ///
+    /// This test uses a nearly-collinear triple [0,0],[2,0],[4,1e-12] which
+    /// produces a triangle whose circumcenter determinant d ≈ 2·1e-12 ≤ 1e-10,
+    /// paired with a non-degenerate neighbouring triangle formed by the fourth
+    /// point [2, 2].  Before the fix the ridge between those two triangles was
+    /// silently dropped; after the fix it appears as an infinite ridge.
+    func testVoronoiDegenerateNeighbourCircumcenterBecomesInfiniteRidge() {
+        // Three nearly-collinear points + one well-separated point.
+        // The nearly-collinear triangle has |d| = 2*1e-12 ≤ 1e-10 → degenerate.
+        let points = [[0.0, 0.0], [2.0, 0.0], [4.0, 1e-12], [2.0, 2.0]]
+        let result = voronoi(points)
+
+        // Every Delaunay edge must appear as either a finite or an infinite ridge.
+        // At minimum, the input set produces at least one infinite ridge.
+        let infiniteRidges = result.ridgeVertices.filter { $0.contains(-1) }
+        XCTAssertGreaterThan(
+            infiniteRidges.count, 0,
+            "Near-collinear input must produce at least one infinite ridge; "
+            + "got ridgeVertices=\(result.ridgeVertices)")
+
+        // None of the ridgeVertices arrays may be empty (which would indicate a
+        // silently-dropped ridge has been stored as a placeholder).
+        for rv in result.ridgeVertices {
+            XCTAssertFalse(rv.isEmpty, "ridgeVertices must never contain an empty array")
+        }
     }
 
     // MARK: - Convex Hull Tests

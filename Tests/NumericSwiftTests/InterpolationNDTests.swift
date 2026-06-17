@@ -2,7 +2,7 @@
 //  InterpolationNDTests.swift
 //  Tests/NumericSwiftTests/
 //
-//  XCTest coverage for interpn / InterpolationND.swift.
+//  XCTest coverage for InterpolationND.interpn / InterpolationND.swift.
 //  Oracle values were generated with SciPy's interpn function (scipy 1.x):
 //
 //      from scipy.interpolate import interpn
@@ -56,7 +56,7 @@ final class InterpolationNDTests: XCTestCase {
       ([3.0, 5.0], 13.0),
     ]
     for (point, expected) in onNodeCases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [point],
         method: .linear, boundsHandling: .error)
       XCTAssertEqual(
@@ -73,7 +73,7 @@ final class InterpolationNDTests: XCTestCase {
       ([2.0, 3.5], 9.0),
     ]
     for (point, expected) in cases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [point],
         method: .linear, boundsHandling: .error)
       XCTAssertEqual(
@@ -86,7 +86,7 @@ final class InterpolationNDTests: XCTestCase {
   func test2DLinearBatchOrder() throws {
     let pts: [[Double]] = [[0.0, 0.0], [1.0, 2.0], [0.5, 1.0], [2.0, 3.5], [1.0, 5.0], [3.0, 5.0]]
     let expected = [0.0, 5.0, 2.5, 9.0, 11.0, 13.0]
-    let results = try interpn(
+    let results = try InterpolationND.interpn(
       points: [x2, y2], values: v2, xi: pts,
       method: .linear, boundsHandling: .error)
     XCTAssertEqual(results.count, expected.count)
@@ -109,7 +109,7 @@ final class InterpolationNDTests: XCTestCase {
       ([3.0, 5.0], 13.0),
     ]
     for (point, expected) in cases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [point],
         method: .nearest, boundsHandling: .error)
       XCTAssertEqual(
@@ -130,7 +130,7 @@ final class InterpolationNDTests: XCTestCase {
       ([0.5, 0.5, 0.5], 1.5),
     ]
     for (point, expected) in cases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x3, y3, z3], values: v3, xi: [point],
         method: .linear, boundsHandling: .error)
       XCTAssertEqual(
@@ -141,23 +141,48 @@ final class InterpolationNDTests: XCTestCase {
 
   // MARK: - 3-D nearest interpolation
 
-  /// Oracle: scipy interpn nearest on the unit cube.
+  /// Oracle: scipy interpn nearest on the unit cube (scipy 1.x, `method='nearest'`).
+  ///
+  /// ## Tie-break contract
+  ///
+  /// SciPy `interpn` with `method='nearest'` uses `numpy.round` internally, which
+  /// applies *round-half-to-even* (banker's rounding) for scalars.  On a two-node
+  /// axis [0.0, 1.0] the midpoint 0.5 is equidistant from both nodes; numpy rounds
+  /// 0.5 → 0 (even), so the **left / lower** node wins.  Our implementation matches
+  /// this: `distToLeft <= distToRight → chosenIndex = lo`.
+  ///
+  /// The tie-break DIRECTION is pinned by:
+  ///   - `[0.5, 0.5, 0.5]` → maps to index (0,0,0) → value 0.0  (left wins on all 3 axes)
+  ///   - `[0.51, 0.51, 0.51]` → just past midpoint → right wins on all 3 axes → index
+  ///     (1,1,1) → value 3.0  (confirms direction is correct)
   func test3DNearest() throws {
-    // (0.25,0.5,0.75)->1.0, (1.0,1.0,1.0)->3.0, (0.0,0.0,0.0)->0.0, (0.5,0.5,0.5)->0.0
+    // Oracle: (0.25,0.5,0.75)->1.0, (1.0,1.0,1.0)->3.0, (0.0,0.0,0.0)->0.0
+    // Tie-break: (0.5,0.5,0.5)->0.0  (left/lower node wins — SciPy round-half-to-even)
     let cases: [(point: [Double], expected: Double)] = [
       ([0.25, 0.5, 0.75], 1.0),
       ([1.0, 1.0, 1.0], 3.0),
       ([0.0, 0.0, 0.0], 0.0),
+      // Exact midpoint on all three axes: left node wins (tie-break = left/lower).
       ([0.5, 0.5, 0.5], 0.0),
     ]
     for (point, expected) in cases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x3, y3, z3], values: v3, xi: [point],
         method: .nearest, boundsHandling: .error)
       XCTAssertEqual(
         result[0], expected, accuracy: 1e-12,
         "3D nearest at \(point) should be \(expected)")
     }
+
+    // Opposite-corner case: a query just past the midpoint (0.51) must snap to the
+    // RIGHT / higher node, confirming the tie-break boundary is at 0.5 (not > 0.5).
+    // Oracle: scipy interpn nearest at [0.51, 0.51, 0.51] → index (1,1,1) → 3.0
+    let pastMidpoint = try InterpolationND.interpn(
+      points: [x3, y3, z3], values: v3, xi: [[0.51, 0.51, 0.51]],
+      method: .nearest, boundsHandling: .error)
+    XCTAssertEqual(
+      pastMidpoint[0], 3.0, accuracy: 1e-12,
+      "3D nearest at [0.51,0.51,0.51] should snap to right node → 3.0")
   }
 
   // MARK: - Out-of-bounds behaviour
@@ -166,12 +191,12 @@ final class InterpolationNDTests: XCTestCase {
   func testOutOfBoundsThrows() {
     // x=4.0 exceeds x-axis max of 3.0
     XCTAssertThrowsError(
-      try interpn(
+      try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [[4.0, 1.0]],
         method: .linear, boundsHandling: .error)
     ) { error in
-      guard let ndError = error as? InterpolationNDError else {
-        XCTFail("Expected InterpolationNDError, got \(error)")
+      guard let ndError = error as? InterpolationND.InterpError else {
+        XCTFail("Expected InterpolationND.InterpError, got \(error)")
         return
       }
       if case .outOfBounds(let axis, _, _, _) = ndError {
@@ -183,11 +208,11 @@ final class InterpolationNDTests: XCTestCase {
 
     // y=-0.5 is below y-axis min of 0.0
     XCTAssertThrowsError(
-      try interpn(
+      try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [[1.0, -0.5]],
         method: .linear, boundsHandling: .error)
     ) { error in
-      guard case InterpolationNDError.outOfBounds(let axis, _, _, _) = error else {
+      guard case InterpolationND.InterpError.outOfBounds(let axis, _, _, _) = error else {
         XCTFail("Expected .outOfBounds on axis 1, got \(error)")
         return
       }
@@ -200,14 +225,14 @@ final class InterpolationNDTests: XCTestCase {
     // Oracle: (4.0, 1.0)->nan, (-0.5, 1.0)->nan
     let oob: [[Double]] = [[4.0, 1.0], [-0.5, 1.0]]
     for point in oob {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [point],
         method: .linear, boundsHandling: .fillValue(.nan))
       XCTAssertTrue(result[0].isNaN, "Expected NaN for OOB point \(point), got \(result[0])")
     }
 
     // In-bounds point should still interpolate correctly
-    let inBounds = try interpn(
+    let inBounds = try InterpolationND.interpn(
       points: [x2, y2], values: v2, xi: [[1.0, 2.0]],
       method: .linear, boundsHandling: .fillValue(.nan))
     XCTAssertEqual(inBounds[0], 5.0, accuracy: 1e-10)
@@ -216,7 +241,7 @@ final class InterpolationNDTests: XCTestCase {
   /// .fillValue(-999.0) must return the constant for out-of-bounds points.
   func testOutOfBoundsFillConstant() throws {
     // Oracle: (4.0, 1.0) -> -999.0
-    let result = try interpn(
+    let result = try InterpolationND.interpn(
       points: [x2, y2], values: v2, xi: [[4.0, 1.0]],
       method: .linear, boundsHandling: .fillValue(-999.0))
     XCTAssertEqual(result[0], -999.0, accuracy: 1e-12)
@@ -231,7 +256,7 @@ final class InterpolationNDTests: XCTestCase {
       ([1.5], 2.5),
     ]
     for (point, expected) in cases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x1], values: v1, xi: [point],
         method: .linear, boundsHandling: .error)
       XCTAssertEqual(
@@ -249,7 +274,7 @@ final class InterpolationNDTests: XCTestCase {
       ([1.5], 1.0),
     ]
     for (point, expected) in cases {
-      let result = try interpn(
+      let result = try InterpolationND.interpn(
         points: [x1], values: v1, xi: [point],
         method: .nearest, boundsHandling: .error)
       XCTAssertEqual(
@@ -267,13 +292,13 @@ final class InterpolationNDTests: XCTestCase {
     // x=2 is at t=(2-1)/(3-1)=0.5 along [1,3].
     // y=3.5 is at t=(3.5-2)/(5-2)=0.5 along [2,5].
     // Bilinear result: oracle says 9.0.
-    let result = try interpn(
+    let result = try InterpolationND.interpn(
       points: [x2, y2], values: v2, xi: [[2.0, 3.5]],
       method: .linear, boundsHandling: .error)
     XCTAssertEqual(result[0], 9.0, accuracy: 1e-10)
 
     // On-node exact at non-first index
-    let onNode = try interpn(
+    let onNode = try InterpolationND.interpn(
       points: [x2, y2], values: v2, xi: [[3.0, 2.0]],
       method: .linear, boundsHandling: .error)
     XCTAssertEqual(onNode[0], 7.0, accuracy: 1e-12)
@@ -287,7 +312,7 @@ final class InterpolationNDTests: XCTestCase {
     // Constant field: every value = 42.0 on the 2D grid
     let constValues = [Double](repeating: 42.0, count: x2.count * y2.count)
     let pts: [[Double]] = [[0.5, 1.0], [2.0, 3.5], [1.5, 4.0]]
-    let results = try interpn(
+    let results = try InterpolationND.interpn(
       points: [x2, y2], values: constValues, xi: pts,
       method: .linear, boundsHandling: .error)
     for (i, r) in results.enumerated() {
@@ -300,7 +325,7 @@ final class InterpolationNDTests: XCTestCase {
   /// Querying exactly at the upper boundary of each axis must not throw.
   func testUpperBoundaryIsInBounds() throws {
     // x=3.0 is the exact maximum x-coordinate
-    let result = try interpn(
+    let result = try InterpolationND.interpn(
       points: [x2, y2], values: v2, xi: [[3.0, 5.0]],
       method: .linear, boundsHandling: .error)
     XCTAssertEqual(result[0], 13.0, accuracy: 1e-12)
@@ -312,11 +337,11 @@ final class InterpolationNDTests: XCTestCase {
   func testDimensionMismatchThrows() {
     // 2D grid but 3-element query point
     XCTAssertThrowsError(
-      try interpn(
+      try InterpolationND.interpn(
         points: [x2, y2], values: v2, xi: [[1.0, 2.0, 3.0]],
         method: .linear, boundsHandling: .error)
     ) { error in
-      guard case InterpolationNDError.dimensionMismatch = error else {
+      guard case InterpolationND.InterpError.dimensionMismatch = error else {
         XCTFail("Expected .dimensionMismatch, got \(error)")
         return
       }
@@ -326,11 +351,11 @@ final class InterpolationNDTests: XCTestCase {
   /// A grid axis with only one point must throw invalidGrid.
   func testSinglePointAxisThrows() {
     XCTAssertThrowsError(
-      try interpn(
+      try InterpolationND.interpn(
         points: [[0.0], [0.0, 1.0]], values: [0.0, 1.0], xi: [[0.0, 0.5]],
         method: .linear, boundsHandling: .error)
     ) { error in
-      guard case InterpolationNDError.invalidGrid = error else {
+      guard case InterpolationND.InterpError.invalidGrid = error else {
         XCTFail("Expected .invalidGrid, got \(error)")
         return
       }
@@ -341,11 +366,11 @@ final class InterpolationNDTests: XCTestCase {
   func testValuesSizeMismatchThrows() {
     // Grid shape 3×3 = 9 elements, but only 8 values supplied
     XCTAssertThrowsError(
-      try interpn(
+      try InterpolationND.interpn(
         points: [x2, y2], values: [Double](repeating: 0, count: 8), xi: [[1.0, 2.0]],
         method: .linear, boundsHandling: .error)
     ) { error in
-      guard case InterpolationNDError.invalidGrid = error else {
+      guard case InterpolationND.InterpError.invalidGrid = error else {
         XCTFail("Expected .invalidGrid, got \(error)")
         return
       }
