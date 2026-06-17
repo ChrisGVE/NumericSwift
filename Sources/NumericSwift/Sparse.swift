@@ -548,11 +548,20 @@ public enum Sparse {
     ///   benefits are secondary to correctness.
     ///   scipy reference: `scipy.sparse.linalg.spsolve` (with SuperLU).
     ///
+    /// ## Performance
+    ///
+    /// Both the SPD detection path and the general fallback are **O(n³) dense
+    /// operations**: SPD detection converts the sparse matrix to dense and runs
+    /// LAPACK Cholesky (O(n³)); the LU fallback converts to dense and runs LAPACK
+    /// dgesv (O(n³)).  For small-to-medium systems (n ≲ a few hundred) this is
+    /// acceptable.  For large sparse systems this solver is unsuitable.
+    ///
     /// ## Deferred
     ///
     /// Sparse direct solvers (sparse Cholesky, sparse LU via UMFPACK/SuperLU)
-    /// are out of scope for this MVP.  The dense fallback has O(n³) cost and
-    /// is not suitable for large systems.
+    /// are out of scope for this MVP.  See the deferred items list in `Sparse.swift`
+    /// for the planned sparse-factorization work that would make this solver
+    /// practical for large n.
     ///
     /// - Parameters:
     ///   - A: Square sparse coefficient matrix in CSR format.
@@ -696,11 +705,10 @@ public enum Sparse {
         return x.data
     }
 
-    // MARK: - Private: BLAS-free dot product
+    // MARK: - Private: vDSP dot product
 
-    /// Compute the dot product of two vectors (length must match).
+    /// Compute the dot product of two vectors using `vDSP_dotprD` (length must match).
     private static func dot(_ a: [Double], _ b: [Double]) -> Double {
-        // Use vDSP for performance when vectors are non-trivial.
         var result = 0.0
         vDSP_dotprD(a, 1, b, 1, &result, vDSP_Length(a.count))
         return result
