@@ -170,6 +170,122 @@ public class KDTree {
   }
 }
 
+// MARK: - k-NN limitation diagnostics (additive, source-compatible)
+
+/// A k-nearest-neighbour query paired with its limitation diagnostics.
+///
+/// `indices` and `distances` are the same best-effort lists the bare
+/// ``KDTree/query(_:k:)`` returns, sorted by ascending distance. They are wrapped
+/// in a ``Diagnosed`` so a caller can detect a **degenerate query** — one that
+/// cannot return `k` valid neighbours — without changing the bare call site.
+public typealias KNNResult = (indices: [Int], distances: [Double])
+
+/// Build the `outsideEnvelope` diagnostic for a degenerate k-NN query, or `nil`
+/// when the query is well-posed.
+///
+/// A k-NN query is degenerate (and its k-th-neighbour distance is meaningless)
+/// when any of these holds (matching `scipy.spatial.cKDTree.query` /
+/// `sklearn.neighbors.NearestNeighbors` preconditions):
+///
+/// - the point set is **empty** — there is no neighbour to return;
+/// - **`k <= 0`** — a non-positive neighbour count is undefined;
+/// - **`k > n`** — there are fewer than `k` points, so the k-th neighbour does
+///   not exist.
+///
+/// - Parameters:
+///   - method: Short method identifier embedded in the diagnostic (e.g. `"kdTree.query"`).
+///   - pointCount: Number of points `n` in the searched set.
+///   - k: Requested neighbour count.
+/// - Returns: A single ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when
+///   the query is degenerate, else `nil`.
+private func knnDegenerateDiagnostic(
+  method: String, pointCount n: Int, k: Int
+) -> NumericDiagnostic? {
+  if n == 0 {
+    return .outsideEnvelope(
+      method: method,
+      reason: "empty point set — no neighbour exists to return")
+  }
+  if k <= 0 {
+    return .outsideEnvelope(
+      method: method,
+      reason: "k = \(k) <= 0 — a non-positive neighbour count is undefined")
+  }
+  if k > n {
+    return .outsideEnvelope(
+      method: method,
+      reason: "k = \(k) exceeds the point count n = \(n) — "
+        + "fewer than k neighbours exist, so the k-th neighbour does not exist")
+  }
+  return nil
+}
+
+extension KDTree {
+
+  /// Find the `k` nearest neighbours, reporting a degenerate-query diagnostic.
+  ///
+  /// Additive, source-compatible companion to ``query(_:k:)``: it returns the
+  /// same best-effort `(indices, distances)` (sorted by ascending distance)
+  /// wrapped in a ``Diagnosed`` so a caller can detect when the query cannot
+  /// yield `k` valid neighbours. Inside the valid envelope (`0 < k <= n` on a
+  /// non-empty tree) ``Diagnosed/diagnostics`` is empty; outside it carries a
+  /// single ``NumericDiagnostic/outsideEnvelope(method:reason:)``. The bare
+  /// ``query(_:k:)`` is unchanged and remains the right call when the warning
+  /// is unwanted.
+  ///
+  /// See ``knnDegenerateDiagnostic`` for the precise degeneracy conditions
+  /// (empty set, `k <= 0`, `k > n`).
+  ///
+  /// - Parameters:
+  ///   - point: Query point.
+  ///   - k: Number of neighbours.
+  /// - Returns: The `(indices, distances)` lists with a degeneracy diagnostic
+  ///   when the query is out of envelope.
+  public func queryDiagnosed(_ point: [Double], k: Int = 1) -> Diagnosed<KNNResult> {
+    if let diag = knnDegenerateDiagnostic(method: "kdTree.query", pointCount: points.count, k: k) {
+      // Degenerate: the bare `query` assumes 0 < k <= n, so do NOT call it (it
+      // force-unwraps an empty best-list). Return what neighbours exist, capped.
+      let safeK = max(min(k, points.count), 0)
+      let value: KNNResult = safeK == 0 ? ([], []) : query(point, k: safeK)
+      return Diagnosed(value, diagnostics: [diag])
+    }
+    return Diagnosed(query(point, k: k))
+  }
+}
+
+extension Spatial {
+
+  /// Brute-force `k` nearest neighbours, reporting a degenerate-query diagnostic.
+  ///
+  /// Computes the Euclidean distance from `query` to every point and returns the
+  /// `k` smallest, sorted by ascending distance — the exact reference answer the
+  /// ``KDTree/queryDiagnosed(_:k:)`` accelerated search must agree with. Like its
+  /// KDTree companion it wraps the result in a ``Diagnosed`` and emits a single
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` for a degenerate query
+  /// (empty point set, `k <= 0`, or `k > n`); a well-posed query carries no
+  /// diagnostic.
+  ///
+  /// - Parameters:
+  ///   - points: The searched point set (each an equal-length coordinate array).
+  ///   - query: The query point.
+  ///   - k: Number of neighbours.
+  /// - Returns: The `(indices, distances)` lists with a degeneracy diagnostic
+  ///   when the query is out of envelope.
+  public static func bruteForceKNNDiagnosed(
+    points: [[Double]], query: [Double], k: Int = 1
+  ) -> Diagnosed<KNNResult> {
+    let ranked = points.enumerated()
+      .map { (idx: $0.offset, dist: Spatial.euclideanDistance(query, $0.element)) }
+      .sorted { $0.dist < $1.dist }
+    let take = ranked.prefix(max(min(k, ranked.count), 0))
+    let value: KNNResult = (take.map { $0.idx }, take.map { $0.dist })
+    if let diag = knnDegenerateDiagnostic(method: "bruteForce.knn", pointCount: points.count, k: k) {
+      return Diagnosed(value, diagnostics: [diag])
+    }
+    return Diagnosed(value)
+  }
+}
+
 // MARK: - Result Types (public, top-level)
 
 /// Result of Delaunay triangulation.
