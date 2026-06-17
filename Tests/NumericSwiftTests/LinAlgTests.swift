@@ -668,6 +668,59 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(sqrtD2[2, 2],  2.0, accuracy: 1e-9)
     }
 
+    /// Parlett recurrence with non-zero cross-terms between a 2×2 and a 1×1 Schur block.
+    ///
+    /// A = [[1,2,1],[-2,1,1],[0,0,2]] is already in real Schur form:
+    /// rows 0–1 form a 2×2 block (eigenvalues 1±2i), row 2 is a 1×1 block (eigenvalue 2).
+    /// The off-diagonal entries T[0,2]=T[1,2]=1 produce non-zero cross-terms F[0,2]
+    /// and F[1,2] that require the 2×2 block Sylvester solver, not the scalar divisor.
+    /// Frozen oracle: scipy.linalg.logm / sqrtm (scipy 1.x, numpy principal branch).
+    func testParlettCrossTermTwoByOneSylvester() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0, 1.0], [-2.0, 1.0, 1.0], [0.0, 0.0, 2.0]])
+
+        // logm(A) — result is real (all eigenvalues have positive real part).
+        guard let logA = try LinAlg.logm(A) else {
+            XCTFail("logm must succeed: eigenvalues 1±2i and 2 all have positive real part")
+            return
+        }
+        // scipy.linalg.logm frozen literals:
+        XCTAssertEqual(logA[0, 0],  0.80471895621705,       accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 1],  1.1071487177940904,     accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 2],  0.15448667816455516,    accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logA[1, 0], -1.1071487177940904,     accuracy: 1e-9)
+        XCTAssertEqual(logA[1, 1],  0.80471895621705,       accuracy: 1e-9)
+        XCTAssertEqual(logA[1, 2],  0.6866035858078751,     accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logA[2, 0],  0.0,                    accuracy: 1e-12)
+        XCTAssertEqual(logA[2, 1],  0.0,                    accuracy: 1e-12)
+        XCTAssertEqual(logA[2, 2],  0.6931471805599453,     accuracy: 1e-9)
+
+        // sqrtm(A) — result is also real.
+        guard let sqrtA = try LinAlg.sqrtm(A) else {
+            XCTFail("sqrtm must succeed: all eigenvalues have positive real part")
+            return
+        }
+        // scipy.linalg.sqrtm frozen literals:
+        XCTAssertEqual(sqrtA[0, 0],  1.272019649514069,     accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[0, 1],  0.7861513777574233,    accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[0, 2],  0.24254662326690027,   accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(sqrtA[1, 0], -0.7861513777574233,    accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[1, 1],  1.272019649514069,     accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[1, 2],  0.4432520440826487,    accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(sqrtA[2, 0],  0.0,                   accuracy: 1e-12)
+        XCTAssertEqual(sqrtA[2, 1],  0.0,                   accuracy: 1e-12)
+        XCTAssertEqual(sqrtA[2, 2],  1.4142135623730951,    accuracy: 1e-9)
+
+        // Defining identity: logm and sqrtm are inverse-consistent.
+        let sqrtA2 = try LinAlg.dot(sqrtA, sqrtA)
+        XCTAssertEqual(sqrtA2[0, 0],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[0, 1],  2.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[0, 2],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[1, 0], -2.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[1, 1],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[1, 2],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[2, 2],  2.0, accuracy: 1e-8)
+    }
+
     /// Defining identity expm(logm(A)) ≈ A for a real-logm case.
     func testExpmLogmDefiningIdentity() throws {
         // R(π/4): expm(logm(R)) ≈ R
