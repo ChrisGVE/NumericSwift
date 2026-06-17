@@ -31,10 +31,20 @@ final class ConstantsTests: XCTestCase {
     // MARK: - MathConstants
 
     func testPi_matchesSwiftBuiltin() {
+        // Frozen-literal anchor: π to 16 significant digits (OEIS A000796).
+        // Oracle: scipy.constants.pi = 3.141592653589793
+        assertRelClose(MathConstants.pi, 3.141592653589793, tol: 1e-15,
+                       "MathConstants.pi must equal 3.141592653589793 (scipy oracle)")
+        // Regression: must also equal Swift's built-in Double.pi.
         XCTAssertEqual(MathConstants.pi, Double.pi)
     }
 
     func testTau_isTwoPi() {
+        // Frozen-literal anchor: τ = 2π = 6.283185307179586 (OEIS A019692).
+        // Oracle: scipy.constants.pi * 2 = 6.283185307179586
+        assertRelClose(MathConstants.tau, 6.283185307179586, tol: 1e-15,
+                       "MathConstants.tau must equal 6.283185307179586 (2*pi oracle)")
+        // Structural: must be exactly 2 * pi.
         assertClose(MathConstants.tau, 2 * Double.pi)
     }
 
