@@ -128,13 +128,14 @@ extension NumericDispatch {
     /// of the same size.  All six buffers are live simultaneously when the two
     /// vDSP combine passes run, giving a peak working set of 6× the result size.
     ///
-    /// Using 5 as the multiplier is deliberately conservative (it bounds the peak
-    /// to `5 × cap` rather than `6 × cap`) while still rejecting all inputs whose
-    /// intermediate allocation would meaningfully exceed the intended ceiling.
-    /// The value matches the "~4–5×" description in the MF-5 / §5 scope note.
+    /// The multiplier is the TRUE peak (6), so the admission test
+    /// `resultElements × 6 ≤ cap` guarantees the actual peak working set never
+    /// exceeds the soft cap. (A smaller multiplier would admit inputs whose 6×
+    /// peak overshoots the cap — e.g. with 5, an input at `cap/5` peaks at
+    /// `6·cap/5 = 1.2× cap`. Codex pre-0.3.0 audit fix.)
     ///
     /// Reference: Issue #13 / CR-D7 cumulative-bounding fix.
-    static let complexMatmulWorkingSetMultiplier: Int = 5
+    static let complexMatmulWorkingSetMultiplier: Int = 6
 
     /// Implements CM*CM via real-block decomposition: Cr=Ar·Br−Ai·Bi, Ci=Ar·Bi+Ai·Br.
     ///
@@ -174,10 +175,10 @@ extension NumericDispatch {
 
         // §4.8 / Issue #13: peak-aware admission control.
         //
-        // The decomposition allocates `complexMatmulWorkingSetMultiplier` (= 5)
+        // The decomposition allocates `complexMatmulWorkingSetMultiplier` (= 6)
         // buffers of shape (resultRows × resultCols) simultaneously.  Bound the
-        // peak by requiring resultElements × 5 ≤ maxEvaluatorMatrixElements,
-        // i.e. resultElements ≤ cap / 5 (floor division, safe from overflow).
+        // peak by requiring resultElements × 6 ≤ maxEvaluatorMatrixElements,
+        // i.e. resultElements ≤ cap / 6 (floor division, safe from overflow).
         //
         // Implementation: divide the cap by the multiplier and call checkSoftCap
         // with the scaled-down cap limit.  This avoids overflow in the product
@@ -217,5 +218,29 @@ extension NumericDispatch {
         let result = NumericValue.complexMatrix(LinAlg.ComplexMatrix(
             rows: resultRows, cols: resultCols, real: crData, imag: ciData))
         return coerce1x1Complex(result)
+    }
+
+    /// Multiply two complex matrices, always returning a `ComplexMatrix` (no 1×1
+    /// scalar coercion). Used by ``evalComplexMatrixPow(cm:exponent:)`` for
+    /// exponentiation-by-squaring, where the running base/accumulator must stay a
+    /// matrix. Uses the same real-block decomposition as ``complexMatmul(lhs:rhs:)``
+    /// (Cr = Ar·Br − Ai·Bi, Ci = Ar·Bi + Ai·Br); callers supply square operands of
+    /// the already cap-checked shape, so admission control is not repeated here.
+    static func complexMatrixMultiply(
+        _ a: LinAlg.ComplexMatrix, _ b: LinAlg.ComplexMatrix
+    ) -> LinAlg.ComplexMatrix {
+        let ar = realBlock(a), ai = imagBlock(a)
+        let br = realBlock(b), bi = imagBlock(b)
+        let arBr = LinAlg.dot(ar, br)
+        let aiBi = LinAlg.dot(ai, bi)
+        let arBi = LinAlg.dot(ar, bi)
+        let aiBr = LinAlg.dot(ai, br)
+        let count = arBr.size
+        var crData = [Double](repeating: 0, count: count)
+        var ciData = [Double](repeating: 0, count: count)
+        vDSP_vsubD(aiBi.data, 1, arBr.data, 1, &crData, 1, vDSP_Length(count))
+        vDSP_vaddD(arBi.data, 1, aiBr.data, 1, &ciData, 1, vDSP_Length(count))
+        return LinAlg.ComplexMatrix(
+            rows: arBr.rows, cols: arBr.cols, real: crData, imag: ciData)
     }
 }

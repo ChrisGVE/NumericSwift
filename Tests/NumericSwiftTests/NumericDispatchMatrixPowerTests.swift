@@ -11,8 +11,8 @@
 //    13.16 — Exponentiation-by-squaring matches naive repeated LinAlg.dot for
 //             n in 2...8 across several matrices.
 //    13.12 — 1×1 matrix^n result stays `.matrix` (no §4.3a scalar collapse).
-//    13.7  — complexMatrix^integer throws a clear documented error (deferred
-//             to Task 13 per PRD; evalComplexMatrixPow is still a stub).
+//    13.7  — complexMatrix^integer: exponentiation-by-squaring (cinv for n < 0),
+//             value checks against closed-form powers (diag(i), etc.).
 //    13.13 — Large/overflowing exponent: a Double that is integral-valued but
 //             outside Int range throws invalidArguments before any loop.
 //
@@ -175,30 +175,80 @@ final class NumericDispatchMatrixPowerTests: XCTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // MARK: - 13.7 — complexMatrix^integer throws documented error (deferred)
+    // MARK: - 13.7 — complexMatrix^integer (implemented; Codex pre-0.3.0 audit)
     // -------------------------------------------------------------------------
     //
-    // evalComplexMatrixPow is a Task-13 stub (still marked "not yet implemented").
-    // Calling complexMatrix^integer must throw MathExprError.unsupportedNode, not
-    // crash or silently produce a wrong result.
+    // evalComplexMatrixPow performs exponentiation-by-squaring (cinv for n < 0),
+    // mirroring the real evalMatrixPow. These replace the former stub-throws test.
 
-    func testComplexMatrixPow_throwsUnsupportedNode() {
-        // Build a 2×2 complex matrix (purely real for simplicity).
-        let cm = LinAlg.ComplexMatrix(LinAlg.Matrix([[1, 0], [0, 1]]))
-        let cmValue = NumericValue.complexMatrix(cm)
+    /// Assert a `.complexMatrix` result equals the given real/imag blocks.
+    private func assertComplexMatrixEqual(
+        _ result: NumericValue,
+        rows: Int, cols: Int, real: [Double], imag: [Double],
+        tolerance: Double = 1e-10,
+        file: StaticString = #file, line: UInt = #line
+    ) {
+        guard case .complexMatrix(let cm) = result else {
+            XCTFail("Expected .complexMatrix, got \(result)", file: file, line: line)
+            return
+        }
+        XCTAssertEqual(cm.rows, rows, "row count", file: file, line: line)
+        XCTAssertEqual(cm.cols, cols, "col count", file: file, line: line)
+        zip(real, cm.real).enumerated().forEach { i, p in
+            XCTAssertEqual(p.1, p.0, accuracy: tolerance, "real[\(i)]", file: file, line: line)
+        }
+        zip(imag, cm.imag).enumerated().forEach { i, p in
+            XCTAssertEqual(p.1, p.0, accuracy: tolerance, "imag[\(i)]", file: file, line: line)
+        }
+    }
 
-        XCTAssertThrowsError(
-            try NumericDispatch.applyBinary(.pow, lhs: cmValue, rhs: .scalar(2))
-        ) { err in
-            switch err {
-            case MathExprError.unsupportedNode(let msg):
-                // Confirm the message names Task 13 as the future implementer.
-                XCTAssert(
-                    msg.contains("Task 13") || msg.contains("not yet implemented"),
-                    "Error message should describe the deferred status: \(msg)")
-            default:
-                XCTFail(
-                    "complexMatrix^integer must throw unsupportedNode, got \(err)")
+    private func cmPow(_ cm: LinAlg.ComplexMatrix, _ e: Double) throws -> NumericValue {
+        try NumericDispatch.applyBinary(.pow, lhs: .complexMatrix(cm), rhs: .scalar(e))
+    }
+
+    /// Purely-real complex matrix [[1,1],[0,1]]^3 = [[1,3],[0,1]] (imag 0).
+    func testComplexMatrixPow_realEntries_matchesRealPower() throws {
+        let cm = LinAlg.ComplexMatrix(LinAlg.Matrix([[1, 1], [0, 1]]))
+        let r = try cmPow(cm, 3)
+        assertComplexMatrixEqual(r, rows: 2, cols: 2,
+            real: [1, 3, 0, 1], imag: [0, 0, 0, 0])
+    }
+
+    /// diag(i)^2 = diag(i²) = diag(-1).
+    func testComplexMatrixPow_imaginaryDiagonal_squared() throws {
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+            real: [0, 0, 0, 0], imag: [1, 0, 0, 1])
+        let r = try cmPow(cm, 2)
+        assertComplexMatrixEqual(r, rows: 2, cols: 2,
+            real: [-1, 0, 0, -1], imag: [0, 0, 0, 0])
+    }
+
+    /// A^0 = identity (complex), even for a singular A.
+    func testComplexMatrixPow_zeroExponent_identity() throws {
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+            real: [0, 0, 0, 0], imag: [0, 0, 0, 0])  // zero matrix (singular)
+        let r = try cmPow(cm, 0)
+        assertComplexMatrixEqual(r, rows: 2, cols: 2,
+            real: [1, 0, 0, 1], imag: [0, 0, 0, 0])
+    }
+
+    /// diag(i)^(-1) = diag(1/i) = diag(-i).
+    func testComplexMatrixPow_negativeExponent_inverse() throws {
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+            real: [0, 0, 0, 0], imag: [1, 0, 0, 1])
+        let r = try cmPow(cm, -1)
+        assertComplexMatrixEqual(r, rows: 2, cols: 2,
+            real: [0, 0, 0, 0], imag: [-1, 0, 0, -1])
+    }
+
+    /// A negative power of a singular complex matrix throws invalidArguments.
+    func testComplexMatrixPow_singularNegative_throws() {
+        let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2,
+            real: [0, 0, 0, 0], imag: [0, 0, 0, 0])  // zero matrix
+        XCTAssertThrowsError(try cmPow(cm, -2)) { err in
+            guard case MathExprError.invalidArguments = err else {
+                XCTFail("singular negative power must throw invalidArguments, got \(err)")
+                return
             }
         }
     }
