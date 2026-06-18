@@ -306,18 +306,17 @@ final class NaNInfHandlingTests: XCTestCase {
   // MARK: - Optimization: NaN-returning functions
 
   func testBisectWithNaNFunction() throws  {
-    // Function returns NaN; bisect should not crash or loop infinitely.
-    // fa*fb > 0 is false for NaN, so the sign-change guard passes.
-    // fa*fc < 0 is also always false, so the else branch always fires:
-    // a = c each iteration, narrowing the interval until |b-a| <= xtol.
-    // bisect therefore reports converged=true even though every f call
-    // returned NaN. The root is the final midpoint (a finite value).
+    // A function returning NaN at the bracket endpoints defeats the sign-change
+    // test (NaN * x > 0 is false), which previously let the iteration narrow via
+    // the else-branch and falsely report converged=true with a finite midpoint —
+    // a silent failure. bisect now detects the NaN endpoint up front and reports
+    // it honestly: not converged, NaN root, and an outsideEnvelope diagnostic.
     let result = bisect({ _ in Double.nan }, a: -1.0, b: 1.0)
-    // Document actual behavior: no crash; interval narrows via else branch;
-    // converged=true; root is a finite midpoint value.
+    XCTAssertFalse(result.converged, "bisect must not claim convergence on NaN f values")
+    XCTAssertTrue(result.root.isNaN, "bisect root must be NaN when f is undefined on the bracket")
     XCTAssertTrue(
-      result.converged, "bisect interval narrows via else-branch even with NaN f values")
-    XCTAssertFalse(result.root.isNaN, "bisect root is the narrowed midpoint, not NaN")
+      result.diagnostics.contains { $0.isOutsideEnvelope },
+      "bisect must emit an outsideEnvelope diagnostic for a NaN endpoint")
   }
 
   func testBisectWithInfBounds() throws  {

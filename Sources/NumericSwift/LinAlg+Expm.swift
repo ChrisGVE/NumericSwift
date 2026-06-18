@@ -32,7 +32,8 @@ extension LinAlg {
     /// result is recovered by `s` squarings. This delivers full double-precision
     /// accuracy, unlike a fixed low-order Padé.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square;
-    ///   ``LinAlgError/invalidParameter(_:)`` when any element is non-finite.
+    ///   ``LinAlgError/invalidParameter(_:)`` when any element is non-finite or
+    ///   (not expected for finite input) the Padé denominator is singular.
     public static func expm(_ m: Matrix) throws -> Matrix {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
@@ -84,10 +85,21 @@ extension LinAlg {
         // Padé approximant r = (V − U)⁻¹ (V + U).
         var VminusU = [Double](repeating: 0, count: n * n)
         var VplusU  = [Double](repeating: 0, count: n * n)
+        // WARNING: vDSP_vsubD(A, strideA, B, strideB, C, strideC, N) computes
+        // C = B − A (second argument minus first), which is counter-intuitive.
+        // Here the first arg is U and second is V, so the result is V − U as intended.
         vDSP_vsubD(U, 1, V, 1, &VminusU, 1, vDSP_Length(n * n))  // V − U
         vDSP_vaddD(V, 1, U, 1, &VplusU,  1, vDSP_Length(n * n))  // V + U
 
-        var R = solveLinearSystemInternal(VminusU, VplusU, n)
+        // The Padé denominator (V − U) is provably non-singular under Higham's
+        // scaling (its eigenvalues are bounded away from zero), so this solve
+        // should never fail for finite input. Guard it anyway (rule 10): a nil
+        // result would only arise from an unexpected numerical breakdown.
+        guard var R = solveLinearSystemInternal(VminusU, VplusU, n) else {
+            throw LinAlgError.invalidParameter(
+                "expm: the Padé denominator (V − U) is numerically singular — "
+                    + "the matrix exponential could not be evaluated")
+        }
 
         // Undo the scaling: r(A/2ˢ)^(2ˢ) = exp(A).
         for _ in 0..<s {

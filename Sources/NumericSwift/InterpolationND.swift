@@ -272,8 +272,10 @@ private struct RegularGrid {
 
     // Bounds check — performed before any interpolation work.
     for d in 0..<ndim {
-      let lo = axes[d].first!
-      let hi = axes[d].last!
+      // axes[d] is guaranteed to have ≥ 2 elements by the RegularGrid initialiser,
+      // so index 0 and index axes[d].count-1 are always valid.
+      let lo = axes[d][0]
+      let hi = axes[d][axes[d].count - 1]
       if point[d] < lo || point[d] > hi {
         switch boundsHandling {
         case .error:

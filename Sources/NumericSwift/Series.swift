@@ -214,6 +214,11 @@ public enum Series {
     /// the resulting evaluation is materially wrong near the radius of
     /// convergence `x = ±π/2`. See CLAUDE.md "Code Review Findings → Series.swift".
     ///
+    /// `12` is an *implementation* limit (the size of the hard-coded coefficient
+    /// table), not a mathematical boundary — `tan`'s Taylor series exists to all
+    /// orders. Extending the table raises the limit; the diagnostic exists so a
+    /// caller is never silently handed the zero-padded surplus in the meantime.
+    ///
     /// A generator absent from this table is unbounded (closed-form).
     public static let taylorSupportedTermLimit: [String: Int] = [
         "tan": 12

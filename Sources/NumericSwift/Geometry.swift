@@ -653,7 +653,7 @@ public enum Geometry {
     // MARK: - Circle Fitting
 
     /// Result of circle fitting.
-    public struct CircleFitResult {
+    public struct CircleFitResult: Sendable {
         public let center: Vec2
         public let radius: Double
         public let residuals: [Double]
@@ -740,11 +740,22 @@ public enum Geometry {
         }
 
         // Eigenvalues of a symmetric 2×2: (trace ± sqrt(trace² − 4·det)) / 2.
+        // The scatter matrix is positive semidefinite by construction (a sum of
+        // outer products), so det ≥ 0 and 0 ≤ lambdaMin ≤ lambdaMax. With
+        // trace > 0 (guarded above) lambdaMax is strictly positive, so the ratio
+        // is well-defined; the guard and the clamp below only defend against
+        // floating-point round-off pushing det slightly negative.
         let det = sxx * syy - sxy * sxy
         let disc = max(0.0, trace * trace - 4.0 * det)
         let root = sqrt(disc)
         let lambdaMax = (trace + root) / 2.0
-        let lambdaMin = (trace - root) / 2.0
+        let lambdaMin = max(0.0, (trace - root) / 2.0)
+        guard lambdaMax > 0 else {
+            return .outsideEnvelope(
+                method: method,
+                reason: "degenerate scatter matrix — a circle is undetermined"
+            )
+        }
         let relativeTransverseSpread = lambdaMin / lambdaMax
 
         if relativeTransverseSpread < circleFitCollinearityThreshold {

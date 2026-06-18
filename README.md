@@ -278,6 +278,36 @@ The real `evaluate` keeps the IEEE-754 NaN contract (`eval("sqrt(-4)")` is `NaN`
 promotion set is narrow: `pow(x, y)` as a *function*, `log10`/`log2`, and inverse-trig still
 return `NaN` for negative reals. (Resolved [GitHub issue #1](https://github.com/ChrisGVE/NumericSwift/issues/1).)
 
+## Self-Aware Diagnostics (0.3.0)
+
+NumericSwift knows when it is being used outside the domain where its accuracy holds, and
+says so — without turning a usable best-effort answer into a thrown error. Every diagnostic
+is a non-fatal `NumericDiagnostic` (`outsideEnvelope`, `precisionDegraded`, `nonConvergence`).
+
+Two access patterns:
+
+- **Result-struct field** — types that already return a result struct carry a
+  `diagnostics: [NumericDiagnostic]` array (`QuadResult`, `OLSResult`, `RootScalarResult`, …).
+- **`Diagnosed<T>` wrapper** — bare-value APIs gained self-aware companions returning
+  `Diagnosed<T>` (best-effort value + diagnostics + `isReliable`): `erfinvDiagnosed`,
+  `TDistribution.ppfDiagnosed`, `LinAlg.solveDiagnosed`/`lstsqDiagnosed`, the interpolation
+  `eval*Diagnosed` family, `Series.taylorEvalDiagnosed`, `KDTree.queryDiagnosed`, …
+
+```swift
+let r = LinAlg.lstsqDiagnosed(A, b)   // ill-conditioned design?
+if !r.isReliable { print(r.diagnostics) }   // [outsideEnvelope] LinAlg.lstsq: cond ≈ 1e13 …
+use(r.value)
+
+let root = brentq({ $0 * $0 - 2 }, a: 0, b: 2)   // Brent's method root finder
+// root.diagnostics flags an invalid bracket (f(a)·f(b) > 0) or a NaN/undefined endpoint.
+```
+
+Envelope boundaries are public constants you can test against in advance —
+`LinAlg.solveConditionEnvelope` (1e12), `erfinvEnvelopeBoundary`, `TDistribution.ppfTailEnvelope`.
+The whole surface is exercised end-to-end by the `NumericSwiftWorkbench` self-awareness gate,
+which checks 17 domains × ~100 cases against external oracles (scipy/numpy/statsmodels/sklearn/
+sympy/cmath) and fails CI if the library mis-classifies any case.
+
 ## Performance
 
 NumericSwift uses a unified numeric evaluation pipeline (`MathExpr.evaluateUnified`) that routes

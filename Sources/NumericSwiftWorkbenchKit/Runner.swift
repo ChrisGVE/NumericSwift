@@ -155,6 +155,11 @@ public enum Workbench {
 
             var accuracy: [Violation] = []
             if declaredInEnvelope, let v = value, let err = absError, let tol = declaredTol {
+                // Tolerance-selection priority order:
+                //   1. Bit-exact match or both-NaN → always within tolerance.
+                //   2. Case declares a tol for this strategy → use it directly.
+                //   3. Envelope registry has an entry → use its inEnvelope predicate.
+                //   4. No tol source at all → treat as passing (unregistered strategy).
                 // A bit-exact match is always within tolerance — this also covers
                 // non-finite oracles (±inf) where `abs(v - oracle)` is NaN even
                 // though the library reproduced the oracle exactly (e.g. log(0) = -inf).

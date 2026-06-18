@@ -13,10 +13,17 @@
 //    • Unexpectedly better — result is consistently better, suggesting the
 //      envelope is stale and should be tightened.
 //
-//  ## Wave coverage
+//  ## Architecture
 //
-//  Wave 1 (this file): types + a worked Integration example.
-//  Wave 2: full per-domain registry population.
+//  This file defines the envelope infrastructure types:
+//    • `EnvelopeEntry` — the accuracy contract for one (strategy, tier) pair,
+//      carrying a `maxAbsError` and an `inEnvelope` predicate closure.
+//    • `EnvelopeRegistry` — a `[EnvelopeKey: EnvelopeEntry]` dictionary wrapper.
+//    • `Violation` — an accuracy miss: in-envelope result exceeded its declared tol.
+//    • `SelfAwarenessFailure` — a hard-gate miss: spurious or missing diagnostic.
+//
+//  Per-domain envelope registrations (the actual (strategy, tier) bounds) live in
+//  `Domains/<Domain>.swift`, each exposed through that domain's ``DomainSuite``.
 //
 //  Licensed under the Apache License, Version 2.0.
 //

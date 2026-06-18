@@ -82,7 +82,11 @@ public func erfcinv(_ x: Double) -> Double {
 /// rises to ~1.5e-6 at `1 − 1e-12`, and diverges (absolute error > 2) by
 /// `1 − 1e-15`. The cutoff is placed at `1e-11` so the reliable region (≥8
 /// digits) stays in-envelope and the degraded far tail is flagged.
-private let erfinvTailBoundary = 1e-11
+///
+/// Public (mirroring ``LinAlg/solveConditionEnvelope``) so a caller can decide
+/// in advance whether its `x` is inside the envelope — `1 − |x| < erfinvEnvelopeBoundary`
+/// is the exact predicate ``erfinvDiagnosed(_:)`` uses to attach its diagnostic.
+public let erfinvEnvelopeBoundary = 1e-11
 
 /// Inverse error function with a recoverable accuracy diagnostic.
 ///
@@ -106,7 +110,7 @@ public func erfinvDiagnosed(_ x: Double) -> Diagnosed<Double> {
   guard x > -1, x < 1, x.isFinite else {
     return Diagnosed(value)
   }
-  if 1.0 - abs(x) < erfinvTailBoundary {
+  if 1.0 - abs(x) < erfinvEnvelopeBoundary {
     return Diagnosed(
       value,
       diagnostics: [

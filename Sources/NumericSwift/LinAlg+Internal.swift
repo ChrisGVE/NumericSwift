@@ -55,8 +55,11 @@ extension LinAlg {
 
     /// Internal linear system solver for two n×n row-major arrays via LAPACK dgesv.
     ///
-    /// Solves A * X = B and returns X (or the input B unchanged on failure).
-    static func solveLinearSystemInternal(_ A: [Double], _ B: [Double], _ n: Int) -> [Double] {
+    /// Solves `A · X = B` and returns `X`, or `nil` when LAPACK reports a failure
+    /// (`info != 0` — a singular `A` or an illegal argument). Returning `nil`
+    /// rather than the half-overwritten right-hand side lets the caller surface a
+    /// real error (CLAUDE.md rule 10: treat failures as errors, never as garbage).
+    static func solveLinearSystemInternal(_ A: [Double], _ B: [Double], _ n: Int) -> [Double]? {
         var a = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
             for j in 0..<n {
@@ -79,6 +82,11 @@ extension LinAlg {
         var info: __CLPK_integer = 0
 
         dgesv_(&n1, &nrhs, &a, &lda, &ipiv, &b, &ldb, &info)
+
+        // info > 0: U(info,info) is exactly zero → A is singular. info < 0: the
+        // info-th argument was illegal. Either way the solve did not produce a
+        // valid X; signal failure instead of returning the clobbered buffer.
+        guard info == 0 else { return nil }
 
         var result = [Double](repeating: 0, count: n * n)
         for i in 0..<n {

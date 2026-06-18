@@ -172,13 +172,28 @@ public class KDTree {
 
 // MARK: - k-NN limitation diagnostics (additive, source-compatible)
 
-/// A k-nearest-neighbour query paired with its limitation diagnostics.
+/// A k-nearest-neighbour query result: parallel `indices` / `distances` lists.
 ///
 /// `indices` and `distances` are the same best-effort lists the bare
-/// ``KDTree/query(_:k:)`` returns, sorted by ascending distance. They are wrapped
-/// in a ``Diagnosed`` so a caller can detect a **degenerate query** — one that
-/// cannot return `k` valid neighbours — without changing the bare call site.
-public typealias KNNResult = (indices: [Int], distances: [Double])
+/// ``KDTree/query(_:k:)`` returns, sorted by ascending distance. ``KDTree/queryDiagnosed(_:k:)``
+/// and ``Spatial/bruteForceKNNDiagnosed(points:query:k:)`` wrap this in a
+/// ``Diagnosed`` so a caller can detect a **degenerate query** — one that cannot
+/// return `k` valid neighbours — without changing the bare call site.
+///
+/// A named struct (rather than a bare tuple) so it carries an explicit `Sendable`
+/// and `Equatable` contract and a stable, documented shape across the 0.3.0 API.
+public struct KNNResult: Sendable, Equatable {
+  /// Neighbour indices into the searched point set, nearest first.
+  public let indices: [Int]
+  /// Distances to those neighbours, ascending and aligned with `indices`.
+  public let distances: [Double]
+
+  /// Create a k-NN result from parallel index / distance lists.
+  public init(indices: [Int], distances: [Double]) {
+    self.indices = indices
+    self.distances = distances
+  }
+}
 
 /// Build the `outsideEnvelope` diagnostic for a degenerate k-NN query, or `nil`
 /// when the query is well-posed.
@@ -246,10 +261,17 @@ extension KDTree {
       // Degenerate: the bare `query` assumes 0 < k <= n, so do NOT call it (it
       // force-unwraps an empty best-list). Return what neighbours exist, capped.
       let safeK = max(min(k, points.count), 0)
-      let value: KNNResult = safeK == 0 ? ([], []) : query(point, k: safeK)
+      let value: KNNResult
+      if safeK == 0 {
+        value = KNNResult(indices: [], distances: [])
+      } else {
+        let r = query(point, k: safeK)
+        value = KNNResult(indices: r.indices, distances: r.distances)
+      }
       return Diagnosed(value, diagnostics: [diag])
     }
-    return Diagnosed(query(point, k: k))
+    let r = query(point, k: k)
+    return Diagnosed(KNNResult(indices: r.indices, distances: r.distances))
   }
 }
 
@@ -278,7 +300,7 @@ extension Spatial {
       .map { (idx: $0.offset, dist: Spatial.euclideanDistance(query, $0.element)) }
       .sorted { $0.dist < $1.dist }
     let take = ranked.prefix(max(min(k, ranked.count), 0))
-    let value: KNNResult = (take.map { $0.idx }, take.map { $0.dist })
+    let value = KNNResult(indices: take.map { $0.idx }, distances: take.map { $0.dist })
     if let diag = knnDegenerateDiagnostic(method: "bruteForce.knn", pointCount: points.count, k: k) {
       return Diagnosed(value, diagnostics: [diag])
     }

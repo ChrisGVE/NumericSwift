@@ -193,28 +193,69 @@ public func registerSpecialFunctionsStrategies(into registry: inout StrategyRegi
 public func makeSpecialFunctionsEnvelopeRegistry() -> EnvelopeRegistry {
     var reg = EnvelopeRegistry()
 
-    // (trivial, hard, edge) absolute-error bounds per strategy.
+    // (trivial, hard, edge) absolute-error bounds per strategy, grouped by
+    // algorithmic family to explain why tolerances differ across groups.
     let bounds: [String: (Double, Double, Double)] = [
+        // Error functions: Darwin POSIX wrappers (erf/erfc) — full machine
+        // precision; tight bounds are achievable across the whole domain.
         "erf": (1e-13, 1e-12, 1e-12),
         "erfc": (1e-13, 1e-12, 1e-12),
+
+        // erfinv / erfcinv: Winitzki approximation + two Halley refinement steps.
+        // The far-tail region (|x| > 1 − 1e-11) loses precision due to the
+        // log-domain cancellation in the initial approximation; the edge tier
+        // reflects this documented limitation (CLAUDE.md Known Limitations §1).
         "erfinv": (1e-11, 1e-9, 1e-7),
         "erfcinv": (1e-11, 1e-9, 1e-7),
+
+        // Beta / incomplete beta: series + continued-fraction expansion. Near the
+        // boundary (a or b close to 0, or x near 0 or 1) convergence slows and
+        // round-off accumulates, explaining the looser edge tolerance.
         "beta": (1e-10, 1e-9, 1e-8),
         "betainc": (1e-11, 1e-10, 1e-9),
+
+        // Gamma family: digamma uses rational-function reflection + asymptotic
+        // series; incomplete gamma uses series/continued-fraction switching. Both
+        // are tight in the bulk but softer near poles or large arguments.
         "digamma": (1e-10, 1e-9, 1e-8),
         "gammainc": (1e-11, 1e-10, 1e-9),
         "gammaincc": (1e-11, 1e-10, 1e-9),
+
+        // Bessel J/Y (first/second kind): Darwin POSIX wrappers (j0/j1/jn/y0/y1/yn).
+        // Tight across most of the domain; edge cases are large-argument oscillatory
+        // regions where the wrappers may lose ~1 ULP relative to scipy's AMOS.
         "besselj0": (1e-12, 1e-12, 1e-11),
         "besselj1": (1e-12, 1e-12, 1e-11),
         "besseljn": (1e-12, 1e-12, 1e-11),
         "bessely0": (1e-12, 1e-12, 1e-11),
         "bessely1": (1e-12, 1e-12, 1e-11),
         "besselyn": (1e-12, 1e-12, 1e-11),
+
+        // Modified Bessel I (besseli): large-argument asymptotic series converges
+        // slowly and may need many terms; the noticeably looser bounds (1e-5 at edge)
+        // reflect accumulated truncation error for large n or x.
         "besseli": (1e-8, 1e-6, 1e-5),
+
+        // Modified Bessel K (besselk): exponentially decaying; computed via
+        // backward recurrence. Tighter than I because the recurrence is numerically
+        // stable in the decaying direction.
         "besselk": (1e-10, 1e-9, 1e-8),
+
+        // Elliptic integrals K/E: AGM (arithmetic-geometric mean) iteration;
+        // converges quadratically to full precision except near the singularity
+        // (m → 1 for K, handled by the log transformation). Slightly looser at
+        // edge to account for that transition region.
         "ellipk": (1e-12, 1e-11, 1e-10),
         "ellipe": (1e-12, 1e-11, 1e-10),
+
+        // Riemann zeta: Euler-Maclaurin formula + reflection. Converges slowly
+        // near s = 1 (pole) and for complex-ish real arguments; the wider bounds
+        // are intentional for those hard/edge inputs.
         "zeta": (1e-8, 1e-5, 1e-4),
+
+        // Lambert W (principal branch W₀): Halley iteration seeded from a
+        // rational approximation. Tight except near the branch point (x → −1/e)
+        // where the derivative blows up and convergence slows.
         "lambertw": (1e-10, 1e-9, 1e-8),
     ]
 

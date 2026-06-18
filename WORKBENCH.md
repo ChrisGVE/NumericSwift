@@ -195,7 +195,18 @@ NUMERICSWIFT_REGENERATE_WORKBENCH=1 ...        # regen fixtures (offline, scipy)
   hard failure; numeric deviation alone is only a reported flag. (Owner, §5.)
 - ✅ **Tracking:** commit WORKBENCH.md + generators + fixtures + the workbench
   target to the repo (shipped, reviewable infra).
-- ⏳ **OPEN — diagnostics mechanism (§5b):** which mechanism the library uses to
-  surface a limitation-diagnostic (recoverable `Diagnosed<T>` / context-handler /
-  result-struct field / hybrid). This is new public API surface and gates the
-  workbench build past the skeleton. **Owner pick needed.**
+- ✅ **RESOLVED — diagnostics mechanism (§5b):** hybrid. Result-struct types that
+  already exist carry a flat `diagnostics: [NumericDiagnostic]` field; bare-value
+  APIs gained `*Diagnosed` companions returning `Diagnosed<T>`. Both are `Sendable`.
+  `NumericDiagnostic` is left non-`@frozen` (additive cases in future minor
+  releases; consumers `switch` with a `default`). `KNNResult` is a named struct.
+
+## 10. Build status — COMPLETE
+
+All 17 domains built, merged, and green on `hardening-sweep`:
+- Workbench: **17 domains, 1713 cases, 0 self-awareness failures, 0 accuracy flags**, exit 0.
+- Full suite: **2448 XCTest (2 skipped) + 42 swift-testing, 0 failures, 0 warnings**.
+- Post-build audit (code-reviewer + architect-reviewer + readability-auditor +
+  numerics reviewer) complete; all findings resolved. Envelope thresholds verified
+  defensible vs scipy/statsmodels; no vacuous gate (every oracle calls an external
+  authority — numpy/scipy/statsmodels/sklearn/sympy/cmath).

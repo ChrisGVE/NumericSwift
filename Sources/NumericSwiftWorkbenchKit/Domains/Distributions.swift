@@ -213,11 +213,12 @@ public func makeDistributionsEnvelopeRegistry() -> EnvelopeRegistry {
     let families = ["normal", "uniform", "expon", "t", "chi2", "f", "gamma", "beta"]
     for tier: CaseTier in [.trivial, .hard, .edge] {
         for family in families {
-            // cdf / pdf — tight everywhere.
-            let cdfTol: Double = tier == .trivial ? 1e-12 : 1e-9
-            reg.register(EnvelopeEntry(strategy: "\(family)_cdf", tier: tier, maxAbsError: cdfTol,
+            // cdf / pdf share a tolerance because both route through the same
+            // closed-form / Darwin transcendental path (incomplete beta/gamma, erf).
+            let cdfPdfTol: Double = tier == .trivial ? 1e-12 : 1e-9
+            reg.register(EnvelopeEntry(strategy: "\(family)_cdf", tier: tier, maxAbsError: cdfPdfTol,
                 description: "\(family) cdf vs scipy.stats — \(tier.rawValue) cases"))
-            reg.register(EnvelopeEntry(strategy: "\(family)_pdf", tier: tier, maxAbsError: cdfTol,
+            reg.register(EnvelopeEntry(strategy: "\(family)_pdf", tier: tier, maxAbsError: cdfPdfTol,
                 description: "\(family) pdf vs scipy.stats — \(tier.rawValue) cases"))
 
             // ppf — Newton-Raphson; full precision in-envelope, ~5 digits in the

@@ -1,8 +1,16 @@
 //
 //  LinAlg+Solvers.swift
-//  NumericSwift
+//  Sources/NumericSwift/
 //
 //  Linear system solvers: solve, lstsq, solveTriangular, choSolve, luSolve.
+//
+//  This file is one of several `enum LinAlg` extension files (alongside
+//  `LinAlg+Expm.swift` and others in the same directory). Each extension file
+//  groups a coherent subset of LinAlg's public API.
+//
+//  The `*Diagnosed` overloads (solveDiagnosed, lstsqDiagnosed,
+//  solveTriangularDiagnosed, choSolveDiagnosed) return `Diagnosed<Matrix?>`
+//  defined in `NumericDiagnostic.swift`.
 //
 //  Licensed under the Apache License, Version 2.0.
 //
@@ -75,6 +83,11 @@ extension LinAlg {
         lwork = __CLPK_integer(work[0])
         work = [Double](repeating: 0, count: Int(lwork))
 
+        // LAPACK workspace-query idiom (LAPACK Users' Guide §2.4):
+        // The first dgels_ call above (with lwork = -1) is a dry run — it does not
+        // solve anything; instead it writes the optimal workspace size into work[0].
+        // The workspace is now allocated and the matrices are re-supplied because
+        // dgels_ overwrites both A and b in place during the factorisation.
         a = toColumnMajor(A)
         bCol = buildLstsqRHS(b: b, maxDim: maxDim)
 
@@ -392,6 +405,13 @@ extension LinAlg {
         // Symmetry within a scaled tolerance (LAPACK-style: relative to the
         // largest magnitude entry, never a bare absolute epsilon).
         let scale = A.data.reduce(0.0) { Swift.max($0, abs($1)) }
+        // Relative tolerance: ~7 orders of magnitude above Double machine epsilon
+        // (~2.2e-16), giving slack for the floating-point assembly round-off of
+        // L·Lᵀ while still catching genuinely asymmetric input. The relative form
+        // (scaled by the largest element) avoids false negatives for large-magnitude
+        // matrices where an absolute threshold like 1e-10 would be far too tight.
+        // Note: Sparse.isSPD deliberately uses an absolute 1e-10 because it operates
+        // on triplet-entry data where only O(1) entries are tested.
         let tol = (scale == 0 ? 1.0 : scale) * 1e-9
         for i in 0..<n {
             for j in (i + 1)..<n where abs(A[i, j] - A[j, i]) > tol {

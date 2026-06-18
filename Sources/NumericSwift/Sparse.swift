@@ -130,6 +130,20 @@ public enum Sparse {
         ///   any triplet index is out of bounds.
         public init(rows: Int, cols: Int,
                     triplets: [(row: Int, col: Int, value: Double)]) throws {
+            // The duplicate-summation step encodes (row, col) into a single Int64
+            // as `row * cols + col`. That map is injective and overflow-free only
+            // while both dimensions fit in Int32: then the largest key,
+            // (rows−1)·cols + (cols−1) ≈ rows·cols ≤ Int32.max² ≈ 4.6e18, stays
+            // below Int64.max ≈ 9.2e18. Reject larger shapes loudly rather than
+            // silently wrapping the key and corrupting the matrix (a matrix that
+            // large cannot fit in memory anyway). Zero dimensions are legal — an
+            // empty matrix has no triplets to encode (scipy.sparse allows it).
+            guard rows >= 0, cols >= 0,
+                  rows <= Int(Int32.max), cols <= Int(Int32.max) else {
+                throw SparseError.shapeMismatch(
+                    "COO requires 0 ≤ rows, cols ≤ \(Int32.max) (the (row,col)→Int64 "
+                        + "key encoding overflows beyond that); got rows=\(rows), cols=\(cols)")
+            }
             self.rows = rows
             self.cols = cols
 
@@ -146,7 +160,9 @@ public enum Sparse {
             // re-sort by (row, col) for a stable canonical ordering matching
             // scipy's row-major output order.
             var accumulator: [Int64: Double] = [:]
-            // Encode (row, col) into a single Int64 key (safe: rows, cols < 2^31)
+            // Pair-encode (row, col) → row·cols + col. Injective because
+            // col ∈ [0, cols), so distinct pairs map to distinct keys; overflow
+            // is impossible given the rows, cols ≤ Int32.max guard in init.
             for t in triplets {
                 let key = Int64(t.row) * Int64(cols) + Int64(t.col)
                 accumulator[key, default: 0.0] += t.value
@@ -618,6 +634,13 @@ public enum Sparse {
                 for m in A.indptr[j]..<A.indptr[j + 1] {
                     if A.indices[m] == i { aji = A.data[m]; break }
                 }
+                // Absolute symmetry tolerance 1e-10: appropriate for the
+                // assemble-from-triplets context where COO entries are typically
+                // O(1). (LinAlg.isSymmetricPositiveDefinite uses a scale-relative
+                // tolerance instead — the two are intentionally different because
+                // that path admits arbitrarily-scaled dense matrices, whereas a
+                // physically-scaled sparse system should be normalised by the
+                // caller before spsolve.)
                 guard let v = aji, abs(aij - v) <= 1e-10 else { return false }
             }
         }

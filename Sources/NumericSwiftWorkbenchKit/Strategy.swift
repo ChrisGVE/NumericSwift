@@ -1,6 +1,6 @@
 //
 //  Strategy.swift
-//  NumericSwiftWorkbench
+//  NumericSwiftWorkbenchKit
 //
 //  Strategy-registry types for the NumericSwift E2E functional workbench.
 //
@@ -10,15 +10,15 @@
 //
 //  ## Architecture
 //
-//  The registry is a `[String: StrategyFn]` dictionary. Each domain suite
-//  (wave 2, under `Sources/NumericSwiftWorkbench/Domains/`) populates the
-//  global registry via ``StrategyRegistry/register(_:id:)``.
+//  This file defines the three foundational strategy types:
+//    • `StrategyResult` — the return type of every strategy closure, carrying a
+//      scalar `Double` value and any ``NumericDiagnostic`` entries.
+//    • `StrategyFn` — the closure type: `([String: InputValue]) -> StrategyResult?`.
+//    • `StrategyRegistry` — a `[String: StrategyFn]` dictionary wrapper with
+//      `register(id:_:)` and subscript lookup.
 //
-//  Wave 1 provides:
-//    • `StrategyResult` — the return type of every strategy closure.
-//    • `StrategyFn` — the closure type.
-//    • `StrategyRegistry` — the dictionary wrapper.
-//    • Integration example registrations.
+//  Per-domain strategy registrations (the actual NumericSwift call sites) live in
+//  `Domains/<Domain>.swift`, each exposed through that domain's ``DomainSuite``.
 //
 //  Licensed under the Apache License, Version 2.0.
 //

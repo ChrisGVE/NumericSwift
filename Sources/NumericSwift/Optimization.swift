@@ -66,7 +66,7 @@ public struct MinimizeScalarResult {
 /// slope) collapses toward zero or the iteration diverges / exhausts its budget —
 /// regimes where the returned iterate is not a trustworthy root. A self-aware
 /// caller inspects `diagnostics` (mirroring SciPy's `ValueError`/`RuntimeWarning`).
-public struct RootScalarResult {
+public struct RootScalarResult: Sendable {
     public let root: Double
     public let iterations: Int
     public let functionCalls: Int
@@ -356,6 +356,21 @@ public func bisect(
     var fa = f(a); nfev += 1
     var fb = f(b); nfev += 1
 
+    // A NaN endpoint evaluation defeats the sign-change test (`NaN * x > 0` is
+    // false for any x), so it would otherwise slip past the guard below and the
+    // iteration would propagate NaN while reporting `converged`. Detect it first.
+    if fa.isNaN || fb.isNaN {
+        return RootScalarResult(
+            root: .nan, iterations: 0, functionCalls: nfev,
+            converged: false, flag: "f(a) or f(b) is NaN",
+            diagnostics: [.outsideEnvelope(
+                method: "bisect",
+                reason: "f evaluated to NaN at a bracket endpoint — the function is "
+                    + "undefined on [\(a), \(b)] and no root can be bracketed"
+            )]
+        )
+    }
+
     // Check for sign change. A bracketing method is mathematically invalid when
     // f(a) and f(b) share a sign — there is no guaranteed root in [a, b]. SciPy
     // raises a ValueError here; we surface a recoverable `outsideEnvelope`
@@ -590,6 +605,21 @@ public func brentq(
 
     var fa = f(xa); nfev += 1
     var fb = f(xb); nfev += 1
+
+    // A NaN endpoint evaluation defeats the sign-change test below (`NaN * x > 0`
+    // is false), so guard it first — otherwise Brent's iteration would propagate
+    // NaN iterates while falsely reporting `converged`.
+    if fa.isNaN || fb.isNaN {
+        return RootScalarResult(
+            root: .nan, iterations: 0, functionCalls: nfev,
+            converged: false, flag: "f(a) or f(b) is NaN",
+            diagnostics: [.outsideEnvelope(
+                method: "brentq",
+                reason: "f evaluated to NaN at a bracket endpoint — the function is "
+                    + "undefined on [\(a), \(b)] and no root can be bracketed"
+            )]
+        )
+    }
 
     // Exact roots at the endpoints.
     if fa == 0 {

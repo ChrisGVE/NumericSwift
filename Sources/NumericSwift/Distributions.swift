@@ -416,26 +416,42 @@ public struct TDistribution {
   /// The bare ``ppf(_:)`` is unchanged and remains the right entry point when a
   /// caller does not need the envelope signal.
   ///
+  /// - Note: This overload exists only on ``TDistribution`` because the
+  ///   extreme-tail precision loss is specific to the Student-t quantile (it
+  ///   inverts the regularized incomplete beta, whose tail conditioning is the
+  ///   documented limitation). ``NormalDistribution``/``ChiSquaredDistribution``
+  ///   etc. reach full double precision across their domain via the (now
+  ///   accurate) ``erfinv(_:)`` path and so need no `ppfDiagnosed` companion.
+  ///
   /// - Parameter p: Requested probability in `[0, 1]`.
   /// - Returns: A ``Diagnosed`` wrapping the quantile and any diagnostic.
   public func ppfDiagnosed(_ p: Double) -> Diagnosed<Double> {
     let value = ppf(p)
-    // Extreme-tail envelope: |p| beyond 0.9999, equivalently p < 1e-4 or p > 1 - 1e-4.
-    // Only flag finite, in-domain probabilities — out-of-domain p is the bare
-    // ppf's NaN contract, not an accuracy-envelope concern.
-    if p >= 0, p <= 1, p < 1e-4 || p > 1.0 - 1e-4 {
+    // Extreme-tail envelope: p in (0, ppfTailEnvelope) ∪ (1 − ppfTailEnvelope, 1),
+    // i.e. beyond the 0.9999 probability mark on either side. Only flag finite,
+    // in-domain probabilities — out-of-domain p is the bare ppf's NaN contract,
+    // not an accuracy-envelope concern.
+    if p >= 0, p <= 1, p < TDistribution.ppfTailEnvelope || p > 1.0 - TDistribution.ppfTailEnvelope {
       return Diagnosed(
         value,
         diagnostics: [
           .outsideEnvelope(
             method: "TDistribution.ppf",
-            reason: "|p| > 0.9999 (p=\(p)) — extreme-tail precision is ~5 digits, not full double"
+            reason: "p=\(p) is in the extreme tail (p < \(TDistribution.ppfTailEnvelope) "
+              + "or p > \(1.0 - TDistribution.ppfTailEnvelope)) — precision is ~5 digits, not full double"
           )
         ]
       )
     }
     return Diagnosed(value)
   }
+
+  /// Tail distance from 0 or 1 beyond which ``ppfDiagnosed(_:)`` flags the
+  /// Student-t quantile as outside its full-precision envelope (`p < 1e-4` or
+  /// `p > 1 − 1e-4`, i.e. `|p|` past the 0.9999 mark). Public so a caller can
+  /// test its probability against the boundary before calling, mirroring
+  /// ``LinAlg/solveConditionEnvelope`` and ``erfinvEnvelopeBoundary``.
+  public static let ppfTailEnvelope = 1e-4
 
   /// Random variate sampling using ratio of normal and chi-squared.
   public func rvs() -> Double {

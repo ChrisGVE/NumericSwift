@@ -10,7 +10,10 @@
 //    .build/debug/NumericSwiftWorkbench                      # all domains
 //    .build/debug/NumericSwiftWorkbench integration          # selected domains
 //
-//  Exit code: 0 — no self-awareness failures; 1 — one or more (the hard gate).
+//  Exit code: 0 — no self-awareness failures; 1 — one or more (the hard gate);
+//  2 — the corpus could not be located/loaded, so the gate could NOT run. A
+//  missing corpus is NOT a pass: exiting non-zero stops a CI invocation from
+//  succeeding vacuously (the XCTest gate enforces the same via XCTFail).
 //
 //  Licensed under the Apache License, Version 2.0.
 //
@@ -21,14 +24,14 @@ import NumericSwiftWorkbenchKit
 let requestedDomains = Array(CommandLine.arguments.dropFirst())
 
 guard let fixturesDir = FixtureLoader.fixturesDirectory() else {
-    print(ReportRenderer.renderNoFixtures())
-    exit(0)
+    FileHandle.standardError.write(Data(ReportRenderer.renderNoFixtures().utf8))
+    exit(2)
 }
 
 let fixtures = FixtureLoader.load(domains: requestedDomains, from: fixturesDir)
 guard !fixtures.isEmpty else {
-    print(ReportRenderer.renderNoFixtures())
-    exit(0)
+    FileHandle.standardError.write(Data(ReportRenderer.renderNoFixtures().utf8))
+    exit(2)
 }
 
 let summary = Workbench.run(fixtures: fixtures)

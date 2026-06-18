@@ -53,6 +53,16 @@
 ///     print("Warning: result may be inaccurate")
 /// }
 /// ```
+///
+/// ## Source-stability policy
+///
+/// This enum is **not** `@frozen`: additional cases may be introduced in a future
+/// minor release (a new diagnostic kind such as overflow or cancellation). The
+/// enum form was chosen precisely so that adding a case is a compile-checked
+/// event. Consumers that `switch` over `NumericDiagnostic` should therefore
+/// include a `default:` (or `@unknown default:`) branch so a future case
+/// addition does not break their build. The three existing cases will not be
+/// renamed or removed.
 public enum NumericDiagnostic: Sendable, Equatable, CustomStringConvertible {
 
     // MARK: Cases
@@ -97,6 +107,20 @@ public enum NumericDiagnostic: Sendable, Equatable, CustomStringConvertible {
     /// ```
     public var isOutsideEnvelope: Bool {
         if case .outsideEnvelope = self { return true }
+        return false
+    }
+
+    /// Returns `true` when this diagnostic indicates an iterative algorithm
+    /// exhausted its iteration budget without converging.
+    public var isNonConvergence: Bool {
+        if case .nonConvergence = self { return true }
+        return false
+    }
+
+    /// Returns `true` when this diagnostic indicates the result achieved fewer
+    /// significant digits than full `Double` precision.
+    public var isPrecisionDegraded: Bool {
+        if case .precisionDegraded = self { return true }
         return false
     }
 
@@ -196,3 +220,11 @@ public struct Diagnosed<Value: Sendable>: Sendable {
         Diagnosed<U>(transform(value), diagnostics: diagnostics)
     }
 }
+
+// MARK: - Conditional Equatable
+
+/// `Diagnosed` compares equal when both the wrapped value and the diagnostic
+/// list are equal. Synthesised when `Value` is `Equatable`, so callers and tests
+/// can assert on a `Diagnosed` result directly instead of unwrapping `.value`
+/// and `.diagnostics` separately.
+extension Diagnosed: Equatable where Value: Equatable {}

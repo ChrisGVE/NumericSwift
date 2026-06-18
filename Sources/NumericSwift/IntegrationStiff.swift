@@ -76,7 +76,11 @@ private func bdfJacobian(
   f0: [Double]
 ) -> [[Double]] {
   let n = y.count
-  let sqrtEps = (2.22e-16 as Double).squareRoot()   // ≈ 1.49e-8
+  // Optimal forward-difference step for a relative perturbation: √(machine ε).
+  // `Double.ulpOfOne` is the gap above 1.0 (2.22e-16); dividing by 2 gives the
+  // standard machine epsilon, whose square root (≈ 1.49e-8) balances truncation
+  // against round-off error in the difference quotient (Press et al., NR §5.7).
+  let sqrtEps = (Double.ulpOfOne / 2).squareRoot()   // ≈ 1.49e-8
   var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
   for j in 0..<n {
     let delta = sqrtEps * max(1.0, abs(y[j]))
@@ -147,7 +151,12 @@ private func bdfNewtonSolve(
     }
 
     let bMat = LinAlg.Matrix(rows: n, cols: 1, data: residual)
-    guard let delta = (try? LinAlg.solve(jMat, bMat)) ?? nil else {
+    // LinAlg.solve throws (LinAlgError) on a singular Jacobian or — provably not
+    // here, since jMat is always n×n and bMat n×1 — a shape error. `try?` maps any
+    // such throw to nil, which we treat uniformly as "Newton did not converge"
+    // (the simplified-Newton loop tolerates a failed step). The explicit single
+    // bind replaces the redundant `(try?) ?? nil` double-optional.
+    guard let delta = try? LinAlg.solve(jMat, bMat) else {
       return NewtonResult(y: yNew, fNew: lastFNew, nfev: nfev, converged: false)
     }
     for i in 0..<n { yNew[i] -= delta[i, 0] }
@@ -198,6 +207,16 @@ private func bdfAttemptStep(
   atol: Double,
   jacobianFn: (([Double], Double) -> [[Double]])?
 ) -> BDFStepOutcome {
+  // History depth must cover the requested BDF order: the Σ over j∈1...k below
+  // indexes yHistory[j-1]/fHistory[j-1]. The driver maintains this invariant (it
+  // only raises the order once enough steps have accumulated), but guard
+  // defensively so a future caller passing order > available history cannot
+  // index out of bounds — return a non-converged outcome instead of trapping.
+  guard yHistory.count >= k, fHistory.count >= k else {
+    return BDFStepOutcome(
+      yNew: yHistory[0], fNew: fHistory[0], errNorm: 10.0, nfev: 0, converged: false)
+  }
+
   let n = yHistory[0].count
   let alpha = bdfAlpha[k - 1]
   let yn = yHistory[0]
@@ -326,6 +345,10 @@ func bdfSolveIVP(
   var order = 1
   var h = direction * min(abs(firstStep), maxStep)
 
+  // Minimum step: a fraction of the integration span small enough that the
+  // solver can always make progress, yet large enough that t + h stays
+  // distinguishable from t in Double. 1e-14 · |tf − t0| sits ~2 orders above
+  // machine epsilon, so adding h never underflows the time variable.
   let hMin = abs(tf - t0) * 1e-14
   if abs(h) < hMin { h = direction * hMin }
 

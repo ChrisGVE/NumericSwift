@@ -23,7 +23,7 @@ public let quadDefaultLimit: Int = 50
 // MARK: - Result Types
 
 /// Result of a quadrature integration
-public struct QuadResult {
+public struct QuadResult: Sendable {
   /// Computed integral value
   public let value: Double
   /// Estimated absolute error
@@ -52,7 +52,7 @@ public struct QuadResult {
 }
 
 /// Result of an ODE integration
-public struct ODEResult {
+public struct ODEResult: Sendable {
   /// Time points
   public let t: [Double]
   /// Solution values at each time point (y[i] is array of components at t[i])

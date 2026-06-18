@@ -13,7 +13,7 @@ import Accelerate
 // MARK: - Result Types (public, top-level)
 
 /// Result of k-means clustering.
-public struct KMeansResult {
+public struct KMeansResult: Sendable {
     /// Cluster labels for each data point (0-indexed).
     public let labels: [Int]
     /// Final cluster centroids.
@@ -47,7 +47,7 @@ public struct KMeansResult {
 }
 
 /// Result of hierarchical clustering.
-public struct HierarchicalResult {
+public struct HierarchicalResult: Sendable {
     /// Linkage matrix (n-1 × 4): [cluster1, cluster2, distance, size]
     public let linkageMatrix: [[Double]]
     /// Cluster labels if tree was cut (0-indexed), nil otherwise.
@@ -87,7 +87,7 @@ public enum LinkageMethod: String {
 }
 
 /// Result of DBSCAN clustering.
-public struct DBSCANResult {
+public struct DBSCANResult: Sendable {
     /// Cluster labels (-1 for noise, 0+ for clusters).
     public let labels: [Int]
     /// Indices of core samples.

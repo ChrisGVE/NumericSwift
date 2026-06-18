@@ -13,7 +13,7 @@ import Foundation
 // MARK: - OLS Regression Result
 
 /// Result of OLS/WLS regression.
-public struct OLSResult {
+public struct OLSResult: Sendable {
   // Per-parameter metrics
   /// Estimated coefficients.
   public let params: [Double]
@@ -191,6 +191,13 @@ public struct OLSResult {
 /// past it, fewer than ~6 of a `Double`'s ~16 significant digits survive. The
 /// reported `conditionNumber` field of ``OLSResult`` is `cond(X) = sqrt(cond(X'X))`,
 /// so the comparison is apples-to-apples.
+///
+/// - Note: This gate flags *near-degeneracy*, not the *moderate* multicollinearity
+///   statsmodels warns about. statsmodels reports `cond(X'X)` and calls a value
+///   `> ~1000` "strong" — which is only `cond(X) ≈ 31`. By design this envelope is
+///   far more permissive: moderate collinearity (`cond(X)` ≈ 10³–10⁹) is left to
+///   the caller's judgement (inspect ``OLSResult/conditionNumber`` directly), and
+///   only an essentially-degenerate design trips the diagnostic.
 public let regressionConditionEnvelope: Double = 1e10
 
 /// Build the multicollinearity / ill-conditioning diagnostic for a design matrix
@@ -664,7 +671,7 @@ public enum GLMLink: String {
 }
 
 /// Result of GLM fitting.
-public struct GLMResult {
+public struct GLMResult: Sendable {
   /// Estimated coefficients.
   public let params: [Double]
   /// Standard errors.
@@ -1294,7 +1301,7 @@ public func addConstant(_ x: [Double]) -> [[Double]] {
 // MARK: - ARIMA (AutoRegressive Integrated Moving Average)
 
 /// Result of ARIMA model fitting.
-public struct ARIMAResult {
+public struct ARIMAResult: Sendable {
   /// AR coefficients.
   public let arParams: [Double]
   /// MA coefficients.
