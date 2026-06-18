@@ -241,7 +241,7 @@ final class LinAlgTests: XCTestCase {
 
     func testSVD() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4], [5, 6]])
-        let (s, _, _) = LinAlg.svd(a)
+        let (s, _, _) = try XCTUnwrap(LinAlg.svd(a))
 
         XCTAssertEqual(s.count, 2)
         XCTAssertTrue(s[0] >= s[1])  // Singular values in descending order
@@ -250,7 +250,7 @@ final class LinAlgTests: XCTestCase {
     func testEigenvalues() throws  {
         // Symmetric matrix has real eigenvalues
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (real, imag) = try LinAlg.eigvals(a)
+        let (real, imag) = try XCTUnwrap(LinAlg.eigvals(a))
 
         // Eigenvalues should be 3 and 1
         XCTAssertTrue(imag.allSatisfy { abs($0) < 1e-10 })  // All real
@@ -261,7 +261,7 @@ final class LinAlgTests: XCTestCase {
 
     func testEig() throws  {
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (values, _, vectors) = try LinAlg.eig(a)
+        let (values, _, vectors) = try XCTUnwrap(LinAlg.eig(a))
 
         XCTAssertEqual(values.count, 2)
         XCTAssertEqual(vectors.rows, 2)
@@ -907,7 +907,7 @@ final class LinAlgTests: XCTestCase {
     func testPinv() throws  {
         // For invertible matrix, pinv = inv
         let A = LinAlg.Matrix([[1, 2], [3, 4]])
-        let pA = LinAlg.pinv(A)
+        let pA = try XCTUnwrap(LinAlg.pinv(A))
         guard let invA = try LinAlg.inv(A) else {
             XCTFail("inv should succeed")
             return
@@ -979,8 +979,8 @@ final class LinAlgTests: XCTestCase {
     func testMatrixInstancePinvMatchesStaticPinv() throws  {
         // For an invertible matrix, pinv should match inv
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
-        let instancePinv = a.pinv()
-        let staticPinv = LinAlg.pinv(a)
+        let instancePinv = try XCTUnwrap(a.pinv())
+        let staticPinv = try XCTUnwrap(LinAlg.pinv(a))
         for i in 0..<2 {
             for j in 0..<2 {
                 XCTAssertEqual(instancePinv[i, j], staticPinv[i, j], accuracy: 1e-10)
@@ -991,7 +991,7 @@ final class LinAlgTests: XCTestCase {
     func testMatrixInstancePinvNonSquare() throws  {
         // pinv of a tall matrix: (3x2) -> (2x3)
         let a = LinAlg.Matrix([[1, 0], [0, 1], [0, 0]])
-        let p = a.pinv()
+        let p = try XCTUnwrap(a.pinv())
         XCTAssertEqual(p.rows, 2)
         XCTAssertEqual(p.cols, 3)
     }

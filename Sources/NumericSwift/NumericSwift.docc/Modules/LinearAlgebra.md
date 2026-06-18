@@ -68,17 +68,24 @@ let (L, U, P) = LinAlg.lu(A)
 // QR decomposition
 let (Q, R) = LinAlg.qr(A)
 
-// Singular Value Decomposition
-let (s, U, Vt) = LinAlg.svd(A)
+// Singular Value Decomposition — returns nil if the LAPACK driver fails to converge
+if let (s, U, Vt) = LinAlg.svd(A) {
+    print(s, U, Vt)
+}
 
 // Cholesky decomposition (positive definite matrices)
-if let L = LinAlg.cholesky(A) {
+if let L = try LinAlg.cholesky(A) {
     print(L)
 }
 
-// Eigenvalue decomposition
-let (values, imagParts, vectors) = LinAlg.eig(A)
-let (real, imag) = LinAlg.eigvals(A)
+// Eigenvalue decomposition — throws for a non-square matrix, returns nil on
+// non-convergence
+if let (values, imagParts, vectors) = try LinAlg.eig(A) {
+    print(values, imagParts, vectors)
+}
+if let (real, imag) = try LinAlg.eigvals(A) {
+    print(real, imag)
+}
 ```
 
 ## Matrix Functions

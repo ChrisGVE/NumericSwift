@@ -599,8 +599,21 @@ public struct ChiSquaredDistribution {
   }
 
   /// Log of the probability density function.
+  ///
+  /// Computed in closed form rather than as `log(pdf(x))`: once `pdf` underflows
+  /// to `0` (e.g. far in the tail or for large `df`), `log(0) = -inf` discards the
+  /// true log-density. The direct form stays finite across the whole support.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z < 0 { return -.infinity }
+    let k2 = df / 2.0
+    if z == 0 {
+      if df < 2 { return .infinity }
+      if df == 2 { return Foundation.log(0.5 / scale) }
+      return -.infinity  // df > 2: density 0
+    }
+    let logPdf = (k2 - 1) * Foundation.log(z) - z / 2.0 - k2 * Foundation.log(2.0) - lgamma(k2)
+    return logPdf - Foundation.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -647,15 +660,25 @@ public struct FDistribution {
   }
 
   /// Probability density function.
+  ///
+  /// Evaluated through the log-density and exponentiated. The direct product
+  /// form `(dfn·z)^(dfn/2) · dfd^(dfd/2) / (dfn·z+dfd)^((dfn+dfd)/2)` overflows to
+  /// `inf/inf = NaN` for moderate-to-large degrees of freedom; the log form,
+  /// using `lgamma` for `log B(dfn/2, dfd/2)`, stays finite.
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
     if z <= 0 { return 0.0 }
 
-    let num = Darwin.pow(dfn * z, dfn / 2.0) * Darwin.pow(dfd, dfd / 2.0)
-    let den = Darwin.pow(dfn * z + dfd, (dfn + dfd) / 2.0)
-    let coef = 1.0 / (z * beta(dfn / 2.0, dfd / 2.0))
+    let halfN = dfn / 2.0
+    let halfD = dfd / 2.0
+    // log B(halfN, halfD) = lgamma(halfN) + lgamma(halfD) - lgamma(halfN + halfD)
+    let logBeta = lgamma(halfN) + lgamma(halfD) - lgamma(halfN + halfD)
+    let logPdf =
+      halfN * Foundation.log(dfn * z) + halfD * Foundation.log(dfd)
+      - (halfN + halfD) * Foundation.log(dfn * z + dfd)
+      - Foundation.log(z) - logBeta
 
-    return coef * num / den / scale
+    return Foundation.exp(logPdf) / scale
   }
 
   /// Cumulative distribution function.
@@ -765,7 +788,14 @@ public struct GammaDistribution {
   /// Probability density function.
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
-    if z <= 0 { return 0.0 }
+    if z < 0 { return 0.0 }
+    // Support boundary z == 0 (SciPy parity): shape < 1 diverges, shape == 1 is
+    // the exponential density 1/scale, shape > 1 vanishes.
+    if z == 0 {
+      if shape < 1 { return .infinity }
+      if shape == 1 { return 1.0 / scale }
+      return 0.0
+    }
     // Log-space: tgamma(shape) overflows to Inf for shape > 171, silently
     // zeroing the density. lgamma keeps it finite.
     let logPdf = (shape - 1) * Foundation.log(z) - z - lgamma(shape)
@@ -860,7 +890,20 @@ public struct BetaDistribution {
   /// Probability density function.
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
-    if z <= 0 || z >= 1 { return 0.0 }
+    if z < 0 || z > 1 { return 0.0 }
+    // Support boundaries (SciPy parity). At z == 0 the density is governed by a:
+    // a < 1 diverges, a == 1 gives 1/B(1,b) = b, a > 1 vanishes. At z == 1 it is
+    // governed symmetrically by b. Values are divided by `scale`.
+    if z == 0 {
+      if a < 1 { return .infinity }
+      if a == 1 { return b / scale }
+      return 0.0
+    }
+    if z == 1 {
+      if b < 1 { return .infinity }
+      if b == 1 { return a / scale }
+      return 0.0
+    }
     return Darwin.pow(z, a - 1) * Darwin.pow(1 - z, b - 1) / beta(a, b) / scale
   }
 

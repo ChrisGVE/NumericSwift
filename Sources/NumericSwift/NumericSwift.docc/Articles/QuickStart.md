@@ -74,9 +74,11 @@ if let x = LinAlg.solve(A, b) {
 }
 
 // Matrix decompositions
-let (L, U, P) = LinAlg.lu(A)
+let (L, U, P) = try LinAlg.lu(A)
 let (Q, R) = LinAlg.qr(A)
-let (values, _, _) = LinAlg.eig(A)
+if let (values, _, _) = try LinAlg.eig(A) {
+    print(values)
+}
 ```
 
 ## Optimization

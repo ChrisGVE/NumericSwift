@@ -180,8 +180,9 @@ extension LinAlg {
         /// For invertible square matrices, equals `inverse()`.
         ///
         /// - Parameter rcond: Cutoff for small singular values (default: 1e-15).
-        /// - Returns: The pseudoinverse matrix.
-        public func pinv(rcond: Double = 1e-15) -> Matrix {
+        /// - Returns: The pseudoinverse matrix, or `nil` when the underlying SVD
+        ///   fails to converge.
+        public func pinv(rcond: Double = 1e-15) -> Matrix? {
             return LinAlg.pinv(self, rcond: rcond)
         }
     }
