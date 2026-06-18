@@ -111,14 +111,18 @@ public enum NumberTheory {
     ///   - a: First integer
     ///   - b: Second integer
     /// - Returns: GCD of a and b
+    /// GCD over unsigned magnitudes — avoids the `abs(Int.min)` trap (`|Int.min|`
+    /// is not representable as `Int`, but is as `UInt`).
+    private static func gcdMagnitude(_ a: UInt, _ b: UInt) -> UInt {
+        var x = a, y = b
+        while y != 0 { (x, y) = (y, x % y) }
+        return x
+    }
+
     public static func gcd(_ a: Int, _ b: Int) -> Int {
-        var a = abs(a), b = abs(b)
-        while b != 0 {
-            let t = b
-            b = a % b
-            a = t
-        }
-        return a
+        // `abs(Int.min)` traps; use `.magnitude` (UInt) and clamp the one
+        // unrepresentable result, gcd(Int.min, Int.min) = 2^63, to Int.max.
+        Int(clamping: gcdMagnitude(a.magnitude, b.magnitude))
     }
 
     /// Least common multiple.
@@ -126,12 +130,14 @@ public enum NumberTheory {
     /// - Parameters:
     ///   - a: First integer
     ///   - b: Second integer
-    /// - Returns: LCM of a and b
+    /// - Returns: LCM of a and b. Non-trapping overflow policy: a result that
+    ///   exceeds `Int.max` (including the `abs(Int.min)` edge) is clamped to `Int.max`.
     public static func lcm(_ a: Int, _ b: Int) -> Int {
-        let absA = abs(a)
-        let absB = abs(b)
+        let absA = a.magnitude
+        let absB = b.magnitude
         if absA == 0 || absB == 0 { return 0 }
-        return absA / gcd(absA, absB) * absB
+        let (product, overflow) = (absA / gcdMagnitude(absA, absB)).multipliedReportingOverflow(by: absB)
+        return overflow ? Int.max : Int(clamping: product)
     }
 
     // MARK: - Arithmetic Functions
@@ -254,7 +260,8 @@ public enum NumberTheory {
     /// - Parameter x: Upper bound
     /// - Returns: Number of primes not exceeding x
     public static func primePi(_ x: Double) -> Int {
-        guard x >= 2 else { return 0 }
+        // `Int(x)` traps for +inf or x > Int.max (NaN already fails `x >= 2`).
+        guard x.isFinite, x >= 2, x <= Double(Int.max) else { return 0 }
         return primesUpTo(Int(x)).count
     }
 
@@ -263,7 +270,7 @@ public enum NumberTheory {
     /// - Parameter x: Upper bound
     /// - Returns: θ(x)
     public static func chebyshevTheta(_ x: Double) -> Double {
-        guard x >= 2 else { return 0 }
+        guard x.isFinite, x >= 2, x <= Double(Int.max) else { return 0 }
         let primes = primesUpTo(Int(x))
         var result = 0.0
         for p in primes { result += Darwin.log(Double(p)) }
@@ -275,7 +282,7 @@ public enum NumberTheory {
     /// - Parameter x: Upper bound
     /// - Returns: ψ(x)
     public static func chebyshevPsi(_ x: Double) -> Double {
-        guard x >= 2 else { return 0 }
+        guard x.isFinite, x >= 2, x <= Double(Int.max) else { return 0 }
         var result = 0.0
         for n in 2...Int(x) { result += vonMangoldt(n) }
         return result
@@ -328,6 +335,8 @@ public enum NumberTheory {
     ///   - m: Modulus
     /// - Returns: Modular inverse, or nil if it doesn't exist (gcd(a, m) ≠ 1)
     public static func modInverse(_ a: Int, _ m: Int) -> Int? {
+        // A non-positive modulus is undefined and `x % 0` traps; reject it.
+        guard m > 0 else { return nil }
         let (g, x, _) = extendedGcd(a, m)
         guard g == 1 else { return nil }
         return ((x % m) + m) % m

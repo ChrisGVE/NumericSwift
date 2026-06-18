@@ -520,6 +520,9 @@ public func romberg(
   tol: Double = 1e-8,
   divmax: Int = 10
 ) -> QuadResult {
+  // `divmax < 1` makes `1...divmax` an invalid range and a sufficiently negative
+  // value allocates a negative array count; clamp to the documented minimum of 1.
+  let divmax = Swift.max(1, divmax)
   var R: [[Double]] = Array(repeating: [], count: divmax + 2)
   var h = b - a
 

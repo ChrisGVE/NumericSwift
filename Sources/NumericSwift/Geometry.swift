@@ -1131,6 +1131,10 @@ public enum Geometry {
     /// Uses the Cox-de Boor recursion formula. Handles the right endpoint (t = last knot)
     /// correctly for clamped B-splines by including t in the last interval.
     public static func bsplineBasis(i: Int, degree: Int, t: Double, knots: [Double]) -> Double {
+        // A basis function is 0 for an out-of-support / malformed request. Guard the
+        // indices used below (knots[i], knots[i+1], knots[i+degree], knots[i+degree+1])
+        // so a negative i/degree or too-short knot vector returns 0 instead of trapping.
+        guard degree >= 0, i >= 0, i + degree + 1 < knots.count else { return 0.0 }
         if degree == 0 {
             // Standard half-open interval check: [knots[i], knots[i+1])
             // Exception: include right endpoint when t equals the last knot value
@@ -1159,6 +1163,8 @@ public enum Geometry {
 
     /// Generate uniform knot vector for B-spline.
     public static func bsplineUniformKnots(n: Int, degree: Int) -> [Double] {
+        // Negative n/degree would make `m = n + degree + 1` a negative array count.
+        guard n >= 0, degree >= 0 else { return [] }
         let m = n + degree + 1
         var knots = [Double](repeating: 0, count: m)
 

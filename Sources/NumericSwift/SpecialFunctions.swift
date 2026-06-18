@@ -214,7 +214,10 @@ public func j1(_ x: Double) -> Double {
 
 /// Bessel function of the first kind, order n: Jₙ(x)
 public func jn(_ n: Int, _ x: Double) -> Double {
-  Darwin.jn(Int32(n), x)
+  // `Int32(n)` traps for an order outside Int32 range (e.g. Int.min); such orders
+  // are not meaningful — return NaN rather than crash.
+  guard let order = Int32(exactly: n) else { return .nan }
+  return Darwin.jn(order, x)
 }
 
 // MARK: - Bessel Functions (Second Kind)
@@ -237,14 +240,18 @@ public func y1(_ x: Double) -> Double {
 /// Note: Yₙ(x) is undefined for x ≤ 0
 public func yn(_ n: Int, _ x: Double) -> Double {
   guard x > 0 else { return -.infinity }
-  return Darwin.yn(Int32(n), x)
+  // `Int32(n)` traps for an order outside Int32 range (e.g. Int.min).
+  guard let order = Int32(exactly: n) else { return .nan }
+  return Darwin.yn(order, x)
 }
 
 // MARK: - Modified Bessel Functions
 
 /// Modified Bessel function of the first kind: Iₙ(x)
 public func besseli(_ n: Int, _ x: Double) -> Double {
-  let absN = abs(n)
+  // `abs(Int.min)` traps; an order outside Int32 range is not meaningful → NaN.
+  guard let order = Int32(exactly: n) else { return .nan }
+  let absN = Int(order.magnitude)
 
   if x == 0 {
     return absN == 0 ? 1.0 : 0.0
@@ -312,7 +319,9 @@ private func besseliAsymptotic(_ n: Int, _ x: Double) -> Double {
 /// Modified Bessel function of the second kind: Kₙ(x)
 /// Note: Kₙ(x) is undefined for x ≤ 0
 public func besselk(_ n: Int, _ x: Double) -> Double {
-  let absN = abs(n)
+  // `abs(Int.min)` traps; an order outside Int32 range is not meaningful → NaN.
+  guard let order = Int32(exactly: n) else { return .nan }
+  let absN = Int(order.magnitude)
 
   guard x > 0 else { return .infinity }
 

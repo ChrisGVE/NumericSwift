@@ -136,6 +136,8 @@ public enum Series {
     /// - Returns: Array of Taylor coefficients, or nil if function unknown
     public static func taylorCoefficients(for function: String, terms: Int) -> [Double]? {
         guard let generator = knownTaylorSeries[function] else { return nil }
+        // `0..<terms` is an invalid range for a negative count; no coefficients.
+        guard terms > 0 else { return [] }
         return (0..<terms).map { generator($0) }
     }
 
@@ -412,6 +414,8 @@ public enum Series {
     ///   - term: Function that generates term for index n
     /// - Returns: Array of partial sums
     public static func partialSums(from: Int, count: Int, term: (Int) -> Double) -> [Double] {
+        // Non-positive count: `reserveCapacity`/`0..<count` would trap; no sums.
+        guard count > 0 else { return [] }
         var sums = [Double]()
         sums.reserveCapacity(count)
         var sum = 0.0
