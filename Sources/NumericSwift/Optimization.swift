@@ -881,6 +881,17 @@ public func newtonMulti(
         nit += 1
         let fx = f(x); nfev += 1
 
+        // A residual whose dimension differs from x0 makes the zero-norm check
+        // report a false "root" (for an empty fx) and traps later Jacobian indexing
+        // (for a short fx). Reject rather than proceed on a malformed system.
+        guard fx.count == n else {
+            return RootResult(
+                x: x, fun: fx, success: false,
+                message: "residual dimension (\(fx.count)) does not match x0 (\(n)).",
+                nfev: nfev, nit: nit
+            )
+        }
+
         // Check convergence
         let norm = sqrt(fx.reduce(0) { $0 + $1 * $1 })
         if norm < tol {

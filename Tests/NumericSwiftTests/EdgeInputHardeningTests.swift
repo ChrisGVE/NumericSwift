@@ -85,4 +85,41 @@ final class EdgeInputHardeningTests: XCTestCase {
     XCTAssertTrue(NumericSwift.jn(Int.min, 1.0).isNaN)
     XCTAssertTrue(NumericSwift.yn(Int.min, 1.0).isNaN)
   }
+
+  // MARK: - MathExpr toString (round 6)
+
+  /// toString of an integral Double outside Int64 range (1e20) must not trap on
+  /// Int64(v); it formats as a Double instead.
+  func testMathExprToStringLargeIntegralDoesNotTrap() throws {
+    let s = try MathExpr.toString("1e20")
+    XCTAssertFalse(s.isEmpty)
+  }
+
+  // MARK: - Interpolation evaluators (round 6)
+
+  /// Public spline/PCHIP/Akima/Barycentric evaluators return NaN on malformed
+  /// (empty or length-mismatched) input rather than trapping on x[0]/x[n-1].
+  func testInterpolationEvaluatorsMalformedReturnNaN() {
+    XCTAssertTrue(evalCubicSpline(x: [], coeffs: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalCubicSplineDerivative(x: [], coeffs: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalPchip(x: [], y: [], d: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalAkima(x: [], coeffs: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalLagrange(x: [0, 1], y: [0], xNew: 0.5).isNaN)  // length mismatch
+    XCTAssertTrue(evalBarycentric(x: [0, 1], y: [0, 1], w: [1], xNew: 0.5).isNaN)
+  }
+
+  /// solveTridiagonal returns [] when rhs length does not match the diagonal,
+  /// rather than trapping on rhs[0].
+  func testSolveTridiagonalRhsMismatchReturnsEmpty() {
+    XCTAssertTrue(solveTridiagonal(diag: [2, 2], offDiag: [1], rhs: [1]).isEmpty)
+  }
+
+  // MARK: - newtonMulti dimension (round 6)
+
+  /// newtonMulti returns success=false (not a false root or a trap) when the
+  /// residual dimension does not match x0.
+  func testNewtonMultiDimensionMismatchFails() {
+    let result = newtonMulti({ _ in [] }, x0: [1.0, 2.0])  // residual empty
+    XCTAssertFalse(result.success)
+  }
 }

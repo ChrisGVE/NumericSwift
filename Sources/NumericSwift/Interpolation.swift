@@ -187,6 +187,9 @@ public func findInterval(_ xs: [Double], _ x: Double) -> Int {
 public func solveTridiagonal(diag: [Double], offDiag: [Double], rhs: [Double]) -> [Double] {
   let n = diag.count
   guard n > 0 else { return [] }
+  // rhs is indexed at [0] and [i] up to n-1; a short rhs would trap. (offDiag is
+  // already accessed defensively below, so only rhs needs a length match.)
+  guard rhs.count == n else { return [] }
 
   var cPrime = [Double](repeating: 0, count: n)
   var dPrime = [Double](repeating: 0, count: n)
@@ -388,6 +391,8 @@ public func evalCubicSpline(
   x: [Double], coeffs: [CubicCoeffs], xNew: Double, extrapolate: Bool = true
 ) -> Double {
   let n = x.count
+  // Indexes x[0], x[n-1], x[n-2], coeffs[0]; malformed input returns NaN.
+  guard n >= 2, !coeffs.isEmpty else { return .nan }
 
   // Check bounds
   if xNew < x[0] {
@@ -419,6 +424,7 @@ public func evalCubicSplineDerivative(
   x: [Double], coeffs: [CubicCoeffs], xNew: Double, order: Int = 1
 ) -> Double {
   let n = x.count
+  guard n >= 2, !coeffs.isEmpty else { return .nan }
 
   // Clamp to domain
   let xEval = max(x[0], min(xNew, x[n - 1]))
@@ -434,6 +440,7 @@ public func evalCubicSplineDerivative(
 public func integrateCubicSpline(x: [Double], coeffs: [CubicCoeffs], a: Double, b: Double) -> Double
 {
   let n = x.count
+  guard n >= 2, !coeffs.isEmpty else { return .nan }
 
   // Clamp to domain
   let x0 = max(x[0], min(a, x[n - 1]))
@@ -542,6 +549,8 @@ public func computePchipDerivatives(x: [Double], y: [Double]) -> [Double] {
 /// Evaluate PCHIP interpolation at a point.
 public func evalPchip(x: [Double], y: [Double], d: [Double], xNew: Double) -> Double {
   let n = x.count
+  // Indexes x/y/d at [0], [n-1], and [i+1]; require matching non-empty arrays.
+  guard n >= 1, y.count == n, d.count == n else { return .nan }
 
   // Extrapolation
   if xNew <= x[0] {
@@ -624,6 +633,8 @@ public func computeAkimaCoeffs(x: [Double], y: [Double]) -> [CubicCoeffs] {
 /// Evaluate Akima interpolation at a point.
 public func evalAkima(x: [Double], coeffs: [CubicCoeffs], xNew: Double) -> Double {
   let n = x.count
+  // Indexes x[0], x[n-1], x[n-2], coeffs[0], coeffs[n-2]; needs n-1 coefficients.
+  guard n >= 2, coeffs.count >= n - 1 else { return .nan }
 
   // Extrapolation
   if xNew <= x[0] {
@@ -655,6 +666,8 @@ public func evalAkima(x: [Double], coeffs: [CubicCoeffs], xNew: Double) -> Doubl
 /// - Returns: Interpolated value
 public func evalLagrange(x: [Double], y: [Double], xNew: Double) -> Double {
   let n = x.count
+  // y is indexed in lockstep with x; require matching lengths.
+  guard y.count == n else { return .nan }
   var result = 0.0
 
   for i in 0..<n {
@@ -703,6 +716,8 @@ public func computeBarycentricWeights(x: [Double]) -> [Double] {
 /// - Returns: Interpolated value
 public func evalBarycentric(x: [Double], y: [Double], w: [Double], xNew: Double) -> Double {
   let n = x.count
+  // x, y, and w are indexed in lockstep; require matching lengths.
+  guard y.count == n, w.count == n else { return .nan }
 
   // Check for exact match
   for i in 0..<n {
