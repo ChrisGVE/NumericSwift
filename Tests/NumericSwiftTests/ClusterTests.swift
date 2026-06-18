@@ -569,4 +569,20 @@ final class ClusterTests: XCTestCase {
         let r2 = Cluster.kmeans(data, k: 2, nInit: 0)
         XCTAssertFalse(r2.diagnostics.isEmpty, "nInit=0 must be diagnosed")
     }
+
+    /// Ragged / zero-dimensional input must be diagnosed, not drive the vDSP
+    /// centroid accumulation past a shorter row's storage.
+    func testClusterRaggedInputReturnsDiagnostic() {
+        let ragged = [[1.0, 2.0], [3.0], [5.0, 6.0]]  // second row short
+        XCTAssertFalse(Cluster.kmeans(ragged, k: 2).diagnostics.isEmpty)
+        XCTAssertFalse(Cluster.hierarchicalClustering(ragged).diagnostics.isEmpty)
+        XCTAssertFalse(Cluster.dbscan(ragged).diagnostics.isEmpty)
+    }
+
+    /// elbowMethod must not trap on tiny inputs (1–2 points) or non-positive maxK.
+    func testElbowMethodSmallInputsDoNotTrap() {
+        XCTAssertEqual(Cluster.elbowMethod([[1.0]], maxK: 10).suggestedK, 1)
+        XCTAssertEqual(Cluster.elbowMethod([[1.0], [2.0]], maxK: 10).suggestedK, 1)
+        XCTAssertTrue(Cluster.elbowMethod([[1.0], [2.0], [3.0]], maxK: 0).inertias.isEmpty)
+    }
 }

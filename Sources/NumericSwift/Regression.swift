@@ -1416,6 +1416,10 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
   let originalN = y.count
   guard originalN > 2 else { return nil }
 
+  // Negative orders are invalid: a negative `d` makes `0..<d` an invalid range and
+  // a negative `p`/`q` allocates an array with a negative count — both trap. Reject.
+  guard p >= 0, d >= 0, q >= 0, maxiter >= 0 else { return nil }
+
   // Apply differencing
   var yDiff = y
   for _ in 0..<d {

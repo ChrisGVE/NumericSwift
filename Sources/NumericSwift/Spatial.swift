@@ -89,9 +89,10 @@ public class KDTree {
   ///   - k: Number of neighbors
   /// - Returns: Tuple of (indices, distances) sorted by distance
   public func query(_ point: [Double], k: Int = 1) -> (indices: [Int], distances: [Double]) {
-    // A query vector shorter than the tree dimension would trap at
-    // point[node.axis]; an empty tree (root == nil) yields no neighbours.
-    guard point.count >= dim, dim > 0 else { return ([], []) }
+    // k <= 0 would force-unwrap `best.last!` on an empty `best`; a query vector
+    // shorter than the tree dimension would trap at point[node.axis]; an empty
+    // tree (root == nil) yields no neighbours.
+    guard k > 0, dim > 0, point.count >= dim else { return ([], []) }
     var best: [(idx: Int, dist: Double)] = []
 
     func search(_ node: KDTreeNode?) {

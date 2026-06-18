@@ -174,6 +174,13 @@ public enum Cluster {
                     reason: "maxIterations=\(maxIterations) and nInit=\(nInit) must both be positive")])
         }
 
+        // Ragged / zero-dimensional input drives the vDSP centroid accumulation
+        // over `dim` (from data[0]) past a shorter row's storage — diagnose instead.
+        if let diag = raggedInputDiagnostic(data, method: "kmeans") {
+            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
+                diagnostics: [diag])
+        }
+
         let dim = data[0].count
 
         // Run n_init times and keep best result
@@ -264,6 +271,20 @@ public enum Cluster {
     /// Returns an ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the
     /// request lies outside k-means' valid envelope (empty data, `k <= 0`, or
     /// more clusters than points), else `nil`.
+    /// Diagnose a ragged or zero-dimensional point set (every point must share the
+    /// same dimension > 0). Returns `nil` for well-formed, non-empty input. Callers
+    /// invoke this after their own non-empty guard, so an empty `data` (no first
+    /// row) is treated as well-formed here and handled by the empty-input path.
+    static func raggedInputDiagnostic(_ data: [[Double]], method: String) -> NumericDiagnostic? {
+        guard let dim = data.first?.count else { return nil }
+        guard dim > 0, data.allSatisfy({ $0.count == dim }) else {
+            return .outsideEnvelope(method: method,
+                reason: "ragged or zero-dimensional input — every point must share the "
+                    + "same dimension > 0")
+        }
+        return nil
+    }
+
     static func kmeansEnvelopeDiagnostic(n: Int, k: Int) -> NumericDiagnostic? {
         if n == 0 {
             return .outsideEnvelope(method: "kmeans",
@@ -305,6 +326,10 @@ public enum Cluster {
             return HierarchicalResult(linkageMatrix: [], labels: nil, nLeaves: 0,
                 diagnostics: [.outsideEnvelope(method: "hierarchical",
                     reason: "empty input — no points to cluster")])
+        }
+        if let diag = raggedInputDiagnostic(data, method: "hierarchical") {
+            return HierarchicalResult(linkageMatrix: [], labels: nil, nLeaves: 0,
+                diagnostics: [diag])
         }
 
         var clusters: [HierarchicalCluster] = []
@@ -439,6 +464,10 @@ public enum Cluster {
             return DBSCANResult(labels: [], coreSamples: [], nClusters: 0,
                 diagnostics: [.outsideEnvelope(method: "dbscan",
                     reason: "empty input — no points to cluster")])
+        }
+        if let diag = raggedInputDiagnostic(data, method: "dbscan") {
+            return DBSCANResult(labels: [], coreSamples: [], nClusters: 0,
+                diagnostics: [diag])
         }
 
         let tree = KDTree(data)
@@ -584,7 +613,9 @@ public enum Cluster {
     ///   - maxK: Maximum k to test (default 10)
     /// - Returns: ElbowResult with inertias and suggested k
     public static func elbowMethod(_ data: [[Double]], maxK: Int = 10) -> ElbowResult {
-        guard !data.isEmpty else {
+        // maxK <= 0 makes `1...actualMaxK` an invalid closed range; empty data has
+        // no k to test. Either way there is nothing to suggest beyond k = 1.
+        guard !data.isEmpty, maxK > 0 else {
             return ElbowResult(inertias: [], suggestedK: 1)
         }
 
@@ -599,14 +630,19 @@ public enum Cluster {
         var suggestedK = 1
         var maxDiffRatio: Double = 0
 
-        for k in 2..<(actualMaxK - 1) {
-            let diff1 = inertias[k - 2] - inertias[k - 1]
-            let diff2 = inertias[k - 1] - inertias[k]
-            if diff2 > 0 {
-                let ratio = diff1 / diff2
-                if ratio > maxDiffRatio {
-                    maxDiffRatio = ratio
-                    suggestedK = k
+        // The elbow ratio compares inertias[k-2], [k-1], [k]; it needs at least
+        // three points. For actualMaxK < 3 the range `2..<(actualMaxK - 1)` is
+        // invalid (e.g. 2..<1), so only run it when there are enough k values.
+        if actualMaxK >= 3 {
+            for k in 2..<(actualMaxK - 1) {
+                let diff1 = inertias[k - 2] - inertias[k - 1]
+                let diff2 = inertias[k - 1] - inertias[k]
+                if diff2 > 0 {
+                    let ratio = diff1 / diff2
+                    if ratio > maxDiffRatio {
+                        maxDiffRatio = ratio
+                        suggestedK = k
+                    }
                 }
             }
         }

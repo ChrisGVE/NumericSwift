@@ -377,6 +377,15 @@ final class RegressionTests: XCTestCase {
 
     // MARK: - ARIMA Tests
 
+    /// arima rejects negative orders with nil rather than trapping on an invalid
+    /// range (0..<d) or a negative-count array allocation (p/q).
+    func testARIMANegativeOrdersReturnNil() {
+        let y = [1.0, 1.5, 1.8, 2.0, 2.3, 2.5, 2.8, 3.0, 3.2, 3.5]
+        XCTAssertNil(arima(y, p: -1, d: 0, q: 0))
+        XCTAssertNil(arima(y, p: 1, d: -1, q: 0))
+        XCTAssertNil(arima(y, p: 1, d: 0, q: -1))
+    }
+
     func testARIMASimple() {
         // AR(1) process
         let y = [1.0, 1.5, 1.8, 2.0, 2.3, 2.5, 2.8, 3.0, 3.2, 3.5]

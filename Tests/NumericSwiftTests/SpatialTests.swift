@@ -510,6 +510,8 @@ final class SpatialTests: XCTestCase {
         let tree = KDTree([[0.0, 0.0], [1.0, 1.0]])
         XCTAssertTrue(tree.query([0.0], k: 1).indices.isEmpty)
         XCTAssertTrue(tree.queryRadius([0.0], radius: 1.0).indices.isEmpty)
+        // k <= 0 must return empty, not force-unwrap best.last! on an empty buffer.
+        XCTAssertTrue(tree.query([0.0, 0.0], k: 0).indices.isEmpty)
     }
 
     /// 2D algorithms must not trap on points with fewer than two coordinates;
