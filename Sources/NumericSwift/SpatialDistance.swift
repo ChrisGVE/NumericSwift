@@ -406,6 +406,10 @@ public enum Spatial {
     public static func squareformToMatrix(_ condensed: [Double]) -> [[Double]] {
         let m = condensed.count
         let n = Int((1.0 + Darwin.sqrt(1.0 + 8.0 * Double(m))) / 2.0)
+        // A valid condensed array has exactly n(n-1)/2 elements. If `m` is not a
+        // triangular number the derived `n` is wrong and condensed[k] would
+        // over-read; reject such input with an empty result rather than trap.
+        guard m == n * (n - 1) / 2 else { return [] }
         var result = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
         var k = 0
         for i in 0..<(n - 1) {

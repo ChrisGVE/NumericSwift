@@ -493,4 +493,39 @@ final class SpatialTests: XCTestCase {
         XCTAssertEqual(manDist, Spatial.manhattanDistance(p1, p2), accuracy: 1e-10)
         XCTAssertEqual(cheDist, Spatial.chebyshevDistance(p1, p2), accuracy: 1e-10)
     }
+
+    // MARK: - Malformed-input hardening (audit round 3)
+
+    /// A zero-dimensional point set builds an empty tree instead of trapping at
+    /// `depth % dim` (dim==0 → division by zero). A short query returns nothing.
+    func testKDTreeZeroDimAndRaggedDoNotTrap() {
+        let emptyDimTree = KDTree([[]])
+        XCTAssertTrue(emptyDimTree.query([1.0], k: 1).indices.isEmpty)
+
+        let ragged = KDTree([[0.0, 0.0], [1.0]])  // ragged → empty tree
+        XCTAssertTrue(ragged.query([0.0, 0.0], k: 1).indices.isEmpty)
+
+        // Valid tree, but a query vector shorter than the dimension returns empty
+        // rather than trapping at point[node.axis].
+        let tree = KDTree([[0.0, 0.0], [1.0, 1.0]])
+        XCTAssertTrue(tree.query([0.0], k: 1).indices.isEmpty)
+        XCTAssertTrue(tree.queryRadius([0.0], radius: 1.0).indices.isEmpty)
+    }
+
+    /// 2D algorithms must not trap on points with fewer than two coordinates;
+    /// they return an empty result.
+    func testConvexHullDelaunayVoronoiMalformedReturnEmpty() {
+        let bad = [[0.0], [1.0], [2.0]]  // 1-D points
+        XCTAssertTrue(Spatial.convexHull(bad).vertices.isEmpty)
+        XCTAssertTrue(Spatial.delaunay(bad).simplices.isEmpty)
+        XCTAssertTrue(Spatial.voronoi(bad).regions.isEmpty)
+    }
+
+    /// squareformToMatrix rejects a non-triangular length (n(n-1)/2) with an empty
+    /// result rather than over-reading the condensed array.
+    func testSquareformInvalidLengthReturnsEmpty() {
+        // 4 is not a triangular number (1,3,6,10,…); valid lengths produce n×n.
+        XCTAssertTrue(Spatial.squareformToMatrix([1, 2, 3, 4]).isEmpty)
+        XCTAssertEqual(Spatial.squareformToMatrix([1, 2, 3]).count, 3)  // n=3 valid
+    }
 }

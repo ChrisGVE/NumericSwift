@@ -547,4 +547,26 @@ final class ClusterTests: XCTestCase {
         // Well-separated clusters should have good silhouette
         XCTAssertGreaterThan(score, 0.5)
     }
+
+    // MARK: - Degenerate-input hardening (audit round 3)
+
+    /// All-identical points with k=2 is valid input. kmeans++ initialization
+    /// breaks early at totalDist==0; without padding to k centroids, runKMeans
+    /// would trap indexing centroids[c]. Must complete and label every point.
+    func testKMeansAllIdenticalPointsDoesNotTrap() {
+        let data = [[1.0, 1.0], [1.0, 1.0], [1.0, 1.0], [1.0, 1.0]]
+        let result = Cluster.kmeans(data, k: 2)
+        XCTAssertEqual(result.labels.count, 4)
+        XCTAssertTrue(result.inertia.isFinite)
+    }
+
+    /// Non-positive maxIterations / nInit are caller-setting errors: must return a
+    /// diagnosed result, not trap on `for iter in 1...maxIter` (1...0 is invalid).
+    func testKMeansNonPositiveSettingsReturnDiagnostic() {
+        let data = [[0.0], [1.0], [10.0], [11.0]]
+        let r1 = Cluster.kmeans(data, k: 2, maxIterations: 0)
+        XCTAssertFalse(r1.diagnostics.isEmpty, "maxIterations=0 must be diagnosed")
+        let r2 = Cluster.kmeans(data, k: 2, nInit: 0)
+        XCTAssertFalse(r2.diagnostics.isEmpty, "nInit=0 must be diagnosed")
+    }
 }

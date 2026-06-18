@@ -165,6 +165,15 @@ public enum Cluster {
                                 diagnostics: [diag])
         }
 
+        // `runKMeans` uses `for iter in 1...maxIter` (traps when maxIter < 1) and a
+        // non-positive `nInit` would run zero attempts and return an empty result
+        // with infinite inertia. Both are caller-setting errors → diagnose, not trap.
+        guard maxIterations > 0, nInit > 0 else {
+            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
+                diagnostics: [.outsideEnvelope(method: "kmeans",
+                    reason: "maxIterations=\(maxIterations) and nInit=\(nInit) must both be positive")])
+        }
+
         let dim = data[0].count
 
         // Run n_init times and keep best result
@@ -229,6 +238,13 @@ public enum Cluster {
         if let diag = kmeansEnvelopeDiagnostic(n: data.count, k: k) {
             return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
                                 diagnostics: [diag])
+        }
+
+        // `runKMeans` traps on `for iter in 1...maxIter` when maxIter < 1.
+        guard maxIterations > 0 else {
+            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
+                diagnostics: [.outsideEnvelope(method: "kmeans",
+                    reason: "maxIterations=\(maxIterations) must be positive")])
         }
 
         let result = runKMeans(
@@ -665,6 +681,15 @@ public enum Cluster {
             }
 
             centroids.append(data[chosenIdx])
+        }
+
+        // All-identical (or fewer-than-k distinct) points make `totalDist == 0`,
+        // breaking the loop early with fewer than k centroids. runKMeans then
+        // indexes centroids[c] for c in 0..<k and would trap. Pad deterministically
+        // from the data so exactly k centroids are always returned (duplicates are
+        // fine — the corresponding clusters simply collapse, matching sklearn).
+        while centroids.count < k {
+            centroids.append(data[centroids.count % n])
         }
 
         return centroids

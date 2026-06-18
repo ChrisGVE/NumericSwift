@@ -38,12 +38,24 @@ public class KDTree {
   public let root: KDTreeNode?
 
   /// Build a KDTree from points.
+  ///
+  /// A zero-dimensional (`[[]]`) or ragged point set builds an empty tree rather
+  /// than trapping: `depth % dim` would divide by zero when `dim == 0`, and a
+  /// ragged row would trap the median sort at `points[$0][axis]`. Queries on an
+  /// empty tree return no neighbours.
   public init(_ points: [[Double]]) {
+    let d = points.first?.count ?? 0
+    guard d > 0, points.allSatisfy({ $0.count == d }) else {
+      self.points = []
+      self.dim = 0
+      self.root = nil
+      return
+    }
     self.points = points
-    self.dim = points.first?.count ?? 0
+    self.dim = d
 
     var indices = Array(0..<points.count)
-    self.root = KDTree.buildTree(points: points, indices: &indices, depth: 0, dim: dim)
+    self.root = KDTree.buildTree(points: points, indices: &indices, depth: 0, dim: d)
   }
 
   private static func buildTree(
@@ -77,6 +89,9 @@ public class KDTree {
   ///   - k: Number of neighbors
   /// - Returns: Tuple of (indices, distances) sorted by distance
   public func query(_ point: [Double], k: Int = 1) -> (indices: [Int], distances: [Double]) {
+    // A query vector shorter than the tree dimension would trap at
+    // point[node.axis]; an empty tree (root == nil) yields no neighbours.
+    guard point.count >= dim, dim > 0 else { return ([], []) }
     var best: [(idx: Int, dist: Double)] = []
 
     func search(_ node: KDTreeNode?) {
@@ -123,6 +138,9 @@ public class KDTree {
   public func queryRadius(_ point: [Double], radius: Double) -> (
     indices: [Int], distances: [Double]
   ) {
+    // Guard against a short query vector (point[node.axis] would trap) and an
+    // empty tree.
+    guard point.count >= dim, dim > 0 else { return ([], []) }
     var result: [(idx: Int, dist: Double)] = []
 
     func search(_ node: KDTreeNode?) {
@@ -379,6 +397,12 @@ extension Spatial {
     public static func delaunay(_ points: [[Double]]) -> DelaunayResult {
         let n = points.count
 
+        // Malformed 2D input (a point with < 2 coordinates) would trap on
+        // point[0]/point[1]; return an empty triangulation.
+        guard points.allSatisfy({ $0.count >= 2 }) else {
+            return DelaunayResult(points: points, simplices: [], neighbors: [])
+        }
+
         guard n >= 3 else {
             return DelaunayResult(points: points, simplices: [], neighbors: [])
         }
@@ -417,6 +441,13 @@ extension Spatial {
                 ridgeVertices: [],
                 ridgePoints: []
             )
+        }
+
+        // Malformed 2D input (a point with < 2 coordinates) would trap downstream;
+        // return an empty diagram.
+        guard points.allSatisfy({ $0.count >= 2 }) else {
+            return VoronoiResult(
+                points: points, vertices: [], regions: [], ridgeVertices: [], ridgePoints: [])
         }
 
         let n = points.count
@@ -519,6 +550,12 @@ extension Spatial {
     /// - Returns: ``ConvexHullResult`` with vertices and edges
     public static func convexHull(_ points: [[Double]]) -> ConvexHullResult {
         let n = points.count
+
+        // These algorithms index point[0]/point[1]; a point with fewer than two
+        // coordinates would trap. Return an empty hull for malformed 2D input.
+        guard points.allSatisfy({ $0.count >= 2 }) else {
+            return ConvexHullResult(points: points, vertices: [], simplices: [], area: 0)
+        }
 
         guard n >= 3 else {
             let vertices = Array(0..<n)
