@@ -204,4 +204,15 @@ final class ComplexDivisionTests: XCTestCase {
         XCTAssertEqual(z.re,  5e-201, accuracy: 5e-201 * tol, "real part")
         XCTAssertEqual(z.im, -5e-201, accuracy: 5e-201 * tol, "imaginary part")
     }
+
+    /// Double / Complex.zero must route to ±inf per C99 Annex G §G.5.1 — the same
+    /// contract as `Complex / Complex` div-by-zero (`testDivisionByZero`). Before
+    /// the guard, Smith's r = d/c = 0/0 = NaN poisoned the result to NaN+NaNi.
+    func testScalarDivideByZero() {
+        let z = 1.0 / Complex(re: 0, im: 0)
+        XCTAssertFalse(z.re.isFinite && z.im.isFinite,
+                       "scalar / zero must not produce a finite result")
+        XCTAssertTrue(z.re.isInfinite,
+                      "scalar / zero real part must be ±inf per C99 Annex G §G.5.1, not NaN")
+    }
 }

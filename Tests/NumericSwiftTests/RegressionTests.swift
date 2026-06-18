@@ -202,6 +202,41 @@ final class RegressionTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    // MARK: - OLS/WLS input-validation (audit hardening)
+
+    /// A ragged design matrix (rows of differing column counts) must be rejected
+    /// with nil, not trap on the short-row index. k is taken from the first row.
+    func testOLSRaggedDesignMatrixReturnsNil() {
+        let y = [1.0, 2.0, 3.0, 4.0]
+        let X = [[1.0, 1.0], [1.0, 2.0], [1.0], [1.0, 4.0]]  // third row short
+        XCTAssertNil(ols(y, X))
+    }
+
+    /// Weights of the wrong length must be rejected with nil. Previously the fit
+    /// silently skipped weighting while the statistics still indexed the bad-length
+    /// array (`w[i]`), producing inconsistent results or a trap.
+    func testOLSMismatchedWeightLengthReturnsNil() {
+        let y = [1.0, 2.0, 3.0, 4.0]
+        let X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
+        XCTAssertNil(ols(y, X, weights: [1.0, 1.0, 1.0]))  // count 3 != n 4
+    }
+
+    /// Negative weights are invalid for WLS (√w would be NaN and poison LAPACK);
+    /// reject with nil rather than emit NaN coefficients.
+    func testOLSNegativeWeightReturnsNil() {
+        let y = [1.0, 2.0, 3.0, 4.0]
+        let X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
+        XCTAssertNil(ols(y, X, weights: [1.0, -1.0, 1.0, 1.0]))
+    }
+
+    /// Non-finite weights (NaN/inf) are invalid; reject with nil.
+    func testOLSNonFiniteWeightReturnsNil() {
+        let y = [1.0, 2.0, 3.0, 4.0]
+        let X = [[1.0, 1.0], [1.0, 2.0], [1.0, 3.0], [1.0, 4.0]]
+        XCTAssertNil(ols(y, X, weights: [1.0, .nan, 1.0, 1.0]))
+        XCTAssertNil(ols(y, X, weights: [1.0, .infinity, 1.0, 1.0]))
+    }
+
     // MARK: - WLS Tests
 
     func testWLS() {

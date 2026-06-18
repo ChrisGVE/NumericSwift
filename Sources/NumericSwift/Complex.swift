@@ -222,6 +222,14 @@ public struct Complex: Equatable, Hashable, Sendable {
     public static func / (lhs: Double, rhs: Complex) -> Complex {
         let a = lhs
         let c = rhs.re, d = rhs.im
+        // C99 Annex G §G.5.1: finite / ±0 → ±∞ (mirror the `Complex / Complex`
+        // guard at line ~167). Smith's r = d/c = 0/0 path would otherwise give
+        // NaN, diverging from the documented infinities contract. With a real
+        // numerator the imaginary term is 0·∞ = NaN, matching `Complex(lhs) / rhs`.
+        if c == 0.0 && d == 0.0 {
+            let scale = Double.infinity
+            return Complex(re: a * scale, im: 0.0 * scale)
+        }
         if Swift.abs(c) >= Swift.abs(d) {
             let r   = d / c
             let den = c + d * r

@@ -233,10 +233,25 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
   let k = X.first?.count ?? 0
   guard k > 0, n > k else { return nil }
 
+  // Reject ragged design matrices: every observation row must have k columns,
+  // otherwise the XWork[i][j] / X[i][j] indexing below traps on a short row.
+  guard X.allSatisfy({ $0.count == k }) else { return nil }
+
+  // Weights, if provided, must match n and be finite & non-negative. WLS forms
+  // √w (line below); a negative or non-finite weight yields NaN that silently
+  // poisons LAPACK, and a wrong-length array would otherwise be skipped for the
+  // fit yet still indexed for the statistics (`w[i]`, line ~321) — an
+  // inconsistent / trapping mix. Reject up front so fit and statistics agree.
+  if let weights {
+    guard weights.count == n,
+      weights.allSatisfy({ $0.isFinite && $0 >= 0 })
+    else { return nil }
+  }
+
   // Apply weights if provided (WLS)
   var yWork = y
   var XWork = X
-  if let w = weights, w.count == n {
+  if let w = weights {
     for i in 0..<n {
       let sqrtW = Darwin.sqrt(w[i])
       yWork[i] *= sqrtW
