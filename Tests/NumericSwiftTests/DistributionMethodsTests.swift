@@ -386,4 +386,32 @@ final class DistributionMethodsTests: XCTestCase {
     let expected = (k2 - 1) * Darwin.log(x) - x / 2.0 - k2 * Darwin.log(2.0) - lgamma(k2)
     XCTAssertEqual(lp, expected, accuracy: abs(expected) * 1e-12)
   }
+
+  /// F logpdf must stay finite deep in the tail where pdf underflows (closed-form
+  /// log density, not log(pdf)). Also matches log(pdf) where pdf is representable.
+  func testFLogpdfTailStaysFinite() {
+    let f = FDistribution(dfn: 50, dfd: 50)
+    XCTAssertEqual(f.logpdf(2.0), Darwin.log(f.pdf(2.0)), accuracy: tolerance)
+    let lpTail = f.logpdf(1e6)
+    XCTAssertTrue(lpTail.isFinite, "F logpdf must remain finite in the tail, got \(lpTail)")
+  }
+
+  /// Gamma logpdf must stay finite deep in the tail where pdf underflows.
+  func testGammaLogpdfTailStaysFinite() {
+    let g = GammaDistribution(shape: 2, scale: 1)
+    XCTAssertEqual(g.logpdf(3.0), Darwin.log(g.pdf(3.0)), accuracy: tolerance)
+    XCTAssertEqual(g.pdf(2000.0), 0.0, "pdf should underflow deep in the tail")
+    let lpTail = g.logpdf(2000.0)
+    XCTAssertTrue(lpTail.isFinite, "Gamma logpdf must remain finite in the tail, got \(lpTail)")
+    // Closed form: (shape-1)ln x - x - lgamma(shape) - ln(scale)
+    XCTAssertEqual(lpTail, (2.0 - 1) * Darwin.log(2000.0) - 2000.0 - lgamma(2.0), accuracy: 1e-9)
+  }
+
+  /// Beta logpdf boundary values mirror the SciPy-parity pdf (a==1 → log(b), etc.).
+  func testBetaLogpdfBoundary() {
+    XCTAssertEqual(BetaDistribution(a: 1, b: 2).logpdf(0.0), Darwin.log(2.0), accuracy: tolerance)
+    XCTAssertEqual(BetaDistribution(a: 0.5, b: 2).logpdf(0.0), .infinity)
+    XCTAssertEqual(BetaDistribution(a: 2, b: 2).logpdf(0.0), -.infinity)
+    XCTAssertEqual(BetaDistribution(a: 3, b: 1).logpdf(1.0), Darwin.log(3.0), accuracy: tolerance)
+  }
 }

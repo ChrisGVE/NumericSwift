@@ -237,6 +237,13 @@ final class RegressionTests: XCTestCase {
         XCTAssertNil(ols(y, X, weights: [1.0, .infinity, 1.0, 1.0]))
     }
 
+    /// glm rejects a ragged design matrix with nil (the IRLS loop indexes X[i][j]).
+    func testGLMRaggedDesignMatrixReturnsNil() {
+        let y = [0.0, 1.0, 0.0, 1.0, 1.0]
+        let X = [[1.0, 0.5], [1.0, 1.5], [1.0], [1.0, 3.5], [1.0, 4.5]]  // third row short
+        XCTAssertNil(glm(y, X, family: .binomial, link: .logit))
+    }
+
     // MARK: - WLS Tests
 
     func testWLS() {

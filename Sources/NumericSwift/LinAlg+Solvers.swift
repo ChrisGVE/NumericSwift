@@ -190,8 +190,10 @@ extension LinAlg {
     ///   - P: Permutation matrix from lu()
     ///   - b: Right-hand side
     /// - Returns: Solution x
-    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `L`, `U`, or `P` is not square, or
-    ///   ``LinAlgError/dimensionMismatch(_:)`` when the factors and `b` leading dimensions differ.
+    /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `L`, `U`, or `P` is not square;
+    ///   ``LinAlgError/dimensionMismatch(_:)`` when the factors and `b` leading dimensions differ;
+    ///   ``LinAlgError/invalidParameter(_:)`` when `U` has a zero pivot (the factored matrix is
+    ///   singular — back-substitution would otherwise divide by zero and return ±inf/NaN).
     public static func luSolve(_ L: Matrix, _ U: Matrix, _ P: Matrix, _ b: Matrix) throws -> Matrix {
         guard L.rows == L.cols && U.rows == U.cols && P.rows == P.cols else {
             throw LinAlgError.notSquare(rows: L.rows, cols: L.cols)
@@ -201,6 +203,17 @@ extension LinAlg {
         }
 
         let n = L.rows
+
+        // A zero U pivot means the factored matrix is singular; back-substitution
+        // (`sum / U[i,i]`) would divide by zero and silently yield ±inf/NaN.
+        // `dgetrf` sets an exact-zero pivot for exact singularity, so this is a
+        // clean, non-arbitrary check (near-singular but nonzero pivots remain the
+        // caller's conditioning concern, surfaced via `cond`/the diagnosed solvers).
+        for i in 0..<n where U.data[i * n + i] == 0 {
+            throw LinAlgError.invalidParameter(
+                "luSolve: U factor is singular (zero pivot at index \(i)); "
+                + "the system has no unique solution")
+        }
 
         let pb = applyPermutation(P: P, b: b, n: n)
         let y = forwardSubstitution(L: L, pb: pb, n: n, nrhs: b.cols)

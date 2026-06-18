@@ -665,20 +665,22 @@ public struct FDistribution {
   /// form `(dfn·z)^(dfn/2) · dfd^(dfd/2) / (dfn·z+dfd)^((dfn+dfd)/2)` overflows to
   /// `inf/inf = NaN` for moderate-to-large degrees of freedom; the log form,
   /// using `lgamma` for `log B(dfn/2, dfd/2)`, stays finite.
-  public func pdf(_ x: Double) -> Double {
-    let z = (x - loc) / scale
-    if z <= 0 { return 0.0 }
-
+  /// Log of the standard (loc=0, scale=1) F density at `z > 0`. Shared by `pdf`,
+  /// `logpdf`, and the `ppf` Newton step so all three are overflow-safe.
+  private func logPdfStandard(_ z: Double) -> Double {
     let halfN = dfn / 2.0
     let halfD = dfd / 2.0
     // log B(halfN, halfD) = lgamma(halfN) + lgamma(halfD) - lgamma(halfN + halfD)
     let logBeta = lgamma(halfN) + lgamma(halfD) - lgamma(halfN + halfD)
-    let logPdf =
-      halfN * Foundation.log(dfn * z) + halfD * Foundation.log(dfd)
+    return halfN * Foundation.log(dfn * z) + halfD * Foundation.log(dfd)
       - (halfN + halfD) * Foundation.log(dfn * z + dfd)
       - Foundation.log(z) - logBeta
+  }
 
-    return Foundation.exp(logPdf) / scale
+  public func pdf(_ x: Double) -> Double {
+    let z = (x - loc) / scale
+    if z <= 0 { return 0.0 }
+    return Foundation.exp(logPdfStandard(z)) / scale
   }
 
   /// Cumulative distribution function.
@@ -701,9 +703,8 @@ public struct FDistribution {
       let u = dfn * x / (dfn * x + dfd)
       let cdfVal = betainc(dfn / 2.0, dfd / 2.0, u)
 
-      let num = Darwin.pow(dfn * x, dfn / 2.0) * Darwin.pow(dfd, dfd / 2.0)
-      let den = Darwin.pow(dfn * x + dfd, (dfn + dfd) / 2.0)
-      let pdfVal = num / den / (x * beta(dfn / 2.0, dfd / 2.0))
+      // Log-space standard density (overflow-safe for large df), same as `pdf`.
+      let pdfVal = Foundation.exp(logPdfStandard(x))
 
       if pdfVal < 1e-30 { break }
       let dx = (cdfVal - p) / pdfVal
@@ -728,8 +729,13 @@ public struct FDistribution {
   }
 
   /// Log of the probability density function.
+  ///
+  /// Closed form via the shared log-density, so tail underflow does not collapse
+  /// a finite log density to `-inf` (as `log(pdf(x))` would).
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z <= 0 { return -.infinity }
+    return logPdfStandard(z) - Foundation.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -840,8 +846,18 @@ public struct GammaDistribution {
   }
 
   /// Log of the probability density function.
+  ///
+  /// Closed form `(shape−1)·ln z − z − lgamma(shape) − ln(scale)`, so the tail
+  /// stays finite where `log(pdf(x))` would collapse to `-inf` after underflow.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z < 0 { return -.infinity }
+    if z == 0 {
+      if shape < 1 { return .infinity }
+      if shape == 1 { return -Foundation.log(scale) }  // log(1/scale)
+      return -.infinity
+    }
+    return (shape - 1) * Foundation.log(z) - z - lgamma(shape) - Foundation.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -948,8 +964,26 @@ public struct BetaDistribution {
   }
 
   /// Log of the probability density function.
+  ///
+  /// Closed form `(a−1)·ln z + (b−1)·ln(1−z) − log B(a,b) − ln(scale)` (with
+  /// `log B(a,b) = lgamma(a)+lgamma(b)−lgamma(a+b)`), matching the SciPy-parity
+  /// boundary values of `pdf` and avoiding tail collapse from `log(pdf(x))`.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z < 0 || z > 1 { return -.infinity }
+    let logScale = Foundation.log(scale)
+    if z == 0 {
+      if a < 1 { return .infinity }
+      if a == 1 { return Foundation.log(b) - logScale }  // log(b/scale)
+      return -.infinity
+    }
+    if z == 1 {
+      if b < 1 { return .infinity }
+      if b == 1 { return Foundation.log(a) - logScale }  // log(a/scale)
+      return -.infinity
+    }
+    let logBeta = lgamma(a) + lgamma(b) - lgamma(a + b)
+    return (a - 1) * Foundation.log(z) + (b - 1) * Foundation.log(1 - z) - logBeta - logScale
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.

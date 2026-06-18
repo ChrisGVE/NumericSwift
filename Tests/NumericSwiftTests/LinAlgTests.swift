@@ -364,6 +364,20 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(result[1], b[1], accuracy: 1e-10)
     }
 
+    /// luSolve with a singular U factor (zero pivot) must throw invalidParameter,
+    /// not silently divide by zero and return ±inf/NaN.
+    func testLuSolveSingularUThrows() throws {
+        let L = LinAlg.Matrix([[1, 0], [0, 1]])
+        let U = LinAlg.Matrix([[1, 2], [0, 0]])  // zero pivot at (1,1)
+        let P = LinAlg.eye(2)
+        let b = LinAlg.Matrix([1, 2])
+        XCTAssertThrowsError(try LinAlg.luSolve(L, U, P, b)) { err in
+            guard case LinAlg.LinAlgError.invalidParameter = err else {
+                return XCTFail("singular U must throw invalidParameter, got \(err)")
+            }
+        }
+    }
+
     // MARK: - Matrix Functions
 
     func testExpm() throws  {

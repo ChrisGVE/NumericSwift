@@ -246,6 +246,14 @@ final class NaNInfHandlingTests: XCTestCase {
     XCTAssertTrue(result.isNaN, "interp1d with NaN y values should propagate NaN")
   }
 
+  func testInterp1dMalformedInputReturnsFillValue() throws {
+    // Empty grid: must return fillValue rather than trap on x[0] / x[n-1].
+    XCTAssertTrue(interp1d(x: [], y: [], xNew: 0.5).isNaN)
+    XCTAssertEqual(interp1d(x: [], y: [], xNew: 0.5, fillValue: -1), -1)
+    // Mismatched x/y lengths: must return fillValue, not index y out of range.
+    XCTAssertEqual(interp1d(x: [0.0, 1.0, 2.0], y: [0.0, 1.0], xNew: 0.5, fillValue: -7), -7)
+  }
+
   func testComputePchipWithNaNY() throws  {
     // PCHIP derivative computation with NaN in y; no crash expected
     let x = [0.0, 1.0, 2.0, 3.0]

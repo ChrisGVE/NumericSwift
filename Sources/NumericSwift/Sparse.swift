@@ -331,6 +331,28 @@ public enum Sparse {
         ///   - data: Nonzero values.
         public init(rows: Int, cols: Int,
                     indptr: [Int], indices: [Int], data: [Double]) {
+            // Validate the CSR layout up front (M14: a malformed structure is a
+            // programmer error → precondition). Without this, `spmv`, `toDense`,
+            // and `transpose` trust indptr/indices and trap deep inside with an
+            // opaque out-of-bounds error on invalid input.
+            precondition(rows >= 0 && cols >= 0,
+                "CSRMatrix: rows and cols must be non-negative (got \(rows)×\(cols))")
+            precondition(indptr.count == rows + 1,
+                "CSRMatrix: indptr.count must equal rows + 1 (\(rows + 1)); got \(indptr.count)")
+            precondition(indices.count == data.count,
+                "CSRMatrix: indices.count (\(indices.count)) must equal data.count (\(data.count))")
+            precondition(indptr.first == 0,
+                "CSRMatrix: indptr[0] must be 0; got \(indptr.first.map(String.init) ?? "nil")")
+            precondition(indptr.last == data.count,
+                "CSRMatrix: indptr[rows] must equal nnz (\(data.count)); got \(indptr.last.map(String.init) ?? "nil")")
+            for i in 1..<indptr.count where indptr[i] < indptr[i - 1] {
+                preconditionFailure(
+                    "CSRMatrix: indptr must be non-decreasing; indptr[\(i)]=\(indptr[i]) < indptr[\(i-1)]=\(indptr[i-1])")
+            }
+            for c in indices where c < 0 || c >= cols {
+                preconditionFailure(
+                    "CSRMatrix: column index \(c) out of bounds for \(cols) columns")
+            }
             self.rows    = rows
             self.cols    = cols
             self.indptr  = indptr

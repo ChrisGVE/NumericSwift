@@ -746,6 +746,10 @@ public func interp1d(
 ) -> Double {
   let n = x.count
 
+  // Reject malformed input (empty grid or mismatched x/y lengths) by returning the
+  // fill value rather than trapping on x[0] / x[n-1] / y[...] below.
+  guard n > 0, y.count == n else { return fillValue }
+
   // Check bounds
   if xNew < x[0] || xNew > x[n - 1] {
     if boundsError {

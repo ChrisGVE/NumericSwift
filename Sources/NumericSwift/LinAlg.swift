@@ -207,9 +207,9 @@ public enum LinAlg {
     /// are responsible for applying a *scaled* cap check before delegating here.
     /// ``NumericDispatch/complexMatmul(lhs:rhs:)`` is the first such operation:
     /// it divides the cap by ``NumericDispatch/complexMatmulWorkingSetMultiplier``
-    /// (= 5) and checks the result element count against that scaled limit,
-    /// preventing the four intermediate real products from exceeding the ceiling
-    /// in aggregate (Issue #13 / CR-D7).
+    /// (= 6) and checks the result element count against that scaled limit,
+    /// preventing the four intermediate real products plus the two output arrays
+    /// from exceeding the ceiling in aggregate (Issue #13 / CR-D7).
     ///
     /// General chained-expression cumulative-bounding remains a future concern
     /// (§14 / v-next) for expressions that hold *k* independent at-cap matrices.

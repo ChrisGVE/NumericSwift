@@ -1469,6 +1469,14 @@ public func curveFit(
     let n = p0.count
     let m = xdata.count
 
+    // The residual closure indexes ydata[i] for i in 0..<m: mismatched x/y lengths
+    // (or empty data / no parameters) are caller contract violations that would
+    // otherwise trap with an opaque out-of-range error deep in the solver.
+    precondition(
+        ydata.count == m && m > 0 && n > 0,
+        "curveFit requires xdata.count == ydata.count > 0 and a non-empty p0 "
+            + "(got xdata.count=\(m), ydata.count=\(ydata.count), p0.count=\(n))")
+
     // Create residuals function
     let residuals: ([Double]) -> [Double] = { params in
         var r = [Double](repeating: 0, count: m)

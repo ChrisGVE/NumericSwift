@@ -16,16 +16,22 @@ extension LinAlg {
 
     /// Create a matrix/vector of zeros.
     public static func zeros(_ rows: Int, _ cols: Int = 1) -> Matrix {
-        Matrix(rows: rows, cols: cols, data: [Double](repeating: 0, count: rows * cols))
+        // Validate the element count overflow-safely BEFORE `rows * cols` is formed
+        // for the array `count:` (a raw multiply would trap on overflow with an
+        // opaque message); this surfaces the hard-cap precondition instead.
+        assertWithinHardCap(rows: rows, cols: cols)
+        return Matrix(rows: rows, cols: cols, data: [Double](repeating: 0, count: rows * cols))
     }
 
     /// Create a matrix/vector of ones.
     public static func ones(_ rows: Int, _ cols: Int = 1) -> Matrix {
-        Matrix(rows: rows, cols: cols, data: [Double](repeating: 1, count: rows * cols))
+        assertWithinHardCap(rows: rows, cols: cols)
+        return Matrix(rows: rows, cols: cols, data: [Double](repeating: 1, count: rows * cols))
     }
 
     /// Create an identity matrix.
     public static func eye(_ n: Int) -> Matrix {
+        assertWithinHardCap(rows: n, cols: n)
         var data = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
             data[i * n + i] = 1.0
@@ -36,6 +42,7 @@ extension LinAlg {
     /// Create a diagonal matrix from a vector.
     public static func diag(_ values: [Double]) -> Matrix {
         let n = values.count
+        assertWithinHardCap(rows: n, cols: n)
         var data = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
             data[i * n + i] = values[i]

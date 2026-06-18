@@ -799,6 +799,9 @@ public func glm(
   let k = X.first?.count ?? 0
   guard k > 0, n > k else { return nil }
 
+  // Reject ragged design matrices: the IRLS loop indexes X[i][j] for j in 0..<k.
+  guard X.allSatisfy({ $0.count == k }) else { return nil }
+
   // Use canonical link if not specified
   let actualLink: GLMLink
   if let link = link {

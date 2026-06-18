@@ -332,9 +332,19 @@ public enum Spatial {
         var result = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
 
         if m * n > 1000 {
-            DispatchQueue.concurrentPerform(iterations: m) { i in
-                for j in 0..<n {
-                    result[i][j] = distFunc(XA[i], XB[j])
+            // Each iteration writes a distinct row. Mutating a shared Swift
+            // `[[Double]]` from `concurrentPerform` is a data race (copy-on-write
+            // touches the shared buffer/refcount across threads). Write through an
+            // `UnsafeMutableBufferPointer`, where distinct-index stores from
+            // different threads are well-defined, and build each row locally first.
+            result.withUnsafeMutableBufferPointer { buf in
+                DispatchQueue.concurrentPerform(iterations: m) { i in
+                    var row = [Double](repeating: 0, count: n)
+                    let xa = XA[i]
+                    for j in 0..<n {
+                        row[j] = distFunc(xa, XB[j])
+                    }
+                    buf[i] = row
                 }
             }
         } else {

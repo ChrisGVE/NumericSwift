@@ -26,7 +26,7 @@
 //  or intermediate matrix checks the soft cap BEFORE the allocation.
 //  `complexMatmul` uses a *peak-aware* admission check (Issue #13 / CR-D7):
 //  rather than calling `checkSoftCap` on the result shape alone, it divides
-//  the cap by `complexMatmulWorkingSetMultiplier` (= 5) and verifies the
+//  the cap by `complexMatmulWorkingSetMultiplier` (= 6) and verifies the
 //  result element count does not exceed that scaled limit.  This ensures the
 //  four intermediate real products plus the two output arrays cannot exceed
 //  the intended memory ceiling in aggregate.
@@ -112,10 +112,12 @@ extension NumericDispatch {
     static func divideComplex(
         re: Double, im: Double, by divisor: Complex
     ) -> (re: Double, im: Double) {
-        let denom = divisor.re * divisor.re + divisor.im * divisor.im
-        let outRe = (re * divisor.re + im * divisor.im) / denom
-        let outIm = (im * divisor.re - re * divisor.im) / denom
-        return (outRe, outIm)
+        // Delegate to the Smith/C99-hardened `Complex / Complex` operator: the
+        // naive `(ac+bd)/(c²+d²)` form overflowed the denominator to ±inf for a
+        // large-magnitude divisor (zeroing the result) and produced NaN for an
+        // exact-zero divisor instead of the C99 ±inf.
+        let q = Complex(re: re, im: im) / divisor
+        return (q.re, q.im)
     }
 
     // MARK: Core complex matmul
@@ -149,9 +151,9 @@ extension NumericDispatch {
     ///
     /// The check is:
     /// ```
-    /// resultElements × 5 ≤ maxEvaluatorMatrixElements
+    /// resultElements × 6 ≤ maxEvaluatorMatrixElements
     /// ```
-    /// equivalently: `resultElements ≤ cap / 5` (integer division, conservative).
+    /// equivalently: `resultElements ≤ cap / 6` (integer division, conservative).
     /// This is computed overflow-safely by verifying the result first passes the
     /// ordinary cap, then scaling the cap down before re-checking.
     ///
@@ -182,7 +184,7 @@ extension NumericDispatch {
         //
         // Implementation: divide the cap by the multiplier and call checkSoftCap
         // with the scaled-down cap limit.  This avoids overflow in the product
-        // `resultElements * 5` while still producing an informative error message.
+        // `resultElements * 6` while still producing an informative error message.
         let cap = LinAlg.maxEvaluatorMatrixElements
         let scaledCap = cap / complexMatmulWorkingSetMultiplier
         let (resultElements, overflow) = LinAlg.elementCount(rows: resultRows, cols: resultCols)

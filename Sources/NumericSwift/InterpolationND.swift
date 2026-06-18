@@ -240,8 +240,18 @@ private struct RegularGrid {
       }
     }
 
-    // Validate values count against grid shape
-    let expectedCount = points.reduce(1) { $0 * $1.count }
+    // Validate values count against grid shape. Fold with overflow checking: a
+    // raw product of the per-axis lengths could overflow Int and trap before the
+    // comparison below.
+    var expectedCount = 1
+    for axis in points {
+      let (product, overflow) = expectedCount.multipliedReportingOverflow(by: axis.count)
+      guard !overflow else {
+        throw InterpolationND.InterpError.invalidGrid(
+          reason: "grid shape \(points.map(\.count)) overflows the addressable element count")
+      }
+      expectedCount = product
+    }
     guard values.count == expectedCount else {
       throw InterpolationND.InterpError.invalidGrid(
         reason: "values count \(values.count) does not match grid shape \(points.map(\.count)) = \(expectedCount)")
