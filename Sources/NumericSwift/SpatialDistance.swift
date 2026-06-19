@@ -52,7 +52,7 @@ public enum Spatial {
     ///   - p2: Second point
     /// - Returns: Euclidean distance
     public static func euclideanDistance(_ p1: [Double], _ p2: [Double]) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
         guard n > 0 else { return 0 }
         var diff = [Double](repeating: 0, count: n)
@@ -69,7 +69,7 @@ public enum Spatial {
     ///   - p2: Second point
     /// - Returns: Squared Euclidean distance
     public static func squaredEuclideanDistance(_ p1: [Double], _ p2: [Double]) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
         guard n > 0 else { return 0 }
         var diff = [Double](repeating: 0, count: n)
@@ -86,7 +86,7 @@ public enum Spatial {
     ///   - p2: Second point
     /// - Returns: Manhattan distance
     public static func manhattanDistance(_ p1: [Double], _ p2: [Double]) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
         guard n > 0 else { return 0 }
         var diff = [Double](repeating: 0, count: n)
@@ -110,7 +110,7 @@ public enum Spatial {
     ///   - p2: Second point
     /// - Returns: Chebyshev distance (maximum absolute difference)
     public static func chebyshevDistance(_ p1: [Double], _ p2: [Double]) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
         guard n > 0 else { return 0 }
         var diff = [Double](repeating: 0, count: n)
@@ -130,7 +130,7 @@ public enum Spatial {
     ///   - p: Order of the norm (default 2 = Euclidean)
     /// - Returns: Minkowski distance
     public static func minkowskiDistance(_ p1: [Double], _ p2: [Double], p: Double = 2) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
         guard n > 0, p > 0 else { return 0 }
         if p == 1 { return manhattanDistance(p1, p2) }
@@ -152,7 +152,7 @@ public enum Spatial {
     ///   - p2: Second point
     /// - Returns: Cosine distance (0 = identical direction, 2 = opposite)
     public static func cosineDistance(_ p1: [Double], _ p2: [Double]) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = Int32(p1.count)
         guard n > 0 else { return 1.0 }
         let dot = cblas_ddot(n, p1, 1, p2, 1)
@@ -172,7 +172,7 @@ public enum Spatial {
     ///   - p2: Second point
     /// - Returns: Correlation distance
     public static func correlationDistance(_ p1: [Double], _ p2: [Double]) -> Double {
-        guard p1.count == p2.count else { return .nan }
+        guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
         guard n > 0 else { return 1.0 }
         var mean1: Double = 0
@@ -203,7 +203,7 @@ public enum Spatial {
     ///   - b: Second vector
     /// - Returns: Jaccard distance in [0, 1]
     public static func jaccardDistance(_ a: [Double], _ b: [Double]) -> Double {
-        guard a.count == b.count else { return .nan }
+        guard a.count == b.count, a.count <= Int(Int32.max) else { return .nan }
         let n = a.count
         guard n > 0 else { return 0 }
         var intersection = 0
@@ -227,7 +227,7 @@ public enum Spatial {
     ///   - b: Second vector
     /// - Returns: Hamming distance in [0, 1]
     public static func hammingDistance(_ a: [Double], _ b: [Double]) -> Double {
-        guard a.count == b.count else { return .nan }
+        guard a.count == b.count, a.count <= Int(Int32.max) else { return .nan }
         let n = a.count
         guard n > 0 else { return 0 }
         var diffCount = 0
@@ -246,7 +246,7 @@ public enum Spatial {
     ///   - b: Second vector
     /// - Returns: Canberra distance (≥ 0)
     public static func canberraDistance(_ a: [Double], _ b: [Double]) -> Double {
-        guard a.count == b.count else { return .nan }
+        guard a.count == b.count, a.count <= Int(Int32.max) else { return .nan }
         let n = a.count
         guard n > 0 else { return 0 }
         var sum = 0.0
@@ -267,7 +267,7 @@ public enum Spatial {
     ///   - b: Second vector
     /// - Returns: Bray-Curtis distance in [0, 1]
     public static func braycurtisDistance(_ a: [Double], _ b: [Double]) -> Double {
-        guard a.count == b.count else { return .nan }
+        guard a.count == b.count, a.count <= Int(Int32.max) else { return .nan }
         let n = a.count
         guard n > 0 else { return 0 }
         var numerator = 0.0
@@ -290,7 +290,7 @@ public enum Spatial {
     ///   - invCov: Inverse of the covariance matrix (d × d)
     /// - Returns: Mahalanobis distance (≥ 0)
     public static func mahalanobisDistance(_ a: [Double], _ b: [Double], invCov: [[Double]]) -> Double {
-        guard a.count == b.count else { return .nan }
+        guard a.count == b.count, a.count <= Int(Int32.max) else { return .nan }
         let n = a.count
         guard n > 0, invCov.count == n, invCov.allSatisfy({ $0.count == n }) else { return 0 }
         var diff = [Double](repeating: 0, count: n)

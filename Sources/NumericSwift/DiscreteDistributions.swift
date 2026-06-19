@@ -146,9 +146,13 @@ public struct PoissonDistribution {
   /// Expected number of events (rate parameter).
   public let mu: Double
 
-  /// - Parameter mu: Mean rate, must be > 0.
+  /// - Parameter mu: Mean rate, must be finite, > 0, and within `Int` range.
+  ///   The upper bound keeps `Int(mu)` (ppf) and the `Int(floor(...))` PTRS sample
+  ///   cast from trapping; `mu = .infinity` previously passed `mu > 0` and trapped
+  ///   later. (M14: an out-of-domain parameter is a programmer error → precondition.)
   public init(mu: Double) {
-    precondition(mu > 0, "PoissonDistribution: mu must be positive, got \(mu)")
+    precondition(mu.isFinite && mu > 0 && mu <= Double(Int.max),
+      "PoissonDistribution: mu must be finite, positive, and <= Int.max, got \(mu)")
     self.mu = mu
   }
 
