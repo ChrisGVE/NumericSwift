@@ -7,6 +7,14 @@ CLAUDE.local.md
 .taskmaster/
 .claude/
 
+# Private / local-only working docs (must never reach the public repo)
+handover.md
+FIRST-PRINCIPLES.md
+LuaSwift_requirements.md
+code_audit*.md
+code_review.md
+tmp/
+
 # Logs
 logs
 *.log
