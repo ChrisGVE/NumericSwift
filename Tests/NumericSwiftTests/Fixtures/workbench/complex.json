@@ -1,0 +1,2305 @@
+[
+  {
+    "id": "complex.trivial.add_re_1p2i_3p4i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 2.0,
+      "w_re": 3.0,
+      "w_im": 4.0
+    },
+    "oracle": {
+      "value": 4.0,
+      "bits": "0x4010000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_re"
+    ],
+    "tol": {
+      "add_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.add_im_1p2i_3p4i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 2.0,
+      "w_re": 3.0,
+      "w_im": 4.0
+    },
+    "oracle": {
+      "value": 6.0,
+      "bits": "0x4018000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_im"
+    ],
+    "tol": {
+      "add_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.sub_re_5p6i_2p1i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 5.0,
+      "z_im": 6.0,
+      "w_re": 2.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 3.0,
+      "bits": "0x4008000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_re"
+    ],
+    "tol": {
+      "sub_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.sub_im_5p6i_2p1i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 5.0,
+      "z_im": 6.0,
+      "w_re": 2.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_im"
+    ],
+    "tol": {
+      "sub_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.mul_re_one_i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0,
+      "w_re": 0.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_re"
+    ],
+    "tol": {
+      "mul_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.mul_im_one_i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0,
+      "w_re": 0.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_im"
+    ],
+    "tol": {
+      "mul_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.div_re_one_over_i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0,
+      "w_re": 0.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_re"
+    ],
+    "tol": {
+      "div_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.div_im_one_over_i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0,
+      "w_re": 0.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": -1.0,
+      "bits": "0xBFF0000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_im"
+    ],
+    "tol": {
+      "div_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.trivial.abs_3p4i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 3.0,
+      "z_im": 4.0
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "abs"
+    ],
+    "tol": {
+      "abs": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.arg_i",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 1.0
+    },
+    "oracle": {
+      "value": 1.5707963267948966,
+      "bits": "0x3FF921FB54442D18"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "arg"
+    ],
+    "tol": {
+      "arg": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.cexp_re_zero",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_re"
+    ],
+    "tol": {
+      "cexp_re": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.cexp_im_zero",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_im"
+    ],
+    "tol": {
+      "cexp_im": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.clog_re_one",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.clog_im_one",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.csqrt_re_four",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 4.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 2.0,
+      "bits": "0x4000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_re"
+    ],
+    "tol": {
+      "csqrt_re": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.csqrt_im_four",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 4.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_im"
+    ],
+    "tol": {
+      "csqrt_im": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.csin_re_zero",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_re"
+    ],
+    "tol": {
+      "csin_re": 1e-13
+    }
+  },
+  {
+    "id": "complex.trivial.csin_im_zero",
+    "tier": "trivial",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_im"
+    ],
+    "tol": {
+      "csin_im": 1e-13
+    }
+  },
+  {
+    "id": "complex.hard.add_re_q0",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 2.2,
+      "bits": "0x400199999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_re"
+    ],
+    "tol": {
+      "add_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.add_im_q0",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -3.8,
+      "bits": "0xC00E666666666666"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_im"
+    ],
+    "tol": {
+      "add_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.sub_re_q1",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 0.8,
+      "bits": "0x3FE999999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_re"
+    ],
+    "tol": {
+      "sub_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.sub_im_q1",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -1.2,
+      "bits": "0xBFF3333333333333"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_im"
+    ],
+    "tol": {
+      "sub_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.mul_re_q2",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -2.2,
+      "bits": "0xC00199999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_re"
+    ],
+    "tol": {
+      "mul_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.mul_im_q2",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -3.7,
+      "bits": "0xC00D99999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_im"
+    ],
+    "tol": {
+      "mul_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.div_re_q3",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 1.9724770642201834,
+      "bits": "0x3FFF8F441C2EF8F4"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_re"
+    ],
+    "tol": {
+      "div_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.div_im_q3",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 0.09174311926605512,
+      "bits": "0x3FB77C7A20E177CD"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_im"
+    ],
+    "tol": {
+      "div_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cexp_re_q4",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -3.590476585567813,
+      "bits": "0xC00CB94BC9C08A3F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_re"
+    ],
+    "tol": {
+      "cexp_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cexp_im_q4",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -2.6821660671324885,
+      "bits": "0xC00575137BA63328"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_im"
+    ],
+    "tol": {
+      "cexp_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.clog_re_q5",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 1.0700330817481354,
+      "bits": "0x3FF11EDB023BF0FE"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.clog_im_q5",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.0303768265243125,
+      "bits": "0xBFF07C6C6947A6A8"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csqrt_re_q6",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 1.4858458781822983,
+      "bits": "0x3FF7C60653DB07AA"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_re"
+    ],
+    "tol": {
+      "csqrt_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csqrt_im_q6",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -0.8412716408576514,
+      "bits": "0xBFEAEBB2811125D9"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_im"
+    ],
+    "tol": {
+      "csqrt_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csin_re_q7",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 6.116928012369312,
+      "bits": "0x401877BBFA14732E"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_re"
+    ],
+    "tol": {
+      "csin_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csin_im_q7",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -0.42797453450615125,
+      "bits": "0xBFDB63EF4D4E6231"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_im"
+    ],
+    "tol": {
+      "csin_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccos_re_q8",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 0.43378099760770306,
+      "bits": "0x3FDBC3115F967C56"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccos_re"
+    ],
+    "tol": {
+      "ccos_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccos_im_q8",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 6.035048637766573,
+      "bits": "0x401823E3CA43E839"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccos_im"
+    ],
+    "tol": {
+      "ccos_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctan_re_q9",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 0.001927343523745636,
+      "bits": "0x3F5F93DD59C4EF24"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctan_re"
+    ],
+    "tol": {
+      "ctan_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctan_im_q9",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.0134287782038935,
+      "bits": "0xBFF0370118336018"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctan_im"
+    ],
+    "tol": {
+      "ctan_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csinh_re_q10",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.7058586411644667,
+      "bits": "0xBFFB4B326E3667F9"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csinh_re"
+    ],
+    "tol": {
+      "csinh_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csinh_im_q10",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.4078516262453893,
+      "bits": "0xBFF6868F6D458282"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csinh_im"
+    ],
+    "tol": {
+      "csinh_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccosh_re_q11",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.8846179444033462,
+      "bits": "0xBFFE2765254AAC84"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccosh_re"
+    ],
+    "tol": {
+      "ccosh_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccosh_im_q11",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.2743144408870994,
+      "bits": "0xBFF463978A06E3CF"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccosh_im"
+    ],
+    "tol": {
+      "ccosh_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctanh_re_q12",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 0.967786802152774,
+      "bits": "0x3FEEF81C0717E40A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctanh_re"
+    ],
+    "tol": {
+      "ctanh_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctanh_im_q12",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 0.09263783626841987,
+      "bits": "0x3FB7B71CFD25230C"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctanh_im"
+    ],
+    "tol": {
+      "ctanh_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cpow_re_q13",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.2855841139881388,
+      "bits": "0xBFD247029775842D"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cpow_re"
+    ],
+    "tol": {
+      "cpow_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.hard.cpow_im_q13",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.47479865383390857,
+      "bits": "0xBFDE6319E499B18F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cpow_im"
+    ],
+    "tol": {
+      "cpow_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.hard.abs_q14",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": 2.9154759474226504,
+      "bits": "0x400752E50DB3A3A2"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "abs"
+    ],
+    "tol": {
+      "abs": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.arg_q15",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 1.5,
+      "z_im": -2.5
+    },
+    "oracle": {
+      "value": -1.0303768265243125,
+      "bits": "0xBFF07C6C6947A6A8"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "arg"
+    ],
+    "tol": {
+      "arg": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.add_re_q16",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -2.55,
+      "bits": "0xC004666666666666"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_re"
+    ],
+    "tol": {
+      "add_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.add_im_q16",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.55,
+      "bits": "0xBFE199999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_im"
+    ],
+    "tol": {
+      "add_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.sub_re_q17",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -3.95,
+      "bits": "0xC00F99999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_re"
+    ],
+    "tol": {
+      "sub_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.sub_im_q17",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 2.05,
+      "bits": "0x4000666666666666"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_im"
+    ],
+    "tol": {
+      "sub_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.mul_re_q18",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -1.2999999999999998,
+      "bits": "0xBFF4CCCCCCCCCCCC"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_re"
+    ],
+    "tol": {
+      "mul_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.mul_im_q18",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 4.75,
+      "bits": "0x4013000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_im"
+    ],
+    "tol": {
+      "mul_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.div_re_q19",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -1.4908256880733946,
+      "bits": "0xBFF7DA6C0964FDA7"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_re"
+    ],
+    "tol": {
+      "div_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.div_im_q19",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -1.6972477064220184,
+      "bits": "0xBFFB27ED3604B27F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_im"
+    ],
+    "tol": {
+      "div_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cexp_re_q20",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 0.028370656269871123,
+      "bits": "0x3F9D0D3283617001"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_re"
+    ],
+    "tol": {
+      "cexp_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cexp_im_q20",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 0.02643000294730204,
+      "bits": "0x3F9B1077792AD9A5"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_im"
+    ],
+    "tol": {
+      "cexp_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.clog_re_q21",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 1.204597414026152,
+      "bits": "0x3FF34607F0216A79"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.clog_im_q21",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 2.9147938055359073,
+      "bits": "0x4007517F6A2AE17F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csqrt_re_q22",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 0.20665915904162516,
+      "bits": "0x3FCA73CEACC05699"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_re"
+    ],
+    "tol": {
+      "csqrt_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csqrt_im_q22",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 1.8145820477497818,
+      "bits": "0x3FFD08872F6FE785"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_im"
+    ],
+    "tol": {
+      "csqrt_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csin_re_q23",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 0.1400784321594938,
+      "bits": "0x3FC1EE170E7FFF5D"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_re"
+    ],
+    "tol": {
+      "csin_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csin_im_q23",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -0.8174894663549801,
+      "bits": "0xBFEA28DFAB5A3654"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_im"
+    ],
+    "tol": {
+      "csin_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccos_re_q24",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -1.2870830744226893,
+      "bits": "0xBFF497E46BFE16E0"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccos_re"
+    ],
+    "tol": {
+      "ccos_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccos_im_q24",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -0.0889706694381562,
+      "bits": "0xBFB6C6C8238A447D"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccos_im"
+    ],
+    "tol": {
+      "ccos_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctan_re_q25",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -0.06462005598570333,
+      "bits": "0xBFB08AF0A31FD122"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctan_re"
+    ],
+    "tol": {
+      "ctan_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctan_im_q25",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 0.6396158665705525,
+      "bits": "0x3FE477BBB19D8B0A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctan_im"
+    ],
+    "tol": {
+      "ctan_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csinh_re_q26",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -9.421066992806237,
+      "bits": "0xC022D79617C70E43"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csinh_re"
+    ],
+    "tol": {
+      "csinh_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csinh_im_q26",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 8.803062662341539,
+      "bits": "0x40219B2B077ECA8C"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csinh_im"
+    ],
+    "tol": {
+      "csinh_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccosh_re_q27",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 9.449437649076106,
+      "bits": "0x4022E61CB108BEFA"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccosh_re"
+    ],
+    "tol": {
+      "ccosh_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccosh_im_q27",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -8.776632659394238,
+      "bits": "0xC0218DA2CBC23520"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccosh_im"
+    ],
+    "tol": {
+      "ccosh_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctanh_re_q28",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": -0.9997828278614039,
+      "bits": "0xBFEFFE388E988C4F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctanh_re"
+    ],
+    "tol": {
+      "ctanh_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctanh_im_q28",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 0.00299870151896132,
+      "bits": "0x3F6890BB9E8A7B15"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctanh_im"
+    ],
+    "tol": {
+      "ctanh_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cpow_re_q29",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 91.41781903403269,
+      "bits": "0x4056DABD8C0BB445"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cpow_re"
+    ],
+    "tol": {
+      "cpow_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.hard.cpow_im_q29",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 46.94187596705459,
+      "bits": "0x4047788F6445B1A5"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cpow_im"
+    ],
+    "tol": {
+      "cpow_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.hard.abs_q30",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 3.3354160160315836,
+      "bits": "0x400AAEEE979B4838"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "abs"
+    ],
+    "tol": {
+      "abs": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.arg_q31",
+    "tier": "hard",
+    "inputs": {
+      "z_re": -3.25,
+      "z_im": 0.75
+    },
+    "oracle": {
+      "value": 2.9147938055359073,
+      "bits": "0x4007517F6A2AE17F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "arg"
+    ],
+    "tol": {
+      "arg": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.add_re_q32",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 1.2,
+      "bits": "0x3FF3333333333333"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_re"
+    ],
+    "tol": {
+      "add_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.add_im_q32",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.8,
+      "bits": "0xBFE999999999999A"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "add_im"
+    ],
+    "tol": {
+      "add_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.sub_re_q33",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.19999999999999996,
+      "bits": "0xBFC9999999999998"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_re"
+    ],
+    "tol": {
+      "sub_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.sub_im_q33",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 1.8,
+      "bits": "0x3FFCCCCCCCCCCCCD"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "sub_im"
+    ],
+    "tol": {
+      "sub_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.mul_re_q34",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_re"
+    ],
+    "tol": {
+      "mul_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.mul_im_q34",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.30000000000000004,
+      "bits": "0xBFD3333333333334"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "mul_im"
+    ],
+    "tol": {
+      "mul_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.div_re_q35",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": -0.13761467889908258,
+      "bits": "0xBFC19D5B98A919D6"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_re"
+    ],
+    "tol": {
+      "div_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.div_im_q35",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5,
+      "w_re": 0.7,
+      "w_im": -1.3
+    },
+    "oracle": {
+      "value": 0.4587155963302752,
+      "bits": "0x3FDD5B98A919D5B9"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_im"
+    ],
+    "tol": {
+      "div_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cexp_re_q36",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 1.4468890365841693,
+      "bits": "0x3FF726751E511E89"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_re"
+    ],
+    "tol": {
+      "cexp_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.cexp_im_q36",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.7904390832136149,
+      "bits": "0x3FE94B46E77C3F11"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cexp_im"
+    ],
+    "tol": {
+      "cexp_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.clog_re_q37",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": -0.3465735902799726,
+      "bits": "0xBFD62E42FEFA39EE"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.clog_im_q37",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.7853981633974483,
+      "bits": "0x3FE921FB54442D18"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csqrt_re_q38",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.7768869870150187,
+      "bits": "0x3FE8DC42193D5C03"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_re"
+    ],
+    "tol": {
+      "csqrt_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csqrt_im_q38",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.3217971264527913,
+      "bits": "0x3FD49852F983EFDD"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_im"
+    ],
+    "tol": {
+      "csqrt_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csin_re_q39",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.5406126857131534,
+      "bits": "0x3FE14CB2F99E1A61"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_re"
+    ],
+    "tol": {
+      "csin_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.csin_im_q39",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.4573041531842493,
+      "bits": "0x3FDD4478A39015B5"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_im"
+    ],
+    "tol": {
+      "csin_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccos_re_q40",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.9895848833999199,
+      "bits": "0x3FEFAAADEADA3236"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccos_re"
+    ],
+    "tol": {
+      "ccos_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ccos_im_q40",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": -0.24982639750046154,
+      "bits": "0xBFCFFA4FB77892C0"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ccos_im"
+    ],
+    "tol": {
+      "ccos_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctan_re_q41",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.40389645531602586,
+      "bits": "0x3FD9D97084A35EB9"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctan_re"
+    ],
+    "tol": {
+      "ctan_re": 1e-12
+    }
+  },
+  {
+    "id": "complex.hard.ctan_im_q41",
+    "tier": "hard",
+    "inputs": {
+      "z_re": 0.5,
+      "z_im": 0.5
+    },
+    "oracle": {
+      "value": 0.5640831412674986,
+      "bits": "0x3FE20CF8167F00DB"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctan_im"
+    ],
+    "tol": {
+      "ctan_im": 1e-12
+    }
+  },
+  {
+    "id": "complex.edge.clog_re_log_neg_real",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.clog_im_log_neg_real",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 3.141592653589793,
+      "bits": "0x400921FB54442D18"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.csqrt_re_sqrt_neg_one",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_re"
+    ],
+    "tol": {
+      "csqrt_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.csqrt_im_sqrt_neg_one",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_im"
+    ],
+    "tol": {
+      "csqrt_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.clog_re_log_neg_real_lower",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1.0,
+      "z_im": -1e-300
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.clog_im_log_neg_real_lower",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1.0,
+      "z_im": -1e-300
+    },
+    "oracle": {
+      "value": -3.141592653589793,
+      "bits": "0xC00921FB54442D18"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.csqrt_re_sqrt_neg_lower",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -4.0,
+      "z_im": -1e-300
+    },
+    "oracle": {
+      "value": 2.5e-301,
+      "bits": "0x01856E1FC2F8F359"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_re"
+    ],
+    "tol": {
+      "csqrt_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.csqrt_im_sqrt_neg_lower",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -4.0,
+      "z_im": -1e-300
+    },
+    "oracle": {
+      "value": -2.0,
+      "bits": "0xC000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csqrt_im"
+    ],
+    "tol": {
+      "csqrt_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.clog_re_log_zero",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": null,
+      "bits": "0xFFF0000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_re"
+    ],
+    "tol": {
+      "clog_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.clog_im_log_zero",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "clog_im"
+    ],
+    "tol": {
+      "clog_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.ctanh_re_tanh_imag",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.7853981633974483
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctanh_re"
+    ],
+    "tol": {
+      "ctanh_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.ctanh_im_tanh_imag",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 0.7853981633974483
+    },
+    "oracle": {
+      "value": 0.9999999999999999,
+      "bits": "0x3FEFFFFFFFFFFFFF"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "ctanh_im"
+    ],
+    "tol": {
+      "ctanh_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.csin_re_sin_large_imag",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 20.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_re"
+    ],
+    "tol": {
+      "csin_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.csin_im_sin_large_imag",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 20.0
+    },
+    "oracle": {
+      "value": 242582597.70489514,
+      "bits": "0x41ACEB088B68E804"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "csin_im"
+    ],
+    "tol": {
+      "csin_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.abs_abs_large_mag",
+    "tier": "edge",
+    "inputs": {
+      "z_re": -1e+150,
+      "z_im": 1e+150
+    },
+    "oracle": {
+      "value": 1.414213562373095e+150,
+      "bits": "0x5F1BA66EC32ACB5F"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "abs"
+    ],
+    "tol": {
+      "abs": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.div_re_div_tiny",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0,
+      "w_re": 1e-300,
+      "w_im": 0.0
+    },
+    "oracle": {
+      "value": 9.999999999999999e+299,
+      "bits": "0x7E37E43C8800759B"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_re"
+    ],
+    "tol": {
+      "div_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.div_im_div_tiny",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 1.0,
+      "z_im": 0.0,
+      "w_re": 1e-300,
+      "w_im": 0.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "div_im"
+    ],
+    "tol": {
+      "div_im": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.cpow_re_i_pow_i",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 1.0,
+      "w_re": 0.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 0.20787957635076193,
+      "bits": "0x3FCA9BCC46F767E0"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cpow_re"
+    ],
+    "tol": {
+      "cpow_re": 1e-09
+    }
+  },
+  {
+    "id": "complex.edge.cpow_im_i_pow_i",
+    "tier": "edge",
+    "inputs": {
+      "z_re": 0.0,
+      "z_im": 1.0,
+      "w_re": 0.0,
+      "w_im": 1.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "python cmath 3.14",
+    "strategies": [
+      "cpow_im"
+    ],
+    "tol": {
+      "cpow_im": 1e-09
+    }
+  }
+]

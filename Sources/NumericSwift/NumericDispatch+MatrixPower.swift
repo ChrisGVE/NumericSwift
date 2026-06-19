@@ -6,7 +6,7 @@
 //
 //  Covers:
 //    - Real matrix integer power (exponentiation-by-squaring, O(log |n|))
-//    - Complex matrix integer power (deferred stub — throws .unsupportedNode)
+//    - Complex matrix integer power (exponentiation-by-squaring; cinv for n < 0)
 //
 //  Caller contracts (enforced by NumericDispatch+BinaryOps.swift `applyPow`):
 //    - `matrix` is square (rows == cols)
@@ -86,14 +86,77 @@ extension NumericDispatch {
         return .matrix(result)
     }
 
-    /// complexMatrix^n integer power — deferred to a future task.
+    /// Raise a square complex matrix to an integer power via exponentiation-by-squaring.
     ///
-    /// Complex-matrix integer power is deferred; the hard preconditions (square,
-    /// integer exponent) are already checked by the caller (`applyPow`).
+    /// Contracts enforced by the caller (`applyPow`) before this function is invoked:
+    ///   - `cm` is square (`rows == cols`)
+    ///   - `exponent` has no fractional part (`exponent == exponent.rounded()`)
+    ///
+    /// Semantics mirror ``evalMatrixPow(matrix:exponent:)``:
+    ///   - `n > 0`: exponentiation-by-squaring (O(log n) complex multiplies).
+    ///   - `n == 0`: complex identity matrix of the same size (A⁰ = I).
+    ///   - `n < 0`: `cinv(A^|n|)`; throws `MathExprError.invalidArguments` when the
+    ///     matrix (or its positive power) is singular.
+    ///
+    /// - Throws: `MathExprError.invalidArguments` when `|exponent| > 2^53` (the
+    ///   `Int(exponent)` cast would otherwise trap) or when a negative power is
+    ///   requested for a singular matrix.
     static func evalComplexMatrixPow(
         cm: LinAlg.ComplexMatrix, exponent: Double
     ) throws -> NumericValue {
-        throw MathExprError.unsupportedNode(
-            "not yet implemented: complexMatrix^scalar (Task 13)")
+        // Self-protect the `Int(exponent)` cast (same rationale as evalMatrixPow):
+        // a finite integer-valued Double beyond ±2^53 passes the caller's
+        // `== rounded()` guard but overflows `Int` and would TRAP.
+        guard exponent.magnitude <= 9_007_199_254_740_992 else {
+            throw MathExprError.invalidArguments(
+                "matrix power exponent \(exponent) exceeds ±2^53; "
+                + "an exponent this large is not a meaningful matrix power")
+        }
+        let n = Int(exponent)       // caller guarantees no fractional part
+        let dim = cm.rows           // caller guarantees square
+
+        // n == 0 → A⁰ = identity regardless of A (even singular)
+        if n == 0 {
+            return .complexMatrix(LinAlg.ComplexMatrix(LinAlg.eye(dim)))
+        }
+
+        let absN = n < 0 ? -n : n
+
+        // Peak-aware admission control. Each `complexMatrixMultiply` allocates the
+        // same six result-sized buffers as `complexMatmul` (4 real products + 2
+        // output arrays) but skips its soft-cap check; the caller (`applyPow`) only
+        // validated the result shape (dim×dim ≤ cap), not the 6× peak. The shape is
+        // constant dim×dim through the squaring loop, so check the peak once here.
+        let elements = dim * dim
+        let cap = LinAlg.maxEvaluatorMatrixElements
+        guard elements <= cap / complexMatmulWorkingSetMultiplier else {
+            throw LinAlg.LinAlgError.invalidParameter(
+                "complexMatrix^scalar peak working set (\(elements) × "
+                + "\(complexMatmulWorkingSetMultiplier) elements) exceeds soft cap \(cap) "
+                + "(per-matrix limit \(cap / complexMatmulWorkingSetMultiplier) for complex matmul)")
+        }
+
+        // Exponentiation by squaring: O(log |n|) complex multiplications.
+        var result = LinAlg.ComplexMatrix(LinAlg.eye(dim))   // accumulator = identity
+        var base   = cm                                      // running square
+        var remaining = absN
+        while remaining > 0 {
+            if remaining & 1 == 1 {
+                result = complexMatrixMultiply(result, base)
+            }
+            base      = complexMatrixMultiply(base, base)
+            remaining >>= 1
+        }
+
+        if n < 0 {
+            // Negative power: invert the positive-power result.
+            guard let invResult = try LinAlg.cinv(result) else {
+                throw MathExprError.invalidArguments(
+                    "matrix power A^\(n): the matrix (or A^\(absN)) is singular; "
+                    + "negative powers require an invertible matrix")
+            }
+            return .complexMatrix(invResult)
+        }
+        return .complexMatrix(result)
     }
 }

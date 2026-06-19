@@ -326,4 +326,92 @@ final class DistributionMethodsTests: XCTestCase {
     XCTAssertEqual(dist.logpdf(x), expected, accuracy: tolerance)
     XCTAssertFalse(dist.logpdf(x).isInfinite)
   }
+
+  // MARK: - Support-boundary densities (SciPy parity, audit hardening)
+
+  /// Beta pdf at the lower boundary z == 0 is governed by `a`:
+  /// a < 1 → +inf, a == 1 → 1/B(1,b) = b, a > 1 → 0.
+  func testBetaPdfLowerBoundary() {
+    XCTAssertEqual(BetaDistribution(a: 1, b: 2).pdf(0.0), 2.0, accuracy: tolerance)
+    XCTAssertEqual(BetaDistribution(a: 0.5, b: 2).pdf(0.0), .infinity)
+    XCTAssertEqual(BetaDistribution(a: 2, b: 2).pdf(0.0), 0.0, accuracy: tolerance)
+  }
+
+  /// Beta pdf at the upper boundary z == 1 is governed symmetrically by `b`:
+  /// b < 1 → +inf, b == 1 → 1/B(a,1) = a, b > 1 → 0.
+  func testBetaPdfUpperBoundary() {
+    XCTAssertEqual(BetaDistribution(a: 3, b: 1).pdf(1.0), 3.0, accuracy: tolerance)
+    XCTAssertEqual(BetaDistribution(a: 3, b: 0.5).pdf(1.0), .infinity)
+    XCTAssertEqual(BetaDistribution(a: 3, b: 2).pdf(1.0), 0.0, accuracy: tolerance)
+  }
+
+  /// Gamma pdf at z == 0: shape < 1 → +inf, shape == 1 → 1/scale, shape > 1 → 0.
+  func testGammaPdfBoundary() {
+    XCTAssertEqual(GammaDistribution(shape: 0.5).pdf(0.0), .infinity)
+    XCTAssertEqual(GammaDistribution(shape: 1).pdf(0.0), 1.0, accuracy: tolerance)
+    XCTAssertEqual(GammaDistribution(shape: 1, scale: 2).pdf(0.0), 0.5, accuracy: tolerance)
+    XCTAssertEqual(GammaDistribution(shape: 2).pdf(0.0), 0.0, accuracy: tolerance)
+  }
+
+  /// F pdf must stay finite for large degrees of freedom. The old product form
+  /// `(dfn·z)^(dfn/2)·dfd^(dfd/2) / (dfn·z+dfd)^((dfn+dfd)/2)` overflowed to
+  /// inf/inf = NaN; the log-space form does not. The second assertion is an
+  /// algebraic-identity self-check that the refactor preserved the value the
+  /// SciPy-backed workbench validates at moderate inputs.
+  func testFPdfLargeDfStaysFinite() {
+    let f = FDistribution(dfn: 500, dfd: 500)
+    let d = f.pdf(1.2)
+    XCTAssertTrue(d.isFinite, "F pdf with large df must be finite, got \(d)")
+    XCTAssertGreaterThan(d, 0.0)
+
+    let g = FDistribution(dfn: 5, dfd: 9)
+    let z = 1.5
+    // num exponents dfn/2 = 2.5, dfd/2 = 4.5; den exponent (dfn+dfd)/2 = 7.0.
+    let num = Darwin.pow(5 * z, 2.5) * Darwin.pow(9.0, 4.5)
+    let den = Darwin.pow(5 * z + 9, 7.0)
+    let expected = (1.0 / (z * beta(2.5, 4.5))) * num / den
+    XCTAssertEqual(g.pdf(z), expected, accuracy: abs(expected) * 1e-10)
+  }
+
+  /// Chi-squared logpdf must stay finite deep in the tail where pdf underflows to
+  /// 0 (so the old `log(pdf(x))` returned -inf). Closed form:
+  /// (k/2 − 1)·ln x − x/2 − (k/2)·ln 2 − lgamma(k/2).
+  func testChiSquaredLogpdfTailStaysFinite() {
+    let c = ChiSquaredDistribution(df: 4)
+    let x = 2000.0
+    XCTAssertEqual(c.pdf(x), 0.0, "pdf should underflow to 0 deep in the tail")
+    let lp = c.logpdf(x)
+    XCTAssertTrue(lp.isFinite, "logpdf must remain finite where pdf underflows, got \(lp)")
+    let k2 = 2.0
+    let expected = (k2 - 1) * Darwin.log(x) - x / 2.0 - k2 * Darwin.log(2.0) - lgamma(k2)
+    XCTAssertEqual(lp, expected, accuracy: abs(expected) * 1e-12)
+  }
+
+  /// F logpdf must stay finite deep in the tail where pdf underflows (closed-form
+  /// log density, not log(pdf)). Also matches log(pdf) where pdf is representable.
+  func testFLogpdfTailStaysFinite() {
+    let f = FDistribution(dfn: 50, dfd: 50)
+    XCTAssertEqual(f.logpdf(2.0), Darwin.log(f.pdf(2.0)), accuracy: tolerance)
+    let lpTail = f.logpdf(1e6)
+    XCTAssertTrue(lpTail.isFinite, "F logpdf must remain finite in the tail, got \(lpTail)")
+  }
+
+  /// Gamma logpdf must stay finite deep in the tail where pdf underflows.
+  func testGammaLogpdfTailStaysFinite() {
+    let g = GammaDistribution(shape: 2, scale: 1)
+    XCTAssertEqual(g.logpdf(3.0), Darwin.log(g.pdf(3.0)), accuracy: tolerance)
+    XCTAssertEqual(g.pdf(2000.0), 0.0, "pdf should underflow deep in the tail")
+    let lpTail = g.logpdf(2000.0)
+    XCTAssertTrue(lpTail.isFinite, "Gamma logpdf must remain finite in the tail, got \(lpTail)")
+    // Closed form: (shape-1)ln x - x - lgamma(shape) - ln(scale)
+    XCTAssertEqual(lpTail, (2.0 - 1) * Darwin.log(2000.0) - 2000.0 - lgamma(2.0), accuracy: 1e-9)
+  }
+
+  /// Beta logpdf boundary values mirror the SciPy-parity pdf (a==1 → log(b), etc.).
+  func testBetaLogpdfBoundary() {
+    XCTAssertEqual(BetaDistribution(a: 1, b: 2).logpdf(0.0), Darwin.log(2.0), accuracy: tolerance)
+    XCTAssertEqual(BetaDistribution(a: 0.5, b: 2).logpdf(0.0), .infinity)
+    XCTAssertEqual(BetaDistribution(a: 2, b: 2).logpdf(0.0), -.infinity)
+    XCTAssertEqual(BetaDistribution(a: 3, b: 1).logpdf(1.0), Darwin.log(3.0), accuracy: tolerance)
+  }
 }

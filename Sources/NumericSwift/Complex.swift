@@ -141,13 +141,44 @@ public struct Complex: Equatable, Hashable, Sendable {
         )
     }
 
-    /// Division: (a + bi)/(c + di) = [(ac + bd) + (bc - ad)i] / (c² + d²)
+    /// Division using Smith's algorithm for numerical stability.
+    ///
+    /// The naive formula `(ac+bd)/(c²+d²)` overflows to NaN when `c` or `d`
+    /// is near `Double.greatestFiniteMagnitude`, because `c²+d²` exceeds the
+    /// representable range. Smith's algorithm avoids squaring by branching on
+    /// the larger component and forming a scaled ratio.
+    ///
+    /// Algorithm (R.L. Smith 1962, "Algorithm 116: Complex division",
+    /// CACM 5(8):435; also C99 Annex G §G.5.1):
+    ///
+    ///     if |c| ≥ |d|: r = d/c,  den = c + d·r,  re = (a + b·r)/den,  im = (b − a·r)/den
+    ///     else:         r = c/d,  den = c·r + d,   re = (a·r + b)/den,  im = (b·r − a)/den
+    ///
+    /// Special case: denominator is exact zero and numerator is finite — C99
+    /// Annex G §G.5.1 requires the result to be ±inf (not NaN). We detect this
+    /// before entering Smith's branches so that `0/0 = NaN` inside Smith does
+    /// not silently win over the mathematically correct ±inf.
     public static func / (lhs: Complex, rhs: Complex) -> Complex {
-        let denom = rhs.re * rhs.re + rhs.im * rhs.im
-        return Complex(
-            re: (lhs.re * rhs.re + lhs.im * rhs.im) / denom,
-            im: (lhs.im * rhs.re - lhs.re * rhs.im) / denom
-        )
+        let a = lhs.re, b = lhs.im
+        let c = rhs.re, d = rhs.im
+
+        // C99 Annex G §G.5.1: finite / ±0 → ±∞.
+        // Smith's r=d/c=0/0 path gives NaN; we catch exact zero denominators first.
+        if c == 0.0 && d == 0.0 {
+            // Multiply by ±∞ preserving NaN for NaN numerators.
+            let scale = Double.infinity
+            return Complex(re: a * scale, im: b * scale)
+        }
+
+        if Swift.abs(c) >= Swift.abs(d) {
+            let r   = d / c
+            let den = c + d * r
+            return Complex(re: (a + b * r) / den, im: (b - a * r) / den)
+        } else {
+            let r   = c / d
+            let den = c * r + d
+            return Complex(re: (a * r + b) / den, im: (b * r - a) / den)
+        }
     }
 
     // MARK: - Scalar Arithmetic
@@ -180,12 +211,34 @@ public struct Complex: Equatable, Hashable, Sendable {
         Complex(re: lhs.re / rhs, im: lhs.im / rhs)
     }
 
+    /// Scalar-divided-by-complex: `a / (c + di)` using Smith's algorithm.
+    ///
+    /// Equivalent to `Complex(re: lhs, im: 0) / rhs` but avoids the zero imaginary
+    /// part carrying through the general path. Smith's branch on |c| vs |d| applies
+    /// identically; the imaginary numerator term vanishes (b = 0):
+    ///
+    ///     if |c| ≥ |d|: r = d/c, den = c + d·r, re = a/den, im = −a·r/den
+    ///     else:         r = c/d, den = c·r + d,  re = a·r/den, im = −a/den
     public static func / (lhs: Double, rhs: Complex) -> Complex {
-        let denom = rhs.re * rhs.re + rhs.im * rhs.im
-        return Complex(
-            re: lhs * rhs.re / denom,
-            im: -lhs * rhs.im / denom
-        )
+        let a = lhs
+        let c = rhs.re, d = rhs.im
+        // C99 Annex G §G.5.1: finite / ±0 → ±∞ (mirror the `Complex / Complex`
+        // guard at line ~167). Smith's r = d/c = 0/0 path would otherwise give
+        // NaN, diverging from the documented infinities contract. With a real
+        // numerator the imaginary term is 0·∞ = NaN, matching `Complex(lhs) / rhs`.
+        if c == 0.0 && d == 0.0 {
+            let scale = Double.infinity
+            return Complex(re: a * scale, im: 0.0 * scale)
+        }
+        if Swift.abs(c) >= Swift.abs(d) {
+            let r   = d / c
+            let den = c + d * r
+            return Complex(re: a / den, im: -(a * r) / den)
+        } else {
+            let r   = c / d
+            let den = c * r + d
+            return Complex(re: (a * r) / den, im: -a / den)
+        }
     }
 
     // MARK: - Compound Assignment
@@ -211,13 +264,50 @@ public struct Complex: Equatable, Hashable, Sendable {
 
 extension Complex {
 
-    /// Square root using polar form (principal square root).
+    /// Square root using rectangular special-casing then polar form (principal square root).
+    ///
+    /// Follows C99 Annex G.6.4.2 and IEEE-754-2008 for all exceptional operands:
+    ///
+    /// | Input (re, im) | Output (re, im) |
+    /// |---|---|
+    /// | (+∞, NaN) | (+∞, NaN) |
+    /// | (-∞, NaN) | (+∞, NaN) |
+    /// | (+∞, y) for finite y | (+∞, 0) |
+    /// | (-∞, y) for finite y | (0, +∞) |
+    /// | (x, ±∞) for any x including ±∞ | (+∞, +∞) |
+    /// | (NaN, …) or (finite, NaN) | (NaN, NaN) |
+    ///
+    /// For the general finite case the standard polar formula is used.
+    /// Oracle: numpy.complex128 principal square root, C99 cmath sqrtf.
     public var sqrt: Complex {
+        let x = re, y = im
+
+        // C99 Annex G.6.4.2 — handle exceptional operands first.
+        // Any infinite imaginary part → (+∞, +∞) regardless of real part (including NaN real).
+        if y.isInfinite {
+            return Complex(re: .infinity, im: .infinity)
+        }
+        // +∞ real, finite im → (+∞, 0).  +∞ real, NaN im → (+∞, NaN).
+        if x == .infinity {
+            return Complex(re: .infinity, im: y.isNaN ? .nan : 0.0)
+        }
+        // -∞ real, NaN im → (+∞, NaN) per C99 Annex G.6.4.2.
+        // -∞ real, finite im → (0, +∞).
+        if x == -.infinity {
+            return y.isNaN ? Complex(re: .infinity, im: .nan)
+                           : Complex(re: 0.0, im: .infinity)
+        }
+        // NaN in either component — propagate as (NaN, NaN).
+        if x.isNaN || y.isNaN {
+            return Complex(re: .nan, im: .nan)
+        }
+
+        // General finite case: polar form for the principal square root.
         let r = self.abs
         let theta = self.arg
         let sqrtR = Darwin.sqrt(r)
-        let halfTheta = theta / 2
-        return Complex(re: sqrtR * Darwin.cos(halfTheta), im: sqrtR * Darwin.sin(halfTheta))
+        return Complex(re: sqrtR * Darwin.cos(theta / 2),
+                       im: sqrtR * Darwin.sin(theta / 2))
     }
 
     /// Natural logarithm: log(z) = log|z| + i*arg(z)
@@ -262,9 +352,11 @@ extension Complex {
     }
 
     /// Reciprocal: 1/z
+    ///
+    /// Delegates to the Smith's-algorithm division operator so large-magnitude
+    /// values stay finite (same overflow protection as `/`).
     public var reciprocal: Complex {
-        let denom = abs2
-        return Complex(re: re / denom, im: -im / denom)
+        1.0 / self
     }
 }
 

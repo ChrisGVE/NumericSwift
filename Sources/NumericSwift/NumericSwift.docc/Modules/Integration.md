@@ -88,9 +88,41 @@ let result = odeint(
 
 ### ODE Methods
 
-- `.rk45` - Dormand-Prince 4(5) (default, adaptive)
-- `.rk23` - Bogacki-Shampine 2(3) (adaptive)
-- `.rk4` - Classic Runge-Kutta 4 (fixed step)
+- `.rk45` — Dormand-Prince 4(5) (default, adaptive; non-stiff problems)
+- `.rk23` — Bogacki-Shampine 2(3) (adaptive; lower order)
+- `.rk4`  — Classic Runge-Kutta 4 (fixed step)
+- `.bdf`  — Fixed-order BDF-1 / implicit Euler (stiff systems; global error O(√rtol))
+
+### Stiff ODE Example
+
+```swift
+// Van der Pol oscillator at mu = 1000 (highly stiff)
+let solution = solveIVP(
+    { y, t in [y[1], 1000 * (1 - y[0] * y[0]) * y[1] - y[0]] },
+    tSpan: (0, 3000),
+    y0: [2.0, 0.0],
+    method: .bdf,
+    rtol: 1e-6,
+    atol: 1e-9
+)
+```
+
+### Providing an Analytic Jacobian (BDF)
+
+When the Jacobian is available analytically, passing it via `jacobian:` avoids
+the finite-difference approximation inside the BDF solver and can improve both
+accuracy and speed on large systems:
+
+```swift
+// dy/dt = -y  →  J = d(-y)/dy = -1
+let solution = solveIVP(
+    { y, t in [-y[0]] },
+    tSpan: (0, 10),
+    y0: [1.0],
+    method: .bdf,
+    jacobian: { y, t in [[-1.0]] }
+)
+```
 
 ## Topics
 
@@ -111,7 +143,7 @@ let result = odeint(
 
 ### ODE Solvers
 
-- ``solveIVP(_:tSpan:y0:method:tEval:maxStep:rtol:atol:firstStep:)``
+- ``solveIVP(_:tSpan:y0:method:tEval:maxStep:rtol:atol:firstStep:jacobian:)``
 - ``odeint(_:y0:t:rtol:atol:)``
 - ``ODEMethod``
 - ``ODEResult``

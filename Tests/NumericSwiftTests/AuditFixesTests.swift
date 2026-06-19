@@ -94,14 +94,14 @@ final class AuditFixesTests: XCTestCase {
   func testModPowLargeModulusNoOverflow() {
     let m = 9_000_000_000_000_000_000  // 9e18, < Int.max
     // 2^63 mod 9e18 = 9223372036854775808 − 9e18
-    XCTAssertEqual(modPow(2, 63, m), 223_372_036_854_775_808)
+    XCTAssertEqual(NumberTheory.modPow(2, 63, m), 223_372_036_854_775_808)
     // 10^19 mod 9e18 = 1e18 (10^19 is not even representable as Int)
-    XCTAssertEqual(modPow(10, 19, m), 1_000_000_000_000_000_000)
+    XCTAssertEqual(NumberTheory.modPow(10, 19, m), 1_000_000_000_000_000_000)
     // 7^20 < 9e18, so the modulus leaves it unchanged
-    XCTAssertEqual(modPow(7, 20, m), 79_792_266_297_612_001)
+    XCTAssertEqual(NumberTheory.modPow(7, 20, m), 79_792_266_297_612_001)
     // Small cases unchanged by the refactor
-    XCTAssertEqual(modPow(2, 10, 1000), 24)
-    XCTAssertEqual(modPow(3, 5, 7), 5)
+    XCTAssertEqual(NumberTheory.modPow(2, 10, 1000), 24)
+    XCTAssertEqual(NumberTheory.modPow(3, 5, 7), 5)
   }
 
   // MARK: - M8: isPrime / primeFactors Int overflow near Int.max
@@ -115,14 +115,14 @@ final class AuditFixesTests: XCTestCase {
     try XCTSkipUnless(
       ProcessInfo.processInfo.environment["NUMERICSWIFT_SLOW_TESTS"] != nil,
       "set NUMERICSWIFT_SLOW_TESTS=1 to run the full near-Int.max trial-division sweep")
-    XCTAssertTrue(isPrime(9_223_372_036_854_775_783))  // largest prime < 2^63
+    XCTAssertTrue(NumberTheory.isPrime(9_223_372_036_854_775_783))  // largest prime < 2^63
   }
 
   /// primeFactors uses the same `factor <= remaining / factor` guard.
   func testPrimeFactorsLargeSemiprime() {
     // 1_000_003 (prime) × 1_299_709 (the 100,000th prime).
     let n = 1_000_003 * 1_299_709
-    let factors = primeFactors(n)
+    let factors = NumberTheory.primeFactors(n)
     XCTAssertEqual(factors.map { $0.prime }, [1_000_003, 1_299_709])
     XCTAssertEqual(factors.map { $0.exponent }, [1, 1])
   }

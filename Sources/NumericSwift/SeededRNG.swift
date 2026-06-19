@@ -56,5 +56,6 @@ public func randomNormal(using rng: inout some RandomNumberGenerator) -> Double 
 public func randomNormal(
   _ n: Int, using rng: inout some RandomNumberGenerator
 ) -> [Double] {
-  (0..<n).map { _ in randomNormal(using: &rng) }
+  guard n > 0 else { return [] }  // negative n → `0..<n` is an invalid range
+  return (0..<n).map { _ in randomNormal(using: &rng) }
 }

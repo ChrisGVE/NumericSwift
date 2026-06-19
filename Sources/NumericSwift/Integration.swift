@@ -23,23 +23,36 @@ public let quadDefaultLimit: Int = 50
 // MARK: - Result Types
 
 /// Result of a quadrature integration
-public struct QuadResult {
+public struct QuadResult: Sendable {
   /// Computed integral value
   public let value: Double
   /// Estimated absolute error
   public let error: Double
   /// Number of function evaluations
   public let neval: Int
+  /// Diagnostics produced during the integration.
+  ///
+  /// Empty when the integration completed within its accuracy envelope.
+  /// Populated by the workbench detection layer (wave 2) with entries such as
+  /// ``NumericDiagnostic/nonConvergence(method:reason:)`` when the adaptive
+  /// subdivider exhausts its limit without meeting the requested tolerance.
+  public let diagnostics: [NumericDiagnostic]
 
-  public init(value: Double, error: Double, neval: Int) {
+  public init(
+    value: Double,
+    error: Double,
+    neval: Int,
+    diagnostics: [NumericDiagnostic] = []
+  ) {
     self.value = value
     self.error = error
     self.neval = neval
+    self.diagnostics = diagnostics
   }
 }
 
 /// Result of an ODE integration
-public struct ODEResult {
+public struct ODEResult: Sendable {
   /// Time points
   public let t: [Double]
   /// Solution values at each time point (y[i] is array of components at t[i])
@@ -50,13 +63,30 @@ public struct ODEResult {
   public let message: String
   /// Number of function evaluations
   public let nfev: Int
+  /// Diagnostics produced during the ODE integration.
+  ///
+  /// Empty when the solver completed within its accuracy envelope.
+  /// Populated by the workbench detection layer (wave 2) with entries such as
+  /// ``NumericDiagnostic/nonConvergence(method:reason:)`` when a step-size
+  /// adaptive solver exhausts its error budget, or
+  /// ``NumericDiagnostic/precisionDegraded(method:approxDigits:)`` for stiff
+  /// problems solved with explicit methods.
+  public let diagnostics: [NumericDiagnostic]
 
-  public init(t: [Double], y: [[Double]], success: Bool, message: String, nfev: Int) {
+  public init(
+    t: [Double],
+    y: [[Double]],
+    success: Bool,
+    message: String,
+    nfev: Int,
+    diagnostics: [NumericDiagnostic] = []
+  ) {
     self.t = t
     self.y = y
     self.success = success
     self.message = message
     self.nfev = nfev
+    self.diagnostics = diagnostics
   }
 }
 
@@ -206,6 +236,14 @@ public func quad(
     }
   }
 
+  // If the loop stopped because the subdivision limit was reached while
+  // intervals still failed their local tolerance, the integrand lies outside
+  // quad's reliable envelope (e.g. a strong endpoint singularity or high-
+  // frequency oscillation). We still process the remainder for a best-effort
+  // value, but the result is flagged unreliable — mirroring SciPy's
+  // `IntegrationWarning`. A self-aware caller inspects `diagnostics`.
+  let limitReached = subdivisions >= limit && !stack.isEmpty
+
   // Process remaining intervals if limit reached
   while !stack.isEmpty {
     let (ia, ib) = stack.removeLast()
@@ -215,12 +253,38 @@ public func quad(
     neval += 15
   }
 
-  return QuadResult(value: totalResult, error: totalError, neval: neval)
+  var diagnostics: [NumericDiagnostic] = []
+  if limitReached {
+    diagnostics.append(.outsideEnvelope(
+      method: "quad",
+      reason: "adaptive subdivision limit (\(limit)) reached; estimated error "
+        + "(\(totalError)) may exceed the requested tolerance — result may be unreliable"
+    ))
+  }
+
+  return QuadResult(value: totalResult, error: totalError, neval: neval, diagnostics: diagnostics)
 }
 
 // MARK: - Double Integration
 
+// Error accumulator for nested quadrature — a reference type so that closures
+// passed as function arguments to `quad` can update the running maximum
+// without capturing inout bindings (which Swift closures do not support).
+private final class ErrorAccumulator {
+  var maxError: Double = 0.0
+
+  func update(_ err: Double) {
+    if err > maxError { maxError = err }
+  }
+}
+
 /// Double integration over a rectangular or non-rectangular region.
+///
+/// The reported error estimate is the maximum of all inner and outer quadrature
+/// error estimates, following the same composition rule as SciPy's `dblquad`
+/// (QUADPACK `_NQuad`: `abserr = max(self.abserr, abserr)`). This prevents the
+/// outer error from appearing optimistically small when inner integrals carry
+/// significant error (e.g. oscillatory or near-singular inner integrands).
 ///
 /// - Parameters:
 ///   - f: Function f(y, x) to integrate
@@ -230,7 +294,9 @@ public func quad(
 ///   - yb: Upper y limit as function of x
 ///   - epsabs: Absolute tolerance
 ///   - epsrel: Relative tolerance
-/// - Returns: QuadResult with value and error
+/// - Returns: QuadResult with the integral value, composed error estimate, and the
+///   outer evaluation count. `neval` reflects only the outer quadrature evaluations;
+///   inner evaluations are not counted (same behaviour as before the error fix).
 public func dblquad(
   _ f: @escaping (Double, Double) -> Double,
   xa: Double,
@@ -240,13 +306,22 @@ public func dblquad(
   epsabs: Double = quadDefaultEpsAbs,
   epsrel: Double = quadDefaultEpsRel
 ) -> QuadResult {
+  // Accumulate the max inner error across all x evaluation points.
+  let innerErrors = ErrorAccumulator()
+
   let inner: (Double) -> Double = { x in
     let yLower = ya(x)
     let yUpper = yb(x)
     let result = quad({ y in f(y, x) }, yLower, yUpper, epsabs: epsabs, epsrel: epsrel)
+    innerErrors.update(result.error)
     return result.value
   }
-  return quad(inner, xa, xb, epsabs: epsabs, epsrel: epsrel)
+
+  let outer = quad(inner, xa, xb, epsabs: epsabs, epsrel: epsrel)
+
+  // Compose inner and outer errors: take the maximum, matching SciPy's rule.
+  let composedError = max(outer.error, innerErrors.maxError)
+  return QuadResult(value: outer.value, error: composedError, neval: outer.neval)
 }
 
 /// Double integration over a rectangular region (constant limits).
@@ -266,6 +341,10 @@ public func dblquad(
 // MARK: - Triple Integration
 
 /// Triple integration.
+///
+/// Error composition follows the same max-accumulation rule as SciPy's
+/// `tplquad`: the reported error is the maximum of all z-, y-, and x-level
+/// quadrature error estimates. See `dblquad` for the two-level rationale.
 ///
 /// - Parameters:
 ///   - f: Function f(z, y, x) to integrate
@@ -288,13 +367,23 @@ public func tplquad(
   epsabs: Double = quadDefaultEpsAbs,
   epsrel: Double = quadDefaultEpsRel
 ) -> QuadResult {
+  // Accumulate the max z-level error across all (x, y) evaluation points.
+  let zErrors = ErrorAccumulator()
+
   let innerXY: (Double, Double) -> Double = { y, x in
     let zLower = za(x, y)
     let zUpper = zb(x, y)
     let result = quad({ z in f(z, y, x) }, zLower, zUpper, epsabs: epsabs, epsrel: epsrel)
+    zErrors.update(result.error)
     return result.value
   }
-  return dblquad(innerXY, xa: xa, xb: xb, ya: ya, yb: yb, epsabs: epsabs, epsrel: epsrel)
+
+  // dblquad already composes its own inner (y-level) and outer (x-level) errors.
+  let xyResult = dblquad(innerXY, xa: xa, xb: xb, ya: ya, yb: yb, epsabs: epsabs, epsrel: epsrel)
+
+  // Lift z-level max into the final composition.
+  let composedError = max(xyResult.error, zErrors.maxError)
+  return QuadResult(value: xyResult.value, error: composedError, neval: xyResult.neval)
 }
 
 /// Triple integration over rectangular region (constant limits).
@@ -431,6 +520,9 @@ public func romberg(
   tol: Double = 1e-8,
   divmax: Int = 10
 ) -> QuadResult {
+  // `divmax < 1` makes `1...divmax` an invalid range and a sufficiently negative
+  // value allocates a negative array count; clamp to the documented minimum of 1.
+  let divmax = Swift.max(1, divmax)
   var R: [[Double]] = Array(repeating: [], count: divmax + 2)
   var h = b - a
 
@@ -501,11 +593,74 @@ public func simps(_ y: [Double], dx: Double = 1) -> Double {
   }
 }
 
-/// Simpson's rule integration with x values.
+/// Simpson's rule integration with non-uniform sample points.
+///
+/// Mirrors `scipy.integrate.simpson` (Cartwright composite Simpson for
+/// irregularly-spaced data): each consecutive *pair* of intervals is
+/// integrated with the general unequal-spacing 3-point rule, and when the
+/// number of intervals is odd the final interval is added with the Cartwright
+/// correction. The previous implementation averaged the spacing and was
+/// silently wrong on non-uniform grids.
+///
+/// Exact for polynomials of degree ≤ 2 on an arbitrary grid (degree ≤ 3 on a
+/// uniform grid). With two points it reduces to a single trapezoid; with fewer
+/// than two it returns 0 — both matching SciPy.
+///
+/// - Parameters:
+///   - y: Array of function values.
+///   - x: Sample points (same length as `y`); need not be uniformly spaced.
+/// - Returns: Integral approximation.
+///
+/// Reference: Cartwright, K. V., "Simpson's Rule Cumulative Integration with
+/// MS Excel and Irregularly-spaced Data", J. Math. Sci. & Math. Educ. 12(2).
 public func simps(_ y: [Double], x: [Double]) -> Double {
-  guard y.count == x.count && y.count >= 3 else { return 0 }
-  let dx = (x[x.count - 1] - x[0]) / Double(x.count - 1)
-  return simps(y, dx: dx)
+  let n = y.count
+  guard n == x.count else { return 0 }
+  guard n >= 3 else {
+    if n == 2 { return 0.5 * (x[1] - x[0]) * (y[0] + y[1]) }
+    return 0
+  }
+
+  // Guarded division mirroring SciPy's `true_divide(..., where: den != 0)`,
+  // so degenerate (coincident) sample points zero the affected term instead
+  // of producing inf/NaN.
+  func safeDiv(_ a: Double, _ b: Double) -> Double { b == 0 ? 0 : a / b }
+
+  // Composite Simpson over consecutive interval pairs (i, i+1, i+2),
+  // advancing two intervals at a time up to (but not including) `stop`.
+  func basicSimpson(upTo stop: Int) -> Double {
+    var sum = 0.0
+    var i = 0
+    while i < stop {
+      let h0 = x[i + 1] - x[i]
+      let h1 = x[i + 2] - x[i + 1]
+      let hSum = h0 + h1
+      let hProd = h0 * h1
+      let h0DivH1 = safeDiv(h0, h1)
+      sum += hSum / 6.0
+        * (y[i] * (2.0 - safeDiv(1.0, h0DivH1))
+          + y[i + 1] * (hSum * safeDiv(hSum, hProd))
+          + y[i + 2] * (2.0 - h0DivH1))
+      i += 2
+    }
+    return sum
+  }
+
+  let intervals = n - 1
+  if intervals % 2 == 0 {
+    // Even number of intervals → pure composite Simpson over every pair.
+    return basicSimpson(upTo: n - 2)
+  }
+  // Odd number of intervals → Simpson on all but the last interval, then the
+  // Cartwright correction for the final interval using its last three points.
+  var result = basicSimpson(upTo: n - 3)
+  let h0 = x[n - 2] - x[n - 3]  // second-to-last spacing
+  let h1 = x[n - 1] - x[n - 2]  // last spacing
+  let alpha = safeDiv(2.0 * h1 * h1 + 3.0 * h0 * h1, 6.0 * (h1 + h0))
+  let beta = safeDiv(h1 * h1 + 3.0 * h0 * h1, 6.0 * h0)
+  let eta = safeDiv(h1 * h1 * h1, 6.0 * h0 * (h0 + h1))
+  result += alpha * y[n - 1] + beta * y[n - 2] - eta * y[n - 3]
+  return result
 }
 
 // MARK: - Trapezoidal Rule
@@ -583,26 +738,28 @@ public func cumulativeTrapezoid(_ y: [Double], x: [Double]) -> [Double] {
 /// - Returns: Cumulative integral values, or empty array if fewer than 2 points.
 public func cumulativeSimpson(_ y: [Double], dx: Double = 1) -> [Double] {
   guard y.count >= 2 else { return [] }
-  var result = [Double](repeating: 0.0, count: y.count - 1)
+  let n = y.count
+  var result = [Double](repeating: 0.0, count: n - 1)
 
-  // First interval: trapezoidal
-  result[0] = 0.5 * (y[0] + y[1]) * dx
+  // Only two points: a single interval cannot carry Simpson's three-point rule,
+  // so fall back to the trapezoid.
+  if n == 2 {
+    result[0] = 0.5 * (y[0] + y[1]) * dx
+    return result
+  }
 
-  // Subsequent pairs: use Simpson's 1/3 rule on each pair of intervals
-  var i = 1
-  while i < y.count - 1 {
-    if i + 1 < y.count - 1 {
-      // Simpson's rule over two intervals: (dx/3) * (y[i-1] + 4*y[i] + y[i+1])
-      // But we need cumulative, so we add Simpson increment for [x_{i}, x_{i+2}]
-      let simpsonIncrement = dx / 3.0 * (y[i] + 4.0 * y[i + 1] + y[i + 2])
-      result[i] = result[i - 1] + 0.5 * (y[i] + y[i + 1]) * dx
-      result[i + 1] = result[i - 1] + simpsonIncrement
-      i += 2
-    } else {
-      // Odd remaining interval: use trapezoidal
-      result[i] = result[i - 1] + 0.5 * (y[i] + y[i + 1]) * dx
-      i += 1
-    }
+  // Each interval's contribution is the integral of the local interpolating
+  // parabola over that interval — the two half-interval Simpson sub-integrals of
+  // the parabola through three consecutive points (x_{i-1}, x_i, x_{i+1}):
+  //   ∫ over the FIRST half  [x_i, x_{i+1}] = (dx/12)(5·y_i + 8·y_{i+1} − y_{i+2})
+  //   ∫ over the SECOND half [x_i, x_{i+1}] = (dx/12)(−y_{i-1} + 8·y_i + 5·y_{i+1})
+  // (they sum to the full Simpson pair (dx/3)(y+4y+y)). The first interval uses
+  // the first-half form of the parabola through points 0,1,2; every later interval
+  // uses the second-half form of the parabola through (i-1, i, i+1). This is exact
+  // for quadratics and O(dx⁴) in general — the previous code emitted trapezoids.
+  result[0] = dx / 12.0 * (5.0 * y[0] + 8.0 * y[1] - y[2])
+  for i in 1..<(n - 1) {
+    result[i] = result[i - 1] + dx / 12.0 * (-y[i - 1] + 8.0 * y[i] + 5.0 * y[i + 1])
   }
   return result
 }
@@ -675,12 +832,19 @@ private func rk4Step(
 }
 
 /// Single Dormand-Prince RK45 step
+///
+/// Returns the 5th-order solution and error estimate.  The stage derivatives
+/// `k[0..6]` are also returned so that the caller can build the dense-output
+/// quartic interpolant without additional function evaluations.
+///
+/// Reference: Dormand & Prince, "A family of embedded Runge-Kutta formulae",
+/// J. Comput. Appl. Math. 6(1), 1980.
 private func rk45Step(
   _ f: ([Double], Double) -> [Double],
   _ t: Double,
   _ y: [Double],
   _ h: Double
-) -> (yNew: [Double], error: [Double]) {
+) -> (yNew: [Double], error: [Double], stages: [[Double]]) {
   let n = y.count
   var k: [[Double]] = []
 
@@ -720,16 +884,23 @@ private func rk45Step(
     err[i] = sum
   }
 
-  return (yNew, err)
+  return (yNew, err, k)
 }
 
 /// Single Bogacki-Shampine RK23 step
+///
+/// Returns the 3rd-order solution and error estimate.  The stage derivatives
+/// `k[0..3]` are also returned so that the caller can build the dense-output
+/// cubic Hermite interpolant without additional function evaluations.
+///
+/// Reference: Bogacki & Shampine, "A 3(2) pair of Runge-Kutta formulas",
+/// Appl. Math. Lett. 2(4), 1989.
 private func rk23Step(
   _ f: ([Double], Double) -> [Double],
   _ t: Double,
   _ y: [Double],
   _ h: Double
-) -> (yNew: [Double], error: [Double]) {
+) -> (yNew: [Double], error: [Double], stages: [[Double]]) {
   let n = y.count
   var k: [[Double]] = []
 
@@ -769,7 +940,160 @@ private func rk23Step(
     err[i] = sum
   }
 
-  return (yNew, err)
+  return (yNew, err, k)
+}
+
+// MARK: - Dense-output interpolants
+
+/// One accepted solver step recorded for dense-output evaluation.
+///
+/// `tStart` and `tEnd` bracket the step, `yStart` is the state at `tStart`,
+/// `stages` are the per-component stage derivatives used by the interpolant,
+/// and `h` is the (signed) step size `tEnd − tStart`.
+private struct DenseStep {
+  let tStart: Double
+  let tEnd: Double
+  let yStart: [Double]
+  let yEnd: [Double]
+  let stages: [[Double]]  // k[0..6] for RK45 or k[0..3] for RK23
+  let h: Double
+}
+
+/// Dormand-Prince RK45 quartic (4th-order) dense-output interpolant.
+///
+/// The continuous extension evaluates the 4th-order polynomial
+///
+///   y(t) = y₀ + h · (Kᵀ · P) · [s, s², s³, s⁴]
+///
+/// where s = (t − t₀) / h and P is the coefficient matrix from SciPy's
+/// `RK45.dense_output` implementation (scipy/integrate/_ivp/rk.py, constant
+/// `P`).  Using the quartic gives O(h⁵) error — the same order as the
+/// 5th-order solver — far better than the O(h²) of linear interpolation.
+///
+/// P matrix columns (one per power of s, rows = stages k[0]..k[6]):
+/// ```
+/// P = [
+///   [ 1,  -8048581381/2820520608,   8663915743/2820520608, -12715105075/11282082432],
+///   [ 0,   0,                        0,                       0                   ],
+///   [ 0,   131558114200/32700410799, -68118460800/10900136933, 87487479700/32700410799],
+///   [ 0,  -1754552775/470086768,     14199869525/1410260304, -10690763975/1880347072 ],
+///   [ 0,   127303824393/49829197408, -318862633509/49829197408, 701980252875/199316789632],
+///   [ 0,  -282668133/205662961,      2019193451/616988883,   -1453857185/822651844  ],
+///   [ 0,   40617522/29380423,       -110615467/29380423,      69997945/29380423     ]
+/// ]
+/// ```
+///
+/// Reference: Dormand & Prince (1980); SciPy scipy.integrate._ivp.rk.RK45.
+private func rk45DenseOutput(step: DenseStep, at t: Double) -> [Double] {
+  // Normalised parameter s ∈ [0, 1] across the step
+  let s = (t - step.tStart) / step.h
+
+  // Polynomial: y(t) = yStart + h · [cs0·s + cs1·s² + cs2·s³ + cs3·s⁴]
+  // where csK = dot(pColK, stages[:,i]) for each state component i.
+  // pCol0 = [1,0,…,0] so cs0 = stages[0][i] directly.
+  // P row 1 is all zeros so stage k[1] never contributes; the stage loop skips it.
+  // Horner form: s · (cs0 + s · (cs1 + s · (cs2 + s · cs3)))
+
+  // pCol1: P-matrix column 1 (weights of each stage for the s² term)
+  let pCol1: [Double] = [
+    -8048581381.0 / 2820520608.0,
+    0,
+    131558114200.0 / 32700410799.0,
+    -1754552775.0 / 470086768.0,
+    127303824393.0 / 49829197408.0,
+    -282668133.0 / 205662961.0,
+    40617522.0 / 29380423.0,
+  ]
+  // pCol2: P-matrix column 2 (weights of each stage for the s³ term)
+  let pCol2: [Double] = [
+    8663915743.0 / 2820520608.0,
+    0,
+    -68118460800.0 / 10900136933.0,
+    14199869525.0 / 1410260304.0,
+    -318862633509.0 / 49829197408.0,
+    2019193451.0 / 616988883.0,
+    -110615467.0 / 29380423.0,
+  ]
+  // pCol3: P-matrix column 3 (weights of each stage for the s⁴ term)
+  let pCol3: [Double] = [
+    -12715105075.0 / 11282082432.0,
+    0,
+    87487479700.0 / 32700410799.0,
+    -10690763975.0 / 1880347072.0,
+    701980252875.0 / 199316789632.0,
+    -1453857185.0 / 822651844.0,
+    69997945.0 / 29380423.0,
+  ]
+
+  let n = step.yStart.count
+  var y = [Double](repeating: 0, count: n)
+
+  for i in 0..<n {
+    // cs0: pCol0 = [1,0,…,0] so the dot product collapses to stages[0][i].
+    let cs0 = step.stages[0][i]
+
+    // cs1..cs3: dot products of pCol1..pCol3 with stages column i.
+    // Stage index 1 is skipped because P row 1 is all zeros.
+    var cs1 = 0.0, cs2 = 0.0, cs3 = 0.0
+    for j in [0, 2, 3, 4, 5, 6] {
+      let kji = step.stages[j][i]
+      cs1 += pCol1[j] * kji
+      cs2 += pCol2[j] * kji
+      cs3 += pCol3[j] * kji
+    }
+
+    // Horner: s · (cs0 + s · (cs1 + s · (cs2 + s · cs3)))
+    let poly = s * (cs0 + s * (cs1 + s * (cs2 + s * cs3)))
+    y[i] = step.yStart[i] + step.h * poly
+  }
+
+  return y
+}
+
+/// Bogacki-Shampine RK23 cubic Hermite dense-output interpolant.
+///
+/// Uses the standard four-term cubic Hermite polynomial whose basis
+/// functions are defined by matching values and first derivatives at
+/// the two step endpoints.  Let s = (t − t₀)/h ∈ [0, 1]:
+///
+///   h₀₀(s) = 2s³ − 3s² + 1        (value blending at tStart)
+///   h₁₀(s) = s³ − 2s² + s = s(s−1)²  (slope at tStart)
+///   h₀₁(s) = −2s³ + 3s²           (value blending at tEnd)
+///   h₁₁(s) = s³ − s² = s²(s−1)    (slope at tEnd)
+///
+///   y(t) = h₀₀(s)·y₀ + h₁₀(s)·h·f₀ + h₀₁(s)·y₁ + h₁₁(s)·h·f₁
+///
+/// where f₀ = k[0] = f(y₀, t₀) and f₁ = k[3] = f(y₁, t₁).
+/// Boundary conditions are exact: y(t₀)=y₀ and y(t₁)=y₁.
+/// This gives O(h⁴) interpolation accuracy inside the step.
+///
+/// Reference: De Boor, C., "A Practical Guide to Splines", Springer (1978),
+/// Ch. IV §1 (Hermite interpolation).  Applied to RK23 dense output:
+/// Bogacki & Shampine (1989); SciPy scipy.integrate._ivp.rk.RK23.
+private func rk23DenseOutput(step: DenseStep, at t: Double) -> [Double] {
+  let s = (t - step.tStart) / step.h
+  let s2 = s * s
+  let s3 = s2 * s
+
+  // Standard cubic Hermite basis polynomials
+  let h00 = 2.0 * s3 - 3.0 * s2 + 1.0   // value at tStart
+  let h10 = s3 - 2.0 * s2 + s            // slope at tStart  (= s(s-1)²)
+  let h01 = -2.0 * s3 + 3.0 * s2         // value at tEnd
+  let h11 = s3 - s2                       // slope at tEnd    (= s²(s-1))
+
+  let n = step.yStart.count
+  var y = [Double](repeating: 0, count: n)
+
+  for i in 0..<n {
+    let f0 = step.stages[0][i]  // k[0] = f(y₀, t₀)
+    let f1 = step.stages[3][i]  // k[3] = f(y₁, t₁), available via FSAL property
+    y[i] = h00 * step.yStart[i]
+          + h10 * step.h * f0
+          + h01 * step.yEnd[i]
+          + h11 * step.h * f1
+  }
+
+  return y
 }
 
 /// ODE solver method
@@ -777,21 +1101,43 @@ public enum ODEMethod: String {
   case rk45 = "RK45"
   case rk23 = "RK23"
   case rk4 = "RK4"
+  /// Fixed-order BDF-1 (implicit Euler) — for stiff systems.
+  ///
+  /// Global error is O(h) ≈ O(√rtol); variable-order BDF to order 5
+  /// (as in SciPy's `BDF` method) requires the Nordsieck divided-difference
+  /// framework and is deferred to a future milestone.
+  case bdf = "BDF"
 }
 
 /// Solve initial value problem for ODE system.
 ///
+/// Supported methods:
+/// - `.rk45` — Dormand-Prince explicit RK45 (default; non-stiff problems)
+/// - `.rk23` — Bogacki-Shampine explicit RK23 (lower order)
+/// - `.rk4`  — Classical 4th-order Runge-Kutta (fixed-step)
+/// - `.bdf`  — Fixed-order BDF-1 / implicit Euler (implicit; stiff problems; global error O(√rtol))
+///
+/// When `tEval` is supplied for an adaptive explicit method, the output is
+/// computed using a higher-order continuous-extension dense-output interpolant —
+/// the quartic polynomial for RK45 (Dormand-Prince) and the cubic Hermite for
+/// RK23 (Bogacki-Shampine), giving O(h⁵) and O(h⁴) interpolation accuracy
+/// respectively, far better than the O(h²) of simple linear interpolation.
+///
 /// - Parameters:
-///   - fun: Function(y, t) returning dy/dt
-///   - tSpan: (t0, tf) initial and final time
-///   - y0: Initial state
-///   - method: ODE method (RK45, RK23, RK4)
-///   - tEval: Optional specific times for output
-///   - maxStep: Maximum step size
-///   - rtol: Relative tolerance
-///   - atol: Absolute tolerance
-///   - firstStep: Initial step size (nil for auto)
-/// - Returns: ODEResult
+///   - fun: Function `(y, t) → dy/dt` returning derivatives at state `y` and time `t`
+///   - tSpan: `(t0, tf)` initial and final time
+///   - y0: Initial state vector
+///   - method: ODE integration method (default `.rk45`)
+///   - tEval: Optional times at which to report the solution; dense-output
+///     interpolation is used for adaptive methods so accuracy is independent
+///     of step size
+///   - maxStep: Maximum allowed step size (default `.infinity`)
+///   - rtol: Relative error tolerance (default `1e-3`)
+///   - atol: Absolute error tolerance (default `1e-6`)
+///   - firstStep: Initial step size; `nil` selects an automatic estimate
+///   - jacobian: (BDF only) Analytic Jacobian `(y, t) → J` where `J[i][j] = ∂f_i/∂y_j`.
+///     When `nil` the BDF solver computes the Jacobian by finite differences.
+/// - Returns: ``ODEResult``
 public func solveIVP(
   _ fun: @escaping ([Double], Double) -> [Double],
   tSpan: (Double, Double),
@@ -801,7 +1147,8 @@ public func solveIVP(
   maxStep: Double = .infinity,
   rtol: Double = 1e-3,
   atol: Double = 1e-6,
-  firstStep: Double? = nil
+  firstStep: Double? = nil,
+  jacobian: (([Double], Double) -> [[Double]])? = nil
 ) -> ODEResult {
   let t0 = tSpan.0
   let tf = tSpan.1
@@ -812,15 +1159,36 @@ public func solveIVP(
   var y = y0
   var tList = [t0]
   var yList = [y0]
+  // Dense steps are recorded for every accepted adaptive step so tEval can
+  // use higher-order interpolation between solver step boundaries.
+  var denseSteps: [DenseStep] = []
   var nfev = 0
+
+  // Reject malformed configuration before stepping: a non-positive maxStep/firstStep
+  // stalls the integrator (the step budget burns without t advancing), and a
+  // derivative vector whose length differs from y0 traps the RK/BDF stage indexing.
+  // A deterministic rhs returns a fixed length, so validating the first evaluation
+  // covers the per-stage probes (including the delegated BDF solver).
+  guard maxStep > 0 else {
+    return ODEResult(t: [], y: [], success: false,
+      message: "solveIVP requires maxStep > 0; got \(maxStep).", nfev: 0)
+  }
+  if let first = firstStep, !(first > 0) {
+    return ODEResult(t: [], y: [], success: false,
+      message: "solveIVP requires firstStep > 0; got \(first).", nfev: 0)
+  }
+  let f0 = fun(y0, t0); nfev += 1
+  guard f0.count == n else {
+    return ODEResult(t: [], y: [], success: false,
+      message: "solveIVP: fun(y, t) returned \(f0.count) derivatives, expected \(n).",
+      nfev: nfev)
+  }
 
   // Initial step size estimation
   var h: Double
   if let first = firstStep {
     h = first
   } else {
-    let f0 = fun(y0, t0)
-    nfev += 1
     let d0 = max(y0.map { abs($0) }.max() ?? 1, 1e-5)
     let d1 = max(f0.map { abs($0) }.max() ?? 1, 1e-5)
     h = 0.01 * d0 / d1
@@ -828,8 +1196,28 @@ public func solveIVP(
   }
   h = direction * min(abs(h), maxStep)
 
+  // BDF is handled by a dedicated solver; delegate immediately.
+  if method == .bdf {
+    return bdfSolveIVP(
+      fun, tSpan: tSpan, y0: y0,
+      tEval: tEval, maxStep: maxStep,
+      rtol: rtol, atol: atol, firstStep: h,
+      jacobian: jacobian
+    )
+  }
+
   let maxIter = 10000
   var iter = 0
+  // Stiffness telemetry for the explicit adaptive methods (rk45/rk23).
+  // A stiff system forces the explicit error controller into step-size
+  // collapse: it rejects far more steps than it accepts, and the accepted
+  // steps shrink toward `hMin`. We count both to recognise that regime and
+  // surface a recoverable ``NumericDiagnostic/outsideEnvelope`` afterwards
+  // (see `detectExplicitStiffness`). RK4 is fixed-step and never rejects, so
+  // it is excluded from this telemetry.
+  var rejectedSteps = 0
+  var acceptedSteps = 0
+  var minAcceptedStep = Double.infinity
 
   while direction * (tf - t) > 1e-12 * abs(tf) && iter < maxIter {
     iter += 1
@@ -840,16 +1228,30 @@ public func solveIVP(
     }
 
     if method == .rk4 {
+      let tOld = t
+      let yOld = y
       y = rk4Step(fun, t, y, h)
       nfev += 4
       t += h
       tList.append(t)
       yList.append(y)
+      // RK4 provides no higher-order dense output; the tEval path uses
+      // linear interpolation between the step's start and end values.
+      // No extra function evaluations are needed.
+      denseSteps.append(DenseStep(
+        tStart: tOld, tEnd: t,
+        yStart: yOld, yEnd: y,
+        stages: [],   // Empty: RK4 branch uses linear interpolation only
+        h: h
+      ))
     } else {
-      let (yNew, err) =
+      let stepResult =
         method == .rk23
         ? rk23Step(fun, t, y, h)
         : rk45Step(fun, t, y, h)
+      let yNew = stepResult.yNew
+      let err = stepResult.error
+      let stages = stepResult.stages
       nfev += method == .rk23 ? 4 : 7
 
       // Error control
@@ -861,10 +1263,22 @@ public func solveIVP(
       errNorm = sqrt(errNorm / Double(n))
 
       if errNorm <= 1 {
+        let tOld = t
+        let yOld = y
         t += h
         y = yNew
         tList.append(t)
         yList.append(y)
+        acceptedSteps += 1
+        minAcceptedStep = min(minAcceptedStep, abs(h))
+
+        // Record the accepted step for dense-output evaluation
+        denseSteps.append(DenseStep(
+          tStart: tOld, tEnd: t,
+          yStart: yOld, yEnd: y,
+          stages: stages,
+          h: h
+        ))
 
         // Increase step size
         if errNorm > 0 {
@@ -875,38 +1289,91 @@ public func solveIVP(
         }
       } else {
         // Reject step, decrease step size
+        rejectedSteps += 1
         let factor = max(0.1, 0.9 * pow(1 / errNorm, 0.25))
         h *= factor
       }
     }
   }
 
-  // Interpolate to tEval if specified
+  // Build output at requested tEval points using dense-output interpolation,
+  // or return all solver steps when tEval is nil.
   var resultT: [Double]
   var resultY: [[Double]]
 
   if let evalTimes = tEval {
     resultT = evalTimes
     resultY = []
+
     for tE in evalTimes {
-      // Find bracketing interval
-      var idx = 0
-      for j in 0..<(tList.count - 1) {
-        if (tList[j] <= tE && tE <= tList[j + 1]) || (tList[j] >= tE && tE >= tList[j + 1]) {
-          idx = j
+      // Find the dense step whose interval brackets tE.
+      // A point at exactly t0 maps to index 0 even though no dense step
+      // covers it; handle that boundary first.
+      if abs(tE - t0) < 1e-15 * max(1, abs(t0)) {
+        resultY.append(y0)
+        continue
+      }
+
+      // Search for the step containing tE (handles forward and backward integration).
+      var bestStep: DenseStep? = nil
+      for step in denseSteps {
+        let inInterval =
+          direction > 0
+          ? (step.tStart <= tE + 1e-14 && tE <= step.tEnd + 1e-14)
+          : (step.tEnd - 1e-14 <= tE && tE <= step.tStart + 1e-14)
+        if inInterval {
+          bestStep = step
           break
         }
       }
 
-      // Linear interpolation
-      let t1 = tList[idx]
-      let t2 = tList[min(idx + 1, tList.count - 1)]
-      let frac = abs(t2 - t1) > 1e-15 ? (tE - t1) / (t2 - t1) : 0
+      guard let step = bestStep else {
+        // tE is outside the integration range — clamp to nearest endpoint.
+        let yFallback = direction > 0
+          ? (tE <= t0 ? y0 : yList.last ?? y0)
+          : (tE >= t0 ? y0 : yList.last ?? y0)
+        resultY.append(yFallback)
+        continue
+      }
 
-      var yInterp = [Double](repeating: 0, count: n)
-      for i in 0..<n {
-        yInterp[i] =
-          yList[idx][i] + frac * (yList[min(idx + 1, yList.count - 1)][i] - yList[idx][i])
+      // Snap to exact endpoints to avoid floating-point drift at boundaries.
+      // The interpolant at s=0 gives yStart and at s=1 gives yEnd exactly
+      // in exact arithmetic, but floating-point rounding can introduce tiny
+      // errors; returning the stored values directly is both faster and exact.
+      let eps = 1e-12 * max(1.0, abs(step.h))
+      if abs(tE - step.tStart) < eps {
+        resultY.append(step.yStart)
+        continue
+      }
+      if abs(tE - step.tEnd) < eps {
+        resultY.append(step.yEnd)
+        continue
+      }
+
+      // Choose the interpolant appropriate for the current method.
+      let yInterp: [Double]
+      switch method {
+      case .rk45:
+        yInterp = rk45DenseOutput(step: step, at: tE)
+      case .rk23:
+        yInterp = rk23DenseOutput(step: step, at: tE)
+      case .rk4:
+        // RK4 records only two stages (endpoint derivatives); use linear
+        // interpolation between the solver's output values for this step.
+        let frac = abs(step.h) > 1e-15 ? (tE - step.tStart) / step.h : 0
+        yInterp = (0..<n).map { i in
+          step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])
+        }
+      case .bdf:
+        // This branch is unreachable: `.bdf` is dispatched to `bdfSolveIVP`
+        // before entering this dense-output loop.  Fail fast in debug so a
+        // future refactor cannot silently route BDF here; provide a safe
+        // linear-interpolation fallback in release builds.
+        assertionFailure("BDF handled by bdfSolveIVP before this point — this case should never execute")
+        let frac = abs(step.h) > 1e-15 ? (tE - step.tStart) / step.h : 0
+        yInterp = (0..<n).map { i in
+          step.yStart[i] + frac * (step.yEnd[i] - step.yStart[i])
+        }
       }
       resultY.append(yInterp)
     }
@@ -917,21 +1384,114 @@ public func solveIVP(
 
   let success = direction * (tf - t) <= 1e-12 * abs(tf)
 
+  // Stiffness self-awareness: an explicit method applied to a stiff system is
+  // outside its declared envelope. Surface a recoverable diagnostic so callers
+  // can switch to `.bdf`. RK4 (fixed-step) carries no telemetry and is exempt.
+  let diagnostics = detectExplicitStiffness(
+    method: method,
+    success: success,
+    iter: iter,
+    maxIter: maxIter,
+    acceptedSteps: acceptedSteps,
+    rejectedSteps: rejectedSteps,
+    minAcceptedStep: minAcceptedStep,
+    span: abs(tf - t0)
+  )
+
   return ODEResult(
     t: resultT,
     y: resultY,
     success: success,
     message: success ? "Integration successful" : "Max iterations reached",
-    nfev: nfev
+    nfev: nfev,
+    diagnostics: diagnostics
   )
+}
+
+/// Detect that an explicit adaptive ODE step controller was driven into the
+/// step-size-collapse regime characteristic of a **stiff** system, and return
+/// the corresponding recoverable diagnostic.
+///
+/// ## Why this is the chosen envelope
+///
+/// Explicit Runge-Kutta pairs (`.rk45`, `.rk23`) are stability-limited on stiff
+/// problems: the step size is forced down to satisfy stability rather than
+/// accuracy, so the error controller rejects step after step and the accepted
+/// steps shrink to a tiny fraction of the integration span. SciPy's explicit
+/// solvers surface the same regime as the "stiffness detected" warning and
+/// recommend `LSODA`/`BDF`. NumericSwift's documented stiff path is the
+/// fixed-order BDF-1 method (see ``ODEMethod/bdf``, issue #15), so the
+/// recoverable signal points the caller there.
+///
+/// ## Detection signature
+///
+/// Stiffness is reported when **either** condition holds for an explicit
+/// adaptive method:
+///   1. the integrator exhausted its iteration budget without reaching `tf`
+///      (`!success && iter >= maxIter`) — the unbounded step-rejection cascade; or
+///   2. the controller rejected at least as many steps as it accepted
+///      **and** the smallest accepted step fell below `span · 1e-6` — the
+///      step-size-collapse fingerprint, distinguishing genuine stiffness from
+///      the handful of rejections a smooth problem incurs at startup.
+///
+/// Both thresholds are deliberately conservative so a well-behaved non-stiff
+/// solve never trips them (guarded by the in-envelope workbench cases).
+///
+/// - Returns: A single ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when
+///   stiffness is detected, otherwise an empty array.
+private func detectExplicitStiffness(
+  method: ODEMethod,
+  success: Bool,
+  iter: Int,
+  maxIter: Int,
+  acceptedSteps: Int,
+  rejectedSteps: Int,
+  minAcceptedStep: Double,
+  span: Double
+) -> [NumericDiagnostic] {
+  // Only the explicit adaptive pairs carry stiffness telemetry.
+  guard method == .rk45 || method == .rk23 else { return [] }
+
+  let budgetExhausted = !success && iter >= maxIter
+  let stepCollapse =
+    acceptedSteps > 0
+    && rejectedSteps >= acceptedSteps
+    && minAcceptedStep < span * 1e-6
+
+  guard budgetExhausted || stepCollapse else { return [] }
+
+  let reason: String
+  if budgetExhausted {
+    reason =
+      "explicit \(method.rawValue) exhausted its \(maxIter)-step budget without "
+      + "reaching the end of the interval (\(rejectedSteps) rejected vs "
+      + "\(acceptedSteps) accepted) — the step size collapsed, the signature of a "
+      + "stiff system; use the implicit `.bdf` method"
+  } else {
+    reason =
+      "explicit \(method.rawValue) step size collapsed (\(rejectedSteps) rejected "
+      + "vs \(acceptedSteps) accepted; min accepted step "
+      + "\(minAcceptedStep) ≪ span \(span)) — the signature of a stiff system; "
+      + "use the implicit `.bdf` method"
+  }
+  return [.outsideEnvelope(method: "solveIVP.\(method.rawValue)", reason: reason)]
 }
 
 /// odeint-style ODE integration (scipy.integrate.odeint compatible).
 ///
+/// Integrates the ODE in a single continuous pass from `t[0]` to `t[last]`
+/// and evaluates the dense-output interpolant at each requested time point.
+/// This avoids per-interval solver restarts and the accuracy loss and overhead
+/// they introduce: the solver step-size controller never has to re-estimate an
+/// initial step, and the FSAL (first-same-as-last) property of RK45 is
+/// preserved across the full interval.
+///
 /// - Parameters:
 ///   - func_: Function(y, t) returning dy/dt (note: y first, then t)
 ///   - y0: Initial state
-///   - t: Array of times at which to compute solution
+///   - t: Monotone array of times at which to evaluate the solution; must
+///     have at least 1 element (the initial condition is returned for a
+///     single-element array)
 ///   - rtol: Relative tolerance
 ///   - atol: Absolute tolerance
 /// - Returns: Array of solutions y[time_index][component_index]
@@ -944,21 +1504,21 @@ public func odeint(
 ) -> [[Double]] {
   guard t.count >= 2 else { return [y0] }
 
-  var result: [[Double]] = [y0]
-  var currentY = y0
+  // Single solver run over the full time span with dense-output tEval.
+  // solveIVP evaluates the continuous-extension interpolant at each
+  // requested time, so no per-interval restart occurs.
+  let sol = solveIVP(
+    { y, tVal in func_(y, tVal) },
+    tSpan: (t.first!, t.last!),
+    y0: y0,
+    method: .rk45,
+    tEval: t,
+    rtol: rtol,
+    atol: atol
+  )
 
-  for j in 0..<(t.count - 1) {
-    let sol = solveIVP(
-      { y, tVal in func_(y, tVal) },
-      tSpan: (t[j], t[j + 1]),
-      y0: currentY,
-      method: .rk45,
-      rtol: rtol,
-      atol: atol
-    )
-    currentY = sol.y.last ?? currentY
-    result.append(currentY)
-  }
-
-  return result
+  // sol.y is already indexed by t; return it directly.
+  // If the solve failed we still return whatever was computed so the caller
+  // gets partial results rather than an empty array.
+  return sol.y.isEmpty ? [y0] : sol.y
 }

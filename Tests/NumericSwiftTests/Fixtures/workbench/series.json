@@ -1,0 +1,2470 @@
+[
+  {
+    "id": "series.trivial.polyval_linear",
+    "tier": "trivial",
+    "inputs": {
+      "coeffs": [
+        1.0,
+        2.0
+      ],
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 5.0,
+      "bits": "0x4014000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.polyval_quad",
+    "tier": "trivial",
+    "inputs": {
+      "coeffs": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 17.0,
+      "bits": "0x4031000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.polyder_quad",
+    "tier": "trivial",
+    "inputs": {
+      "coeffs": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 14.0,
+      "bits": "0x402C000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.polyint_quad",
+    "tier": "trivial",
+    "inputs": {
+      "coeffs": [
+        2.0,
+        6.0
+      ],
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 16.0,
+      "bits": "0x4030000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.polyadd",
+    "tier": "trivial",
+    "inputs": {
+      "p": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "q": [
+        0.0,
+        1.0
+      ],
+      "x": 1.5
+    },
+    "oracle": {
+      "value": 12.25,
+      "bits": "0x4028800000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.polymul",
+    "tier": "trivial",
+    "inputs": {
+      "p": [
+        1.0,
+        1.0
+      ],
+      "q": [
+        1.0,
+        1.0
+      ],
+      "x": 1.5
+    },
+    "oracle": {
+      "value": 6.25,
+      "bits": "0x4019000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.geom_finite",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "geometric_half",
+      "from": 0,
+      "to": 5
+    },
+    "oracle": {
+      "value": 1.96875,
+      "bits": "0x3FFF800000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.inv_factorial_finite",
+    "tier": "trivial",
+    "inputs": {
+      "tag": "inv_factorial",
+      "from": 0,
+      "to": 8
+    },
+    "oracle": {
+      "value": 2.71827876984127,
+      "bits": "0x4005BF08F08F08F1"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.divdiff_line",
+    "tier": "trivial",
+    "inputs": {
+      "xs": [
+        0.0,
+        1.0,
+        2.0
+      ],
+      "ys": [
+        1.0,
+        3.0,
+        5.0
+      ]
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-12
+    }
+  },
+  {
+    "id": "series.trivial.taylor_sin",
+    "tier": "trivial",
+    "inputs": {
+      "func": "sin",
+      "x": 0.5,
+      "terms": 12
+    },
+    "oracle": {
+      "value": 0.479425538604203,
+      "bits": "0x3FDEAEE8744B05F0"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d2_x-1.3_0",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": -1.3
+    },
+    "oracle": {
+      "value": 1.7760018599999996,
+      "bits": "0x3FFC6A80ED255CDA"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d2_x-0.4_1",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": -0.4
+    },
+    "oracle": {
+      "value": -2.27758176,
+      "bits": "0xC002387CC9295437"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d2_x0.7_2",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": 0.7
+    },
+    "oracle": {
+      "value": -3.68088894,
+      "bits": "0xC00D7275E68C109A"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d2_x1.9_3",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": 1.9
+    },
+    "oracle": {
+      "value": -0.7567872600000007,
+      "bits": "0xBFE83799EA7757AC"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d2_x3.1_4",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": 3.1
+    },
+    "oracle": {
+      "value": 6.815991539999999,
+      "bits": "0x401B439349487360"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyder_d2_5",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": 1.25
+    },
+    "oracle": {
+      "value": 2.275339,
+      "bits": "0x400233E4EF0281BA"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyint_d2_6",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.23983,
+        -1.759971,
+        1.614124
+      ],
+      "x": 0.85
+    },
+    "oracle": {
+      "value": -3.059220389916667,
+      "bits": "0xC00879488A2F966E"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d3_x-1.3_7",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": -1.3
+    },
+    "oracle": {
+      "value": -10.840774537,
+      "bits": "0xC025AE7A000772F7"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d3_x-0.4_8",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": -0.4
+    },
+    "oracle": {
+      "value": -3.8208013839999997,
+      "bits": "0xC00E910050E65511"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d3_x0.7_9",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": 0.7
+    },
+    "oracle": {
+      "value": -5.541748997,
+      "bits": "0xC0162AC03FC305F1"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d3_x1.9_10",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": 1.9
+    },
+    "oracle": {
+      "value": 12.967872918999994,
+      "bits": "0x4029EF8D0A0B93FC"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d3_x3.1_11",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": 3.1
+    },
+    "oracle": {
+      "value": 90.76773717100001,
+      "bits": "0x4056B1229B165797"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyder_d3_12",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": 1.25
+    },
+    "oracle": {
+      "value": 12.715410312499998,
+      "bits": "0x40296E4A42AED138"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyint_d3_13",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -4.508405,
+        -2.68674,
+        -0.910723,
+        3.771511
+      ],
+      "x": 0.85
+    },
+    "oracle": {
+      "value": -4.496973583972395,
+      "bits": "0xC011FCE6A4A88CA5"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d4_x-1.3_14",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": -1.3
+    },
+    "oracle": {
+      "value": 11.680012962300001,
+      "bits": "0x40275C2AA8B3DE82"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d4_x-0.4_15",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": -0.4
+    },
+    "oracle": {
+      "value": 3.4549872527999996,
+      "bits": "0x400BA3D05B56FBAA"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d4_x0.7_16",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": 0.7
+    },
+    "oracle": {
+      "value": 8.4000233543,
+      "bits": "0x4020CCCFDC70B59E"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d4_x1.9_17",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": 1.9
+    },
+    "oracle": {
+      "value": 23.454082274299996,
+      "bits": "0x4037743EBC65CFD1"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d4_x3.1_18",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": 3.1
+    },
+    "oracle": {
+      "value": 80.7477910823,
+      "bits": "0x40542FDBCF20AE03"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyder_d4_19",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": 1.25
+    },
+    "oracle": {
+      "value": 10.8899864375,
+      "bits": "0x4025C7AC4D65E460"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyint_d4_20",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        4.386155,
+        4.018203,
+        3.311459,
+        -1.901336,
+        0.960723
+      ],
+      "x": 0.85
+    },
+    "oracle": {
+      "value": 5.694819097492354,
+      "bits": "0x4016C77EA85176AD"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d5_x-1.3_21",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": -1.3
+    },
+    "oracle": {
+      "value": -25.808311981150002,
+      "bits": "0xC039CEED88B40115"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d5_x-0.4_22",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": -0.4
+    },
+    "oracle": {
+      "value": -4.9767567568,
+      "bits": "0xC013E832EC5A6980"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d5_x0.7_23",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": 0.7
+    },
+    "oracle": {
+      "value": -3.6150509041500003,
+      "bits": "0xC00CEB9FCEF5988A"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d5_x1.9_24",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": 1.9
+    },
+    "oracle": {
+      "value": 22.68525821564999,
+      "bits": "0x4036AF6D15198833"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d5_x3.1_25",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": 3.1
+    },
+    "oracle": {
+      "value": 525.11734799145,
+      "bits": "0x408068F05424CC3B"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyder_d5_26",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": 1.25
+    },
+    "oracle": {
+      "value": 6.190449425781248,
+      "bits": "0x4018C3052C9D16FA"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyint_d5_27",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        -3.096051,
+        2.879193,
+        -4.590722,
+        -1.068967,
+        -1.440537,
+        2.543865
+      ],
+      "x": 0.85
+    },
+    "oracle": {
+      "value": -2.6387276671172684,
+      "bits": "0xC0051C1D404A8D66"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d6_x-1.3_28",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": -1.3
+    },
+    "oracle": {
+      "value": 3.9383767298600016,
+      "bits": "0x400F81CBA8B09BEC"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d6_x-0.4_29",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": -0.4
+    },
+    "oracle": {
+      "value": 1.53231324992,
+      "bits": "0x3FF8845AE5FA245A"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d6_x0.7_30",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": 0.7
+    },
+    "oracle": {
+      "value": 2.21435336626,
+      "bits": "0x4001B6FEE5CEFE62"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d6_x1.9_31",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": 1.9
+    },
+    "oracle": {
+      "value": -84.79331937829997,
+      "bits": "0xC05532C5BEA44536"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d6_x3.1_32",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": 3.1
+    },
+    "oracle": {
+      "value": -1658.050324383981,
+      "bits": "0xC099E833883C3D8F"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyder_d6_33",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": 1.25
+    },
+    "oracle": {
+      "value": -32.9478721640625,
+      "bits": "0xC0407953E004B7F6"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyint_d6_34",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        2.538914,
+        1.363806,
+        -3.371539,
+        0.317083,
+        3.281426,
+        -2.044134,
+        -1.53204
+      ],
+      "x": 0.85
+    },
+    "oracle": {
+      "value": 2.094493635934441,
+      "bits": "0x4000C185E1202600"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d8_x-1.3_35",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": -1.3
+    },
+    "oracle": {
+      "value": 63.59925100872625,
+      "bits": "0x404FCCB441CE4981"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d8_x-0.4_36",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": -0.4
+    },
+    "oracle": {
+      "value": 2.8272823559628804,
+      "bits": "0x40069E46363B58E3"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d8_x0.7_37",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": 0.7
+    },
+    "oracle": {
+      "value": -1.11733504538537,
+      "bits": "0xBFF1E09AB669AD6D"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d8_x1.9_38",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": 1.9
+    },
+    "oracle": {
+      "value": 1200.414491474342,
+      "bits": "0x4092C1A87073FB14"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyval_d8_x3.1_39",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": 3.1
+    },
+    "oracle": {
+      "value": 51561.43407978963,
+      "bits": "0x40E92D2DE3FB4C8A"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyder_d8_40",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": 1.25
+    },
+    "oracle": {
+      "value": 313.0833554040527,
+      "bits": "0x407391556C79E59F"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyint_d8_41",
+    "tier": "hard",
+    "inputs": {
+      "coeffs": [
+        0.202132,
+        -4.723585,
+        2.558583,
+        -2.962012,
+        4.807387,
+        -0.804798,
+        1.73609,
+        2.962539,
+        4.893293
+      ],
+      "x": 0.85
+    },
+    "oracle": {
+      "value": -0.7149972104277188,
+      "bits": "0xBFE6E141D47095C5"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyint"
+    ],
+    "tol": {
+      "polyint": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyadd_k0_42",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -1.065388,
+        0.252634
+      ],
+      "q": [
+        -1.831003,
+        -2.324721,
+        0.955451
+      ],
+      "x": -1.7943
+    },
+    "oracle": {
+      "value": 3.8976411321829896,
+      "bits": "0x400F2E5E795229AF"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polymul_k0_43",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -1.065388,
+        0.252634
+      ],
+      "q": [
+        -1.831003,
+        -2.324721,
+        0.955451
+      ],
+      "x": -1.7943
+    },
+    "oracle": {
+      "value": -8.22572228341545,
+      "bits": "0xC0207391DF027EE0"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyadd_k1_44",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -1.830483,
+        -2.482218,
+        -3.327767,
+        -2.168343,
+        -2.387129
+      ],
+      "q": [
+        -1.854553,
+        0.736154,
+        -1.725981,
+        -1.067955
+      ],
+      "x": 1.8319
+    },
+    "oracle": {
+      "value": -70.6220828707386,
+      "bits": "0xC051A7D034AC4E57"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polymul_k1_45",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -1.830483,
+        -2.482218,
+        -3.327767,
+        -2.168343,
+        -2.387129
+      ],
+      "q": [
+        -1.854553,
+        0.736154,
+        -1.725981,
+        -1.067955
+      ],
+      "x": 1.8319
+    },
+    "oracle": {
+      "value": 742.9772781203336,
+      "bits": "0x408737D17730EF6F"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyadd_k2_46",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -0.742635,
+        3.216467,
+        0.769599
+      ],
+      "q": [
+        0.675994,
+        -3.986401,
+        -0.228925,
+        3.41046,
+        -1.989359
+      ],
+      "x": 0.8915
+    },
+    "oracle": {
+      "value": 0.8365166867235548,
+      "bits": "0x3FEAC4BEA4812677"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polymul_k2_47",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -0.742635,
+        3.216467,
+        0.769599
+      ],
+      "q": [
+        0.675994,
+        -3.986401,
+        -0.228925,
+        3.41046,
+        -1.989359
+      ],
+      "x": 0.8915
+    },
+    "oracle": {
+      "value": -5.199310175634679,
+      "bits": "0xC014CC17F77871A0"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyadd_k3_48",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        1.328547,
+        -0.616917
+      ],
+      "q": [
+        3.300525,
+        0.690205,
+        1.40937
+      ],
+      "x": -1.1104
+    },
+    "oracle": {
+      "value": 6.2854295278592005,
+      "bits": "0x40192447A35DDF38"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polymul_k3_49",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        1.328547,
+        -0.616917
+      ],
+      "q": [
+        3.300525,
+        0.690205,
+        1.40937
+      ],
+      "x": -1.1104
+    },
+    "oracle": {
+      "value": 8.60169188587707,
+      "bits": "0x40213410F578389E"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyadd_k4_50",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -0.470592,
+        2.892022,
+        2.822753,
+        -1.107193,
+        -0.899826
+      ],
+      "q": [
+        2.066011,
+        -3.073982,
+        0.236278,
+        -3.029886
+      ],
+      "x": -1.0658
+    },
+    "oracle": {
+      "value": 9.111771133232708,
+      "bits": "0x4022393A10E3BE20"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polymul_k4_51",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        -0.470592,
+        2.892022,
+        2.822753,
+        -1.107193,
+        -0.899826
+      ],
+      "q": [
+        2.066011,
+        -3.073982,
+        0.236278,
+        -3.029886
+      ],
+      "x": -1.0658
+    },
+    "oracle": {
+      "value": -1.5503925729692272,
+      "bits": "0xBFF8CE68714DD374"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polyadd_k5_52",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        1.18844,
+        3.09307
+      ],
+      "q": [
+        -2.114343,
+        -3.423148,
+        -0.259391,
+        3.01102
+      ],
+      "x": 0.7649
+    },
+    "oracle": {
+      "value": 0.017354353217638008,
+      "bits": "0x3F91C556EE0D4CA0"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyadd"
+    ],
+    "tol": {
+      "polyadd": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.polymul_k5_53",
+    "tier": "hard",
+    "inputs": {
+      "p": [
+        1.18844,
+        3.09307
+      ],
+      "q": [
+        -2.114343,
+        -3.423148,
+        -0.259391,
+        3.01102
+      ],
+      "x": 0.7649
+    },
+    "oracle": {
+      "value": -12.571573282510151,
+      "bits": "0xC02924A540D74C04"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polymul"
+    ],
+    "tol": {
+      "polymul": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N200_54",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_square",
+      "from": 1,
+      "to": 200
+    },
+    "oracle": {
+      "value": 1.6399465460149973,
+      "bits": "0x3FFA3D3896E52942"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N1000_55",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_square",
+      "from": 1,
+      "to": 1000
+    },
+    "oracle": {
+      "value": 1.64393456668156,
+      "bits": "0x3FFA4D8E550A9467"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N200_56",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_fourth",
+      "from": 1,
+      "to": 200
+    },
+    "oracle": {
+      "value": 1.0823231923559298,
+      "bits": "0x3FF151321FADEFC3"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N500_57",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_fourth",
+      "from": 1,
+      "to": 500
+    },
+    "oracle": {
+      "value": 1.0823232310524609,
+      "bits": "0x3FF151322A112456"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N40_58",
+    "tier": "hard",
+    "inputs": {
+      "tag": "geometric_half",
+      "from": 0,
+      "to": 40
+    },
+    "oracle": {
+      "value": 1.9999999999990905,
+      "bits": "0x3FFFFFFFFFFFF000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N15_59",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_factorial",
+      "from": 0,
+      "to": 15
+    },
+    "oracle": {
+      "value": 2.7182818284589945,
+      "bits": "0x4005BF0A8B1456F7"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N20_60",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_factorial",
+      "from": 0,
+      "to": 20
+    },
+    "oracle": {
+      "value": 2.718281828459045,
+      "bits": "0x4005BF0A8B145769"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N100_61",
+    "tier": "hard",
+    "inputs": {
+      "tag": "alt_harmonic",
+      "from": 1,
+      "to": 100
+    },
+    "oracle": {
+      "value": 0.6881721793101953,
+      "bits": "0x3FE60581A984F053"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N500_62",
+    "tier": "hard",
+    "inputs": {
+      "tag": "alt_harmonic",
+      "from": 1,
+      "to": 500
+    },
+    "oracle": {
+      "value": 0.6921481805579454,
+      "bits": "0x3FE62613F0EF6ED3"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.seriesSum_N50_63",
+    "tier": "hard",
+    "inputs": {
+      "tag": "inv_square",
+      "from": 1,
+      "to": 50
+    },
+    "oracle": {
+      "value": 1.6251327336215293,
+      "bits": "0x3FFA008B2E69044B"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k0_64",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -2.9584,
+        -2.2816,
+        -1.6351,
+        1.0796,
+        1.1903
+      ],
+      "ys": [
+        -3.07628,
+        1.861764,
+        -2.729164,
+        2.44426,
+        -0.198443
+      ]
+    },
+    "oracle": {
+      "value": -1.6288726998550662,
+      "bits": "0xBFFA0FDCD1F39882"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k1_65",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -2.7346,
+        -2.5801,
+        -1.0749,
+        1.2115
+      ],
+      "ys": [
+        -0.41244,
+        4.835536,
+        0.653606,
+        4.123524
+      ]
+    },
+    "oracle": {
+      "value": 5.8977336968406,
+      "bits": "0x401797478091CA4C"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k2_66",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -2.6613,
+        1.1426,
+        2.2588
+      ],
+      "ys": [
+        1.711853,
+        1.033377,
+        0.185612
+      ]
+    },
+    "oracle": {
+      "value": -0.11811684431081754,
+      "bits": "0xBFBE3CE7CF6BF38C"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k3_67",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -2.7649,
+        -2.3025,
+        0.8764,
+        2.6851,
+        2.8138
+      ],
+      "ys": [
+        -0.947912,
+        3.056333,
+        -3.770875,
+        1.881279,
+        0.185496
+      ]
+    },
+    "oracle": {
+      "value": -0.46421663487768255,
+      "bits": "0xBFDDB5B9B043C3B3"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k4_68",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -0.4664,
+        2.1636,
+        2.8744
+      ],
+      "ys": [
+        3.279933,
+        -3.863207,
+        -2.292926
+      ]
+    },
+    "oracle": {
+      "value": 1.474256759948984,
+      "bits": "0x3FF7968E419E3477"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k5_69",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -0.8592,
+        -0.4252,
+        1.767,
+        2.8065
+      ],
+      "ys": [
+        0.511322,
+        2.055967,
+        2.740173,
+        2.169804
+      ]
+    },
+    "oracle": {
+      "value": 0.26461983379040854,
+      "bits": "0x3FD0EF8807002D3A"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k6_70",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -2.7555,
+        -1.9203,
+        -1.5462,
+        -1.5459,
+        2.0663,
+        2.6519
+      ],
+      "ys": [
+        -4.586011,
+        -2.231747,
+        2.432518,
+        1.478468,
+        4.128501,
+        -0.155982
+      ]
+    },
+    "oracle": {
+      "value": -465.0930352225785,
+      "bits": "0xC07D117D1280659D"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.divdiff_k7_71",
+    "tier": "hard",
+    "inputs": {
+      "xs": [
+        -0.0331,
+        0.9704,
+        1.485
+      ],
+      "ys": [
+        4.134894,
+        -4.487226,
+        -2.509778
+      ]
+    },
+    "oracle": {
+      "value": 8.190986957468914,
+      "bits": "0x402061C90AE09543"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "divdiff"
+    ],
+    "tol": {
+      "divdiff": 1e-08
+    }
+  },
+  {
+    "id": "series.hard.taylor_sin_x0.7_t14_72",
+    "tier": "hard",
+    "inputs": {
+      "func": "sin",
+      "x": 0.7,
+      "terms": 14
+    },
+    "oracle": {
+      "value": 0.644217687237691,
+      "bits": "0x3FE49D6E694619B8"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_sin_x1.1_t18_73",
+    "tier": "hard",
+    "inputs": {
+      "func": "sin",
+      "x": 1.1,
+      "terms": 18
+    },
+    "oracle": {
+      "value": 0.8912073600614354,
+      "bits": "0x3FEC84C54C2D6338"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_cos_x0.6_t14_74",
+    "tier": "hard",
+    "inputs": {
+      "func": "cos",
+      "x": 0.6,
+      "terms": 14
+    },
+    "oracle": {
+      "value": 0.8253356149096783,
+      "bits": "0x3FEA69263C485B15"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_cos_x1.2_t16_75",
+    "tier": "hard",
+    "inputs": {
+      "func": "cos",
+      "x": 1.2,
+      "terms": 16
+    },
+    "oracle": {
+      "value": 0.3623577544766736,
+      "bits": "0x3FD730DE943B79D4"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_exp_x0.5_t16_76",
+    "tier": "hard",
+    "inputs": {
+      "func": "exp",
+      "x": 0.5,
+      "terms": 16
+    },
+    "oracle": {
+      "value": 1.6487212707001282,
+      "bits": "0x3FFA61298E1E069C"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_exp_x1.3_t20_77",
+    "tier": "hard",
+    "inputs": {
+      "func": "exp",
+      "x": 1.3,
+      "terms": 20
+    },
+    "oracle": {
+      "value": 3.6692966676192444,
+      "bits": "0x400D5AB83615F8B4"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_sinh_x0.4_t14_78",
+    "tier": "hard",
+    "inputs": {
+      "func": "sinh",
+      "x": 0.4,
+      "terms": 14
+    },
+    "oracle": {
+      "value": 0.4107523258028155,
+      "bits": "0x3FDA49C41F850ED2"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.hard.taylor_cosh_x0.5_t14_79",
+    "tier": "hard",
+    "inputs": {
+      "func": "cosh",
+      "x": 0.5,
+      "terms": 14
+    },
+    "oracle": {
+      "value": 1.1276259652063807,
+      "bits": "0x3FF20AC1862AE8D0"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1e-06
+    }
+  },
+  {
+    "id": "series.edge.polyval_constant",
+    "tier": "edge",
+    "inputs": {
+      "coeffs": [
+        7.0
+      ],
+      "x": 99.0
+    },
+    "oracle": {
+      "value": 7.0,
+      "bits": "0x401C000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-12
+    }
+  },
+  {
+    "id": "series.edge.polyval_empty_like",
+    "tier": "edge",
+    "inputs": {
+      "coeffs": [
+        0.0
+      ],
+      "x": 5.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 1e-12
+    }
+  },
+  {
+    "id": "series.edge.polyder_constant",
+    "tier": "edge",
+    "inputs": {
+      "coeffs": [
+        5.0
+      ],
+      "x": 3.0
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyder"
+    ],
+    "tol": {
+      "polyder": 1e-12
+    }
+  },
+  {
+    "id": "series.edge.polyval_largex",
+    "tier": "edge",
+    "inputs": {
+      "coeffs": [
+        1.0,
+        -2.0,
+        1.0
+      ],
+      "x": 1000.0
+    },
+    "oracle": {
+      "value": 998001.0,
+      "bits": "0x412E74E200000000"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "polyval"
+    ],
+    "tol": {
+      "polyval": 0.001
+    }
+  },
+  {
+    "id": "series.edge.inv_square_N5000",
+    "tier": "edge",
+    "inputs": {
+      "tag": "inv_square",
+      "from": 1,
+      "to": 5000
+    },
+    "oracle": {
+      "value": 1.6447340868468932,
+      "bits": "0x3FFA50D4B099FB35"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "seriesSum"
+    ],
+    "tol": {
+      "seriesSum": 1e-09
+    }
+  },
+  {
+    "id": "series.edge.tan_oob_t16_x13",
+    "tier": "edge",
+    "inputs": {
+      "func": "tan",
+      "x": 1.3,
+      "terms": 16
+    },
+    "oracle": {
+      "value": 3.6021024479679786,
+      "bits": "0x400CD11B1696E97E"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1000000000.0
+    },
+    "inEnvelope": {
+      "taylor": false
+    }
+  },
+  {
+    "id": "series.edge.tan_oob_t20_x14",
+    "tier": "edge",
+    "inputs": {
+      "func": "tan",
+      "x": 1.4,
+      "terms": 20
+    },
+    "oracle": {
+      "value": 5.797883715482887,
+      "bits": "0x401731086DC00A35"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1000000000.0
+    },
+    "inEnvelope": {
+      "taylor": false
+    }
+  },
+  {
+    "id": "series.edge.tan_oob_t24_x15",
+    "tier": "edge",
+    "inputs": {
+      "func": "tan",
+      "x": 1.5,
+      "terms": 24
+    },
+    "oracle": {
+      "value": 14.101419947171719,
+      "bits": "0x402C33ED50B88777"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1000000000.0
+    },
+    "inEnvelope": {
+      "taylor": false
+    }
+  },
+  {
+    "id": "series.edge.tan_oob_t30_x10",
+    "tier": "edge",
+    "inputs": {
+      "func": "tan",
+      "x": 1.0,
+      "terms": 30
+    },
+    "oracle": {
+      "value": 1.5574077246549023,
+      "bits": "0x3FF8EB245CBEE3A6"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 1000000000.0
+    },
+    "inEnvelope": {
+      "taylor": false
+    }
+  },
+  {
+    "id": "series.edge.tan_in_t12_x10",
+    "tier": "edge",
+    "inputs": {
+      "func": "tan",
+      "x": 1.0,
+      "terms": 12
+    },
+    "oracle": {
+      "value": 1.5574077246549023,
+      "bits": "0x3FF8EB245CBEE3A6"
+    },
+    "source": "numpy 2.4.6 / numpy.polynomial / sympy 1.14.0",
+    "strategies": [
+      "taylor"
+    ],
+    "tol": {
+      "taylor": 0.01
+    }
+  }
+]

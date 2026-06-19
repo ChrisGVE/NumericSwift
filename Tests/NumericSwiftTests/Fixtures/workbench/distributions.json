@@ -1,0 +1,2148 @@
+[
+  {
+    "id": "distributions.trivial.normal_cdf_0",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "normal",
+      "x": 0.0
+    },
+    "oracle": {
+      "value": 0.5,
+      "bits": "0x3FE0000000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_cdf"
+    ],
+    "tol": {
+      "normal_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.normal_pdf_1",
+    "tier": "trivial",
+    "inputs": {
+      "func": "pdf",
+      "family": "normal",
+      "x": 0.0
+    },
+    "oracle": {
+      "value": 0.3989422804014327,
+      "bits": "0x3FD9884533D43651"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_pdf"
+    ],
+    "tol": {
+      "normal_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.normal_ppf_2",
+    "tier": "trivial",
+    "inputs": {
+      "func": "ppf",
+      "family": "normal",
+      "p": 0.5
+    },
+    "oracle": {
+      "value": 0.0,
+      "bits": "0x0000000000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_ppf"
+    ],
+    "tol": {
+      "normal_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.trivial.normal_cdf_3",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "normal",
+      "x": 1.96
+    },
+    "oracle": {
+      "value": 0.9750021048517795,
+      "bits": "0x3FEF33379D3BD367"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_cdf"
+    ],
+    "tol": {
+      "normal_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.uniform_cdf_4",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "uniform",
+      "x": 0.5
+    },
+    "oracle": {
+      "value": 0.5,
+      "bits": "0x3FE0000000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "uniform_cdf"
+    ],
+    "tol": {
+      "uniform_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.expon_cdf_5",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "expon",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.6321205588285577,
+      "bits": "0x3FE43A54E4E98864"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_cdf"
+    ],
+    "tol": {
+      "expon_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.t_cdf_6",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "t",
+      "x": 0.0,
+      "df": 10.0
+    },
+    "oracle": {
+      "value": 0.5,
+      "bits": "0x3FE0000000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_cdf"
+    ],
+    "tol": {
+      "t_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.chi2_cdf_7",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "chi2",
+      "x": 1.0,
+      "df": 1.0
+    },
+    "oracle": {
+      "value": 0.6826894921370859,
+      "bits": "0x3FE5D897A241A6FA"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_cdf"
+    ],
+    "tol": {
+      "chi2_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.f_cdf_8",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "f",
+      "x": 1.0,
+      "dfn": 5.0,
+      "dfd": 10.0
+    },
+    "oracle": {
+      "value": 0.5348805734621996,
+      "bits": "0x3FE11DBDDD4925DF"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_cdf"
+    ],
+    "tol": {
+      "f_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.trivial.gamma_cdf_9",
+    "tier": "trivial",
+    "inputs": {
+      "func": "cdf",
+      "family": "gamma",
+      "x": 1.0,
+      "shape": 2.0
+    },
+    "oracle": {
+      "value": 0.2642411176571153,
+      "bits": "0x3FD0E95393A6218F"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_cdf"
+    ],
+    "tol": {
+      "gamma_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_cdf_0",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "normal",
+      "x": -2.5,
+      "loc": 1.0,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.040059156863817086,
+      "bits": "0x3FA482A2414556DC"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_cdf"
+    ],
+    "tol": {
+      "normal_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_cdf_1",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "normal",
+      "x": -1.0,
+      "loc": 1.0,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.15865525393145707,
+      "bits": "0x3FC44ED0BB7CB20C"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_cdf"
+    ],
+    "tol": {
+      "normal_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_cdf_2",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "normal",
+      "x": 0.7,
+      "loc": 1.0,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.4403823076297575,
+      "bits": "0x3FDC2F3946406FBC"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_cdf"
+    ],
+    "tol": {
+      "normal_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_cdf_3",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "normal",
+      "x": 2.3,
+      "loc": 1.0,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.7421538891941353,
+      "bits": "0x3FE7BFB983560440"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_cdf"
+    ],
+    "tol": {
+      "normal_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_pdf_4",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "normal",
+      "x": -1.0,
+      "loc": 0.5,
+      "scale": 1.5
+    },
+    "oracle": {
+      "value": 0.16131381634609557,
+      "bits": "0x3FC4A5EE5ECCBA25"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_pdf"
+    ],
+    "tol": {
+      "normal_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_pdf_5",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "normal",
+      "x": 0.4,
+      "loc": 0.5,
+      "scale": 1.5
+    },
+    "oracle": {
+      "value": 0.26537115087596813,
+      "bits": "0x3FD0FBD747941B47"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_pdf"
+    ],
+    "tol": {
+      "normal_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_pdf_6",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "normal",
+      "x": 1.8,
+      "loc": 0.5,
+      "scale": 1.5
+    },
+    "oracle": {
+      "value": 0.1826909782646856,
+      "bits": "0x3FC7626B0075E5AC"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_pdf"
+    ],
+    "tol": {
+      "normal_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.normal_ppf_7",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "normal",
+      "p": 0.05,
+      "loc": 2.0,
+      "scale": 3.0
+    },
+    "oracle": {
+      "value": -2.934560880854418,
+      "bits": "0xC00779FB0E1B201C"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_ppf"
+    ],
+    "tol": {
+      "normal_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.normal_ppf_8",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "normal",
+      "p": 0.25,
+      "loc": 2.0,
+      "scale": 3.0
+    },
+    "oracle": {
+      "value": -0.023469250588245227,
+      "bits": "0xBF980852BEF3DB80"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_ppf"
+    ],
+    "tol": {
+      "normal_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.normal_ppf_9",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "normal",
+      "p": 0.6,
+      "loc": 2.0,
+      "scale": 3.0
+    },
+    "oracle": {
+      "value": 2.7600413094073994,
+      "bits": "0x4006149089BC1C42"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_ppf"
+    ],
+    "tol": {
+      "normal_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.normal_ppf_10",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "normal",
+      "p": 0.9,
+      "loc": 2.0,
+      "scale": 3.0
+    },
+    "oracle": {
+      "value": 5.8446546966338015,
+      "bits": "0x401760ED2929D1E6"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_ppf"
+    ],
+    "tol": {
+      "normal_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.t_cdf_11",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "t",
+      "x": -3.0,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.02883444281121865,
+      "bits": "0x3F9D86C6B37D820C"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_cdf"
+    ],
+    "tol": {
+      "t_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_cdf_12",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "t",
+      "x": -0.5,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.3257239824240755,
+      "bits": "0x3FD4D8A9670231B2"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_cdf"
+    ],
+    "tol": {
+      "t_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_cdf_13",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "t",
+      "x": 1.2,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.8418689426509474,
+      "bits": "0x3FEAF09723068680"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_cdf"
+    ],
+    "tol": {
+      "t_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_cdf_14",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "t",
+      "x": 4.0,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.9859957719949269,
+      "bits": "0x3FEF8D470156CCAB"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_cdf"
+    ],
+    "tol": {
+      "t_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_pdf_15",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "t",
+      "x": -2.0,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 0.06509031032621647,
+      "bits": "0x3FB0A9C232233927"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_pdf"
+    ],
+    "tol": {
+      "t_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_pdf_16",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "t",
+      "x": 0.0,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 0.3796066898224944,
+      "bits": "0x3FD84B79DB8858F5"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_pdf"
+    ],
+    "tol": {
+      "t_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_pdf_17",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "t",
+      "x": 2.5,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 0.03332623888702283,
+      "bits": "0x3FA11023043CA505"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_pdf"
+    ],
+    "tol": {
+      "t_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_pdf_18",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "t",
+      "x": -2.0,
+      "df": 100.0
+    },
+    "oracle": {
+      "value": 0.054908643295411376,
+      "bits": "0x3FAC1CFC56716B45"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_pdf"
+    ],
+    "tol": {
+      "t_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_pdf_19",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "t",
+      "x": 0.0,
+      "df": 100.0
+    },
+    "oracle": {
+      "value": 0.39794618693590594,
+      "bits": "0x3FD977F3489D499F"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_pdf"
+    ],
+    "tol": {
+      "t_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_pdf_20",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "t",
+      "x": 2.5,
+      "df": 100.0
+    },
+    "oracle": {
+      "value": 0.01863000374641339,
+      "bits": "0x3F9313BE6342C492"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_pdf"
+    ],
+    "tol": {
+      "t_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.t_ppf_21",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.01,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": -3.746947387979197,
+      "bits": "0xC00DF9BF8D59A04E"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.t_ppf_22",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.1,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": -1.5332062740589436,
+      "bits": "0xBFF888034D51AECD"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.t_ppf_23",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.4,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": -0.2707222947075976,
+      "bits": "0xBFD153839A844D19"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.t_ppf_24",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.75,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": 0.7406970841126829,
+      "bits": "0x3FE7B3CA5F103587"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.t_ppf_25",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.95,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": 2.1318467863266495,
+      "bits": "0x40010E05B01AD864"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.t_ppf_26",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.99,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": 3.746947387979196,
+      "bits": "0x400DF9BF8D59A04C"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_cdf_27",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "chi2",
+      "x": 0.5,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.08110858834532418,
+      "bits": "0x3FB4C3884E5E2E4F"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_cdf"
+    ],
+    "tol": {
+      "chi2_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_cdf_28",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "chi2",
+      "x": 2.0,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.42759329552912023,
+      "bits": "0x3FDB5DB0451254F1"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_cdf"
+    ],
+    "tol": {
+      "chi2_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_cdf_29",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "chi2",
+      "x": 6.0,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.8883897749052874,
+      "bits": "0x3FEC6DB064AA3556"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_cdf"
+    ],
+    "tol": {
+      "chi2_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_cdf_30",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "chi2",
+      "x": 15.0,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": 0.9981833510334277,
+      "bits": "0x3FEFF11E36033554"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_cdf"
+    ],
+    "tol": {
+      "chi2_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_pdf_31",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "chi2",
+      "x": 1.0,
+      "df": 2.0
+    },
+    "oracle": {
+      "value": 0.3032653298563167,
+      "bits": "0x3FD368B2FC6F960A"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_pdf"
+    ],
+    "tol": {
+      "chi2_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_pdf_32",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "chi2",
+      "x": 4.0,
+      "df": 2.0
+    },
+    "oracle": {
+      "value": 0.06766764161830634,
+      "bits": "0x3FB152AAA3BF81CB"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_pdf"
+    ],
+    "tol": {
+      "chi2_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_pdf_33",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "chi2",
+      "x": 9.0,
+      "df": 2.0
+    },
+    "oracle": {
+      "value": 0.005554498269121153,
+      "bits": "0x3F76C0504695C417"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_pdf"
+    ],
+    "tol": {
+      "chi2_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_ppf_34",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "chi2",
+      "p": 0.05,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 1.1454762260617692,
+      "bits": "0x3FF253DEE1147E2A"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_ppf"
+    ],
+    "tol": {
+      "chi2_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_ppf_35",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "chi2",
+      "p": 0.5,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 4.351460191095526,
+      "bits": "0x401167E52E2A67A0"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_ppf"
+    ],
+    "tol": {
+      "chi2_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_ppf_36",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "chi2",
+      "p": 0.9,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 9.236356899781123,
+      "bits": "0x40227903C5857CDD"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_ppf"
+    ],
+    "tol": {
+      "chi2_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.chi2_ppf_37",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "chi2",
+      "p": 0.99,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 15.08627246938899,
+      "bits": "0x402E2C2BE7B52449"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_ppf"
+    ],
+    "tol": {
+      "chi2_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.f_cdf_38",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "f",
+      "x": 0.5,
+      "dfn": 3.0,
+      "dfd": 12.0
+    },
+    "oracle": {
+      "value": 0.3107306361383482,
+      "bits": "0x3FD3E302C0051639"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_cdf"
+    ],
+    "tol": {
+      "f_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_cdf_39",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "f",
+      "x": 1.5,
+      "dfn": 3.0,
+      "dfd": 12.0
+    },
+    "oracle": {
+      "value": 0.7354051636782509,
+      "bits": "0x3FE7887068E9D7FB"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_cdf"
+    ],
+    "tol": {
+      "f_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_cdf_40",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "f",
+      "x": 3.0,
+      "dfn": 3.0,
+      "dfd": 12.0
+    },
+    "oracle": {
+      "value": 0.9272345231869694,
+      "bits": "0x3FEDABE7BC19ED0E"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_cdf"
+    ],
+    "tol": {
+      "f_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_cdf_41",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "f",
+      "x": 8.0,
+      "dfn": 3.0,
+      "dfd": 12.0
+    },
+    "oracle": {
+      "value": 0.9966014883912395,
+      "bits": "0x3FEFE428CDF92128"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_cdf"
+    ],
+    "tol": {
+      "f_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_pdf_42",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "f",
+      "x": 0.8,
+      "dfn": 4.0,
+      "dfd": 8.0
+    },
+    "oracle": {
+      "value": 0.5312412345196296,
+      "bits": "0x3FE0FFED9E118D1C"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_pdf"
+    ],
+    "tol": {
+      "f_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_pdf_43",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "f",
+      "x": 2.0,
+      "dfn": 4.0,
+      "dfd": 8.0
+    },
+    "oracle": {
+      "value": 0.15625000000000008,
+      "bits": "0x3FC4000000000003"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_pdf"
+    ],
+    "tol": {
+      "f_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_pdf_44",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "f",
+      "x": 5.0,
+      "dfn": 4.0,
+      "dfd": 8.0
+    },
+    "oracle": {
+      "value": 0.013599775603702537,
+      "bits": "0x3F8BDA32FB9B528E"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_pdf"
+    ],
+    "tol": {
+      "f_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.f_ppf_45",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "f",
+      "p": 0.1,
+      "dfn": 5.0,
+      "dfd": 15.0
+    },
+    "oracle": {
+      "value": 0.3088315819478702,
+      "bits": "0x3FD3C3E58A1C08F4"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_ppf"
+    ],
+    "tol": {
+      "f_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.f_ppf_46",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "f",
+      "p": 0.5,
+      "dfn": 5.0,
+      "dfd": 15.0
+    },
+    "oracle": {
+      "value": 0.9107243052969763,
+      "bits": "0x3FED24A74C5D87D9"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_ppf"
+    ],
+    "tol": {
+      "f_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.f_ppf_47",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "f",
+      "p": 0.9,
+      "dfn": 5.0,
+      "dfd": 15.0
+    },
+    "oracle": {
+      "value": 2.273022447867573,
+      "bits": "0x40022F2664A5521B"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_ppf"
+    ],
+    "tol": {
+      "f_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.f_ppf_48",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "f",
+      "p": 0.99,
+      "dfn": 5.0,
+      "dfd": 15.0
+    },
+    "oracle": {
+      "value": 4.555613984653008,
+      "bits": "0x401238F2DF5523C1"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "f_ppf"
+    ],
+    "tol": {
+      "f_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_cdf_49",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "gamma",
+      "x": 0.5,
+      "shape": 2.0
+    },
+    "oracle": {
+      "value": 0.09020401043104986,
+      "bits": "0x3FB7179C2AC4F788"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_cdf"
+    ],
+    "tol": {
+      "gamma_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_cdf_50",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "gamma",
+      "x": 2.0,
+      "shape": 2.0
+    },
+    "oracle": {
+      "value": 0.5939941502901616,
+      "bits": "0x3FE3020005305EA4"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_cdf"
+    ],
+    "tol": {
+      "gamma_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_cdf_51",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "gamma",
+      "x": 5.0,
+      "shape": 2.0
+    },
+    "oracle": {
+      "value": 0.9595723180054873,
+      "bits": "0x3FEEB4D1017F6017"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_cdf"
+    ],
+    "tol": {
+      "gamma_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_cdf_52",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "gamma",
+      "x": 10.0,
+      "shape": 2.0
+    },
+    "oracle": {
+      "value": 0.9995006007726127,
+      "bits": "0x3FEFFBE8AF14D2BB"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_cdf"
+    ],
+    "tol": {
+      "gamma_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_pdf_53",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "gamma",
+      "x": 1.0,
+      "shape": 3.0
+    },
+    "oracle": {
+      "value": 0.18393972058572114,
+      "bits": "0x3FC78B56362CEF37"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_pdf"
+    ],
+    "tol": {
+      "gamma_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_pdf_54",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "gamma",
+      "x": 3.0,
+      "shape": 3.0
+    },
+    "oracle": {
+      "value": 0.22404180765538775,
+      "bits": "0x3FCCAD66E66886C5"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_pdf"
+    ],
+    "tol": {
+      "gamma_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_pdf_55",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "gamma",
+      "x": 7.0,
+      "shape": 3.0
+    },
+    "oracle": {
+      "value": 0.022341108156085643,
+      "bits": "0x3F96E096638C11D0"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_pdf"
+    ],
+    "tol": {
+      "gamma_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_ppf_56",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "gamma",
+      "p": 0.1,
+      "shape": 2.5
+    },
+    "oracle": {
+      "value": 0.8051539934811613,
+      "bits": "0x3FE9C3D24EC7DA32"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_ppf"
+    ],
+    "tol": {
+      "gamma_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_ppf_57",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "gamma",
+      "p": 0.5,
+      "shape": 2.5
+    },
+    "oracle": {
+      "value": 2.175730095547763,
+      "bits": "0x400167E52E2A67A0"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_ppf"
+    ],
+    "tol": {
+      "gamma_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.gamma_ppf_58",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "gamma",
+      "p": 0.9,
+      "shape": 2.5
+    },
+    "oracle": {
+      "value": 4.618178449890562,
+      "bits": "0x40127903C5857CDD"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_ppf"
+    ],
+    "tol": {
+      "gamma_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.beta_cdf_59",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "beta",
+      "x": 0.2,
+      "a": 2.0,
+      "b": 5.0
+    },
+    "oracle": {
+      "value": 0.3446400000000002,
+      "bits": "0x3FD60E94EE392E23"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_cdf"
+    ],
+    "tol": {
+      "beta_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_cdf_60",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "beta",
+      "x": 0.5,
+      "a": 2.0,
+      "b": 5.0
+    },
+    "oracle": {
+      "value": 0.890625,
+      "bits": "0x3FEC800000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_cdf"
+    ],
+    "tol": {
+      "beta_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_cdf_61",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "beta",
+      "x": 0.8,
+      "a": 2.0,
+      "b": 5.0
+    },
+    "oracle": {
+      "value": 0.9984,
+      "bits": "0x3FEFF2E48E8A71DE"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_cdf"
+    ],
+    "tol": {
+      "beta_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_cdf_62",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "beta",
+      "x": 0.2,
+      "a": 0.5,
+      "b": 0.5
+    },
+    "oracle": {
+      "value": 0.2951672353008665,
+      "bits": "0x3FD2E4051D9DF308"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_cdf"
+    ],
+    "tol": {
+      "beta_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_cdf_63",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "beta",
+      "x": 0.5,
+      "a": 0.5,
+      "b": 0.5
+    },
+    "oracle": {
+      "value": 0.5000000000000001,
+      "bits": "0x3FE0000000000001"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_cdf"
+    ],
+    "tol": {
+      "beta_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_cdf_64",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "beta",
+      "x": 0.8,
+      "a": 0.5,
+      "b": 0.5
+    },
+    "oracle": {
+      "value": 0.7048327646991335,
+      "bits": "0x3FE68DFD7131067C"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_cdf"
+    ],
+    "tol": {
+      "beta_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_pdf_65",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "beta",
+      "x": 0.3,
+      "a": 3.0,
+      "b": 2.0
+    },
+    "oracle": {
+      "value": 0.7559999999999996,
+      "bits": "0x3FE83126E978D4FA"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_pdf"
+    ],
+    "tol": {
+      "beta_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_pdf_66",
+    "tier": "hard",
+    "inputs": {
+      "func": "pdf",
+      "family": "beta",
+      "x": 0.6,
+      "a": 3.0,
+      "b": 2.0
+    },
+    "oracle": {
+      "value": 1.7279999999999998,
+      "bits": "0x3FFBA5E353F7CED8"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_pdf"
+    ],
+    "tol": {
+      "beta_pdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.beta_ppf_67",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "beta",
+      "p": 0.1,
+      "a": 2.0,
+      "b": 3.0
+    },
+    "oracle": {
+      "value": 0.14255931671003072,
+      "bits": "0x3FC23F6239813D77"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_ppf"
+    ],
+    "tol": {
+      "beta_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.beta_ppf_68",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "beta",
+      "p": 0.5,
+      "a": 2.0,
+      "b": 3.0
+    },
+    "oracle": {
+      "value": 0.3857275681323895,
+      "bits": "0x3FD8AFC2AE92D494"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_ppf"
+    ],
+    "tol": {
+      "beta_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.beta_ppf_69",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "beta",
+      "p": 0.9,
+      "a": 2.0,
+      "b": 3.0
+    },
+    "oracle": {
+      "value": 0.6795394162781817,
+      "bits": "0x3FE5BEC972283F3F"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "beta_ppf"
+    ],
+    "tol": {
+      "beta_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.expon_cdf_70",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "expon",
+      "x": 0.5,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.22119921692859515,
+      "bits": "0x3FCC5041854DF7D5"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_cdf"
+    ],
+    "tol": {
+      "expon_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.expon_cdf_71",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "expon",
+      "x": 2.0,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.6321205588285577,
+      "bits": "0x3FE43A54E4E98864"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_cdf"
+    ],
+    "tol": {
+      "expon_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.expon_cdf_72",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "expon",
+      "x": 5.0,
+      "scale": 2.0
+    },
+    "oracle": {
+      "value": 0.9179150013761012,
+      "bits": "0x3FED5F8F47ED617B"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_cdf"
+    ],
+    "tol": {
+      "expon_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.expon_ppf_73",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "expon",
+      "p": 0.1,
+      "scale": 1.5
+    },
+    "oracle": {
+      "value": 0.15804077348673945,
+      "bits": "0x3FC43AAE18C7B106"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_ppf"
+    ],
+    "tol": {
+      "expon_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.expon_ppf_74",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "expon",
+      "p": 0.5,
+      "scale": 1.5
+    },
+    "oracle": {
+      "value": 1.0397207708399179,
+      "bits": "0x3FF0A2B23F3BAB73"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_ppf"
+    ],
+    "tol": {
+      "expon_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.expon_ppf_75",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "expon",
+      "p": 0.9,
+      "scale": 1.5
+    },
+    "oracle": {
+      "value": 3.453877639491069,
+      "bits": "0x400BA18A998FFFA1"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "expon_ppf"
+    ],
+    "tol": {
+      "expon_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.hard.uniform_cdf_76",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "uniform",
+      "x": 0.2,
+      "loc": -1.0,
+      "scale": 4.0
+    },
+    "oracle": {
+      "value": 0.3,
+      "bits": "0x3FD3333333333333"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "uniform_cdf"
+    ],
+    "tol": {
+      "uniform_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.uniform_cdf_77",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "uniform",
+      "x": 0.5,
+      "loc": -1.0,
+      "scale": 4.0
+    },
+    "oracle": {
+      "value": 0.375,
+      "bits": "0x3FD8000000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "uniform_cdf"
+    ],
+    "tol": {
+      "uniform_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.uniform_cdf_78",
+    "tier": "hard",
+    "inputs": {
+      "func": "cdf",
+      "family": "uniform",
+      "x": 0.9,
+      "loc": -1.0,
+      "scale": 4.0
+    },
+    "oracle": {
+      "value": 0.475,
+      "bits": "0x3FDE666666666666"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "uniform_cdf"
+    ],
+    "tol": {
+      "uniform_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.hard.uniform_ppf_79",
+    "tier": "hard",
+    "inputs": {
+      "func": "ppf",
+      "family": "uniform",
+      "p": 0.25,
+      "loc": 2.0,
+      "scale": 6.0
+    },
+    "oracle": {
+      "value": 3.5,
+      "bits": "0x400C000000000000"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "uniform_ppf"
+    ],
+    "tol": {
+      "uniform_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_oov_0",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 1e-05,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": -15.546854534954758,
+      "bits": "0xC02F17FD514E9996"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 0.0001
+    },
+    "inEnvelope": {
+      "t_ppf": false
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_oov_1",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 5e-06,
+      "df": 10.0
+    },
+    "oracle": {
+      "value": -8.150286558895806,
+      "bits": "0xC0204CF25C1EF8C3"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 0.0001
+    },
+    "inEnvelope": {
+      "t_ppf": false
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_oov_2",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.99999,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 15.546854534969158,
+      "bits": "0x402F17FD514EB941"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 0.0001
+    },
+    "inEnvelope": {
+      "t_ppf": false
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_oov_3",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.999995,
+      "df": 20.0
+    },
+    "oracle": {
+      "value": 5.853667921768399,
+      "bits": "0x40176A27EC768EE9"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 0.0001
+    },
+    "inEnvelope": {
+      "t_ppf": false
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_oov_4",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 1e-06,
+      "df": 3.0
+    },
+    "oracle": {
+      "value": -103.29946778041935,
+      "bits": "0xC059D32A7AE8C6D6"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 0.0001
+    },
+    "inEnvelope": {
+      "t_ppf": false
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_ok_0",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.999,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": 5.893429531356009,
+      "bits": "0x401792DF30E9D194"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.edge.t_ppf_ok_1",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "t",
+      "p": 0.001,
+      "df": 5.0
+    },
+    "oracle": {
+      "value": -5.893429531356009,
+      "bits": "0xC01792DF30E9D194"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "t_ppf"
+    ],
+    "tol": {
+      "t_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.edge.normal_ppf_ok_2",
+    "tier": "edge",
+    "inputs": {
+      "func": "ppf",
+      "family": "normal",
+      "p": 0.99999
+    },
+    "oracle": {
+      "value": 4.264890793923841,
+      "bits": "0x40110F3F8843A851"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "normal_ppf"
+    ],
+    "tol": {
+      "normal_ppf": 1e-07
+    }
+  },
+  {
+    "id": "distributions.edge.chi2_cdf_ok_3",
+    "tier": "edge",
+    "inputs": {
+      "func": "cdf",
+      "family": "chi2",
+      "x": 50.0,
+      "df": 4.0
+    },
+    "oracle": {
+      "value": 0.9999999996389135,
+      "bits": "0x3FEFFFFFFFCE5F66"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "chi2_cdf"
+    ],
+    "tol": {
+      "chi2_cdf": 1e-10
+    }
+  },
+  {
+    "id": "distributions.edge.gamma_cdf_ok_4",
+    "tier": "edge",
+    "inputs": {
+      "func": "cdf",
+      "family": "gamma",
+      "x": 30.0,
+      "shape": 2.0
+    },
+    "oracle": {
+      "value": 0.9999999999970991,
+      "bits": "0x3FEFFFFFFFFF99EF"
+    },
+    "source": "scipy.stats 1.17.1",
+    "strategies": [
+      "gamma_cdf"
+    ],
+    "tol": {
+      "gamma_cdf": 1e-10
+    }
+  }
+]

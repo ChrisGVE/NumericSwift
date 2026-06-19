@@ -1,0 +1,297 @@
+//
+//  EdgeInputHardeningTests.swift
+//  NumericSwiftTests
+//
+//  Regression tests for the Codex convergence-audit round-5 hardening: public
+//  functions in Geometry, Series, Integration, NumberTheory, and SpecialFunctions
+//  must return a documented sentinel on degenerate/malformed input rather than
+//  trap (force-unwrap, invalid Range, negative array count, divide-by-zero,
+//  Int.min abs, or Int→Int32 narrowing).
+//
+//  Licensed under the Apache License, Version 2.0.
+//
+
+import XCTest
+
+@testable import NumericSwift
+
+final class EdgeInputHardeningTests: XCTestCase {
+
+  // MARK: - NumberTheory
+
+  /// gcd/lcm must not trap on Int.min (abs(Int.min) is not representable as Int).
+  func testGcdLcmIntMinDoesNotTrap() {
+    XCTAssertEqual(NumberTheory.gcd(Int.min, 0), Int.max)  // |Int.min| clamps to Int.max
+    XCTAssertEqual(NumberTheory.gcd(Int.min, 2), 2)        // 2^63 and 2 → 2
+    XCTAssertEqual(NumberTheory.lcm(Int.min, 0), 0)
+    // Large-product overflow clamps to Int.max rather than trapping.
+    XCTAssertEqual(NumberTheory.lcm(Int.max, Int.max - 1), Int.max)
+  }
+
+  /// modInverse with a non-positive modulus returns nil (x % 0 would trap).
+  func testModInverseNonPositiveModulusReturnsNil() {
+    XCTAssertNil(NumberTheory.modInverse(1, 0))
+    XCTAssertNil(NumberTheory.modInverse(3, -7))
+  }
+
+  /// primePi / chebyshev must not trap converting a non-finite or out-of-range
+  /// Double to Int.
+  func testPrimeCountingNonFiniteReturnsZero() {
+    XCTAssertEqual(NumberTheory.primePi(.infinity), 0)
+    XCTAssertEqual(NumberTheory.primePi(.nan), 0)
+    XCTAssertEqual(NumberTheory.chebyshevTheta(.infinity), 0)
+    XCTAssertEqual(NumberTheory.chebyshevPsi(.infinity), 0)
+  }
+
+  // MARK: - Series
+
+  /// Negative term/count must yield an empty array, not an invalid Range trap.
+  func testSeriesNegativeCountsReturnEmpty() {
+    XCTAssertEqual(Series.taylorCoefficients(for: "sin", terms: -1), [])
+    XCTAssertTrue(Series.partialSums(from: 0, count: -3) { Double($0) }.isEmpty)
+  }
+
+  // MARK: - Integration
+
+  /// romberg must not trap on divmax < 1 (clamped to the documented minimum).
+  func testRombergNonPositiveDivmaxDoesNotTrap() {
+    let r = romberg({ $0 }, 0.0, 1.0, divmax: 0)
+    XCTAssertTrue(r.value.isFinite)
+    XCTAssertEqual(r.value, 0.5, accuracy: 1e-9)  // ∫₀¹ x dx = 0.5
+  }
+
+  // MARK: - Geometry (B-spline)
+
+  /// bsplineBasis returns 0 for out-of-range indices/degree or too-short knots.
+  func testBsplineBasisOutOfRangeReturnsZero() {
+    XCTAssertEqual(Geometry.bsplineBasis(i: -1, degree: 0, t: 0.5, knots: [0, 1]), 0.0)
+    XCTAssertEqual(Geometry.bsplineBasis(i: 5, degree: 2, t: 0.5, knots: [0, 1]), 0.0)
+    XCTAssertEqual(Geometry.bsplineBasis(i: 0, degree: -1, t: 0.5, knots: [0, 1]), 0.0)
+  }
+
+  /// bsplineUniformKnots returns [] for negative n/degree (no negative-count alloc).
+  func testBsplineUniformKnotsNegativeReturnsEmpty() {
+    XCTAssertTrue(Geometry.bsplineUniformKnots(n: -1, degree: 2).isEmpty)
+    XCTAssertTrue(Geometry.bsplineUniformKnots(n: 3, degree: -1).isEmpty)
+  }
+
+  // MARK: - SpecialFunctions (integer-order Bessel)
+
+  /// Integer-order Bessel APIs return NaN for an order outside Int32 range instead
+  /// of trapping on abs(Int.min) or the Int→Int32 narrowing.
+  func testBesselIntMinOrderReturnsNaN() {
+    XCTAssertTrue(besseli(Int.min, 1.0).isNaN)
+    XCTAssertTrue(besselk(Int.min, 1.0).isNaN)
+    XCTAssertTrue(NumericSwift.jn(Int.min, 1.0).isNaN)
+    XCTAssertTrue(NumericSwift.yn(Int.min, 1.0).isNaN)
+  }
+
+  // MARK: - MathExpr toString (round 6)
+
+  /// toString of an integral Double outside Int64 range (1e20) must not trap on
+  /// Int64(v); it formats as a Double instead.
+  func testMathExprToStringLargeIntegralDoesNotTrap() throws {
+    let s = try MathExpr.toString("1e20")
+    XCTAssertFalse(s.isEmpty)
+  }
+
+  // MARK: - Interpolation evaluators (round 6)
+
+  /// Public spline/PCHIP/Akima/Barycentric evaluators return NaN on malformed
+  /// (empty or length-mismatched) input rather than trapping on x[0]/x[n-1].
+  func testInterpolationEvaluatorsMalformedReturnNaN() {
+    XCTAssertTrue(evalCubicSpline(x: [], coeffs: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalCubicSplineDerivative(x: [], coeffs: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalPchip(x: [], y: [], d: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalAkima(x: [], coeffs: [], xNew: 0).isNaN)
+    XCTAssertTrue(evalLagrange(x: [0, 1], y: [0], xNew: 0.5).isNaN)  // length mismatch
+    XCTAssertTrue(evalBarycentric(x: [0, 1], y: [0, 1], w: [1], xNew: 0.5).isNaN)
+  }
+
+  /// solveTridiagonal returns [] when rhs length does not match the diagonal,
+  /// rather than trapping on rhs[0].
+  func testSolveTridiagonalRhsMismatchReturnsEmpty() {
+    XCTAssertTrue(solveTridiagonal(diag: [2, 2], offDiag: [1], rhs: [1]).isEmpty)
+  }
+
+  // MARK: - newtonMulti dimension (round 6)
+
+  /// newtonMulti returns success=false (not a false root or a trap) when the
+  /// residual dimension does not match x0.
+  func testNewtonMultiDimensionMismatchFails() {
+    let result = newtonMulti({ _ in [] }, x0: [1.0, 2.0])  // residual empty
+    XCTAssertFalse(result.success)
+  }
+
+  // MARK: - Round 7: coefficient builders + solver dimension drift
+
+  /// Coefficient builders reject a y vector whose length differs from x with [].
+  func testInterpolationCoeffBuildersLengthMismatchReturnEmpty() {
+    XCTAssertTrue(computeSplineCoeffs(x: [0, 1, 2], y: [0, 1]).isEmpty)
+    XCTAssertTrue(computePchipDerivatives(x: [0, 1, 2], y: [0, 1]).isEmpty)
+    XCTAssertTrue(computeAkimaCoeffs(x: [0, 1, 2], y: [0, 1]).isEmpty)
+  }
+
+  /// nelderMead with an empty x0 returns an unsuccessful result (the simplex loop
+  /// `for i in 1...n` traps for n == 0).
+  func testNelderMeadEmptyX0Fails() {
+    let r = nelderMead({ _ in 0 }, x0: [])
+    XCTAssertFalse(r.success)
+  }
+
+  /// newtonMulti probe-dimension drift: the residual matches x0 at the base point
+  /// but changes length under perturbation; must fail, not trap on fxp[i].
+  func testNewtonMultiProbeDriftFails() {
+    let r = newtonMulti({ x in x == [1.0] ? [0.5] : [] }, x0: [1.0])
+    XCTAssertFalse(r.success)
+  }
+
+  /// leastSquares probe-dimension drift must fail rather than trap during Jacobian
+  /// construction (both bounded and unbounded paths).
+  func testLeastSquaresProbeDriftFails() {
+    let drift: ([Double]) -> [Double] = { x in x == [1.0] ? [0.5] : [] }
+    XCTAssertFalse(leastSquares(drift, x0: [1.0]).success)
+    XCTAssertFalse(leastSquares(drift, x0: [1.0], bounds: ([-10], [10])).success)
+  }
+
+  /// solveIVP rejects a malformed rhs dimension and a non-positive maxStep with a
+  /// failed ODEResult rather than trapping in the RK stages.
+  func testSolveIVPMalformedConfigFails() {
+    // rhs returns wrong derivative length
+    let bad = solveIVP({ _, _ in [] }, tSpan: (0, 1), y0: [1.0, 2.0])
+    XCTAssertFalse(bad.success)
+    // non-positive maxStep
+    let badStep = solveIVP({ y, _ in y }, tSpan: (0, 1), y0: [1.0], maxStep: 0)
+    XCTAssertFalse(badStep.success)
+  }
+
+  // MARK: - Round 9: batch random negative-count guards
+
+  /// Batch random / rvs APIs return [] for a non-positive count rather than
+  /// trapping on `0..<n` with a negative n.
+  func testBatchRandomNegativeCountReturnsEmpty() {
+    XCTAssertTrue(randomNormal(-1).isEmpty)
+    XCTAssertTrue(randomGamma(2.0, n: -1).isEmpty)
+    XCTAssertTrue(NormalDistribution(loc: 0, scale: 1).rvs(-5).isEmpty)
+    XCTAssertTrue(GammaDistribution(shape: 2).rvs(-1).isEmpty)
+    XCTAssertTrue(PoissonDistribution(mu: 3).rvs(-1).isEmpty)
+    XCTAssertTrue(BernoulliDistribution(p: 0.5).rvs(-1).isEmpty)
+    XCTAssertTrue(BinomialDistribution(n: 10, p: 0.5).rvs(-1).isEmpty)
+  }
+
+  // MARK: - Round 10: randomGamma shape / BFGS gradient / BDF analytic Jacobian
+
+  /// randomGamma with a non-finite or non-positive shape returns NaN instead of
+  /// hanging the rejection loop (NaN comparisons never accept).
+  func testRandomGammaInvalidShapeReturnsNaNNoHang() {
+    XCTAssertTrue(randomGamma(.nan).isNaN)
+    XCTAssertTrue(randomGamma(-1.0).isNaN)
+    XCTAssertTrue(randomGamma(0.0).isNaN)
+  }
+
+  /// bfgs with a malformed analytic gradient (wrong length) returns success=false
+  /// rather than falsely converging on an empty gradient or truncating the math.
+  func testBFGSMalformedGradientFails() {
+    let r = bfgs({ x in x[0] * x[0] }, x0: [1.0], grad: { _ in [] })
+    XCTAssertFalse(r.success)
+  }
+
+  /// solveIVP(.bdf) with a malformed analytic Jacobian falls back to the numerical
+  /// Jacobian and still integrates y' = -y correctly (no trap).
+  func testSolveIVPBDFMalformedJacobianFallsBack() {
+    let sol = solveIVP(
+      { y, _ in [-y[0]] }, tSpan: (0, 1), y0: [1.0],
+      method: .bdf, jacobian: { _, _ in [[]] })  // malformed Jacobian
+    XCTAssertTrue(sol.success)
+    XCTAssertEqual(sol.y.last![0], exp(-1.0), accuracy: 1e-2)  // y(1) = e^-1
+  }
+
+  // MARK: - Round 12: pdist/squareform/minkowski/mahalanobis/bspline/leastSquares
+
+  /// pdist / squareform on an empty point set return [] instead of trapping on
+  /// `0..<(n-1)` with n == 0.
+  func testPdistSquareformEmptyReturnsEmpty() {
+    XCTAssertTrue(Spatial.pdist([]).isEmpty)
+    XCTAssertTrue(Spatial.squareform([]).isEmpty)
+  }
+
+  /// minkowskiDistance with a non-positive order, and mahalanobisDistance with a
+  /// malformed inverse covariance, return NaN (undefined) — not a misleading 0.
+  func testInvalidDistanceParamsReturnNaN() {
+    XCTAssertTrue(Spatial.minkowskiDistance([1, 2], [3, 4], p: 0).isNaN)
+    XCTAssertTrue(Spatial.minkowskiDistance([1, 2], [3, 4], p: -1).isNaN)
+    XCTAssertTrue(Spatial.mahalanobisDistance([1, 2], [3, 4], invCov: [[1, 0]]).isNaN)
+  }
+
+  /// B-spline derivative APIs return zero for a custom knot vector shorter than
+  /// n+degree+1 rather than trapping on actualKnots[i+degree+1].
+  func testBSplineDerivativeShortKnotsReturnsZero() {
+    let cp = [Vec2(0, 0), Vec2(1, 1), Vec2(2, 0)]
+    let short: [Double] = [0, 1]  // far too short
+    XCTAssertEqual(Geometry.bsplineDerivative(controlPoints: cp, degree: 2, t: 0.5, knots: short), Vec2.zero)
+  }
+
+  /// leastSquares with a residual whose length drifts after an accepted step fails
+  /// rather than trapping on the later r[k] access.
+  func testLeastSquaresAcceptedResidualDriftFails() {
+    // Returns length 1 at x0=[1] (accepted), length 0 once x moves — drift.
+    let drift: ([Double]) -> [Double] = { x in abs(x[0] - 1.0) < 1e-12 ? [0.0] : [] }
+    XCTAssertFalse(leastSquares(drift, x0: [1.0]).success)
+  }
+
+  // MARK: - Round 13: sibling-site guards
+
+  /// extendedGcd(Int.min, -1) must not trap on Int.min % -1 / Int.min / -1 overflow.
+  func testExtendedGcdIntMinMinusOne() {
+    let r = NumberTheory.extendedGcd(Int.min, -1)
+    XCTAssertEqual(r.gcd, -1)  // a·0 + (-1)·1 = -1
+  }
+
+  /// The deterministic-centroid kmeans overload and the deprecated computeCentroid
+  /// reject ragged input instead of running vDSP over a shorter row.
+  func testClusterRaggedSiblingSites() {
+    let ragged = [[1.0, 2.0], [3.0]]
+    XCTAssertFalse(Cluster.kmeans(ragged, initialCentroids: [[0.0, 0.0]]).diagnostics.isEmpty)
+    XCTAssertNil(Cluster.centroid(ragged))
+  }
+
+  /// Seeded randomNormal(_:using:) returns [] for a negative count (no `0..<n` trap).
+  func testSeededRandomNormalNegativeCountReturnsEmpty() {
+    var rng = SystemRandomNumberGenerator()
+    XCTAssertTrue(randomNormal(-3, using: &rng).isEmpty)
+  }
+
+  /// complexMatrix^scalar enforces the same 6x peak-working-set soft cap as
+  /// complexMatmul (it allocates the same intermediates). With a tiny cap a power
+  /// whose peak exceeds it must throw, not silently allocate.
+  func testComplexMatrixPowEnforcesPeakSoftCap() throws {
+    let saved = LinAlg.maxEvaluatorMatrixElements
+    defer { try? LinAlg.setMaxEvaluatorMatrixElements(saved) }
+    try LinAlg.setMaxEvaluatorMatrixElements(10)  // 2x2 result = 4; peak 24 > 10
+    let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2, real: [1, 0, 0, 1], imag: [0, 0, 0, 0])
+    XCTAssertThrowsError(
+      try NumericDispatch.applyBinary(.pow, lhs: .complexMatrix(cm), rhs: .scalar(2)))
+  }
+
+  /// primePi/chebyshev must not trap at the Double(Int.max) boundary (which rounds
+  /// to 2^63, unrepresentable as Int).
+  func testPrimeCountingIntMaxBoundaryNoTrap() {
+    XCTAssertEqual(NumberTheory.primePi(Double(Int.max)), 0)
+    XCTAssertEqual(NumberTheory.chebyshevTheta(Double(Int.max)), 0)
+  }
+
+  /// Discrete ppf must not trap on out-of-domain q (NaN, <0, >1, ±inf). The
+  /// Int-typed quantile signals "no valid value" with `nil`, mirroring the
+  /// continuous ppf NaN contract and the 0.3.0 svd/eig/pinv -> optional convention.
+  func testDiscretePPFOutOfDomainReturnsNil() {
+    for q in [Double.nan, -0.1, 1.1, .infinity, -.infinity] {
+      XCTAssertNil(BernoulliDistribution(p: 0.3).ppf(q))
+      XCTAssertNil(BinomialDistribution(n: 10, p: 0.4).ppf(q))
+      XCTAssertNil(PoissonDistribution(mu: 3).ppf(q))
+    }
+    // In-domain q still returns a value.
+    XCTAssertNotNil(BernoulliDistribution(p: 0.3).ppf(0.5))
+    XCTAssertNotNil(BinomialDistribution(n: 10, p: 0.4).ppf(0.5))
+    XCTAssertNotNil(PoissonDistribution(mu: 3).ppf(0.5))
+  }
+}

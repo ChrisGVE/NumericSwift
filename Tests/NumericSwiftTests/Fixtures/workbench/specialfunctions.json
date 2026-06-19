@@ -1,0 +1,1956 @@
+[
+  {
+    "id": "specialfunctions.trivial.erf_0",
+    "tier": "trivial",
+    "inputs": {
+      "func": "erf",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.8427007929497148,
+      "bits": "0x3FEAF767A741088A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erf"
+    ],
+    "tol": {
+      "erf": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.erfc_1",
+    "tier": "trivial",
+    "inputs": {
+      "func": "erfc",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.15729920705028516,
+      "bits": "0x3FC4226162FBDDD6"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfc"
+    ],
+    "tol": {
+      "erfc": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.erfinv_2",
+    "tier": "trivial",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.5
+    },
+    "oracle": {
+      "value": 0.4769362762044699,
+      "bits": "0x3FDE861FBB24C00A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.beta_3",
+    "tier": "trivial",
+    "inputs": {
+      "func": "beta",
+      "a": 2.0,
+      "b": 3.0
+    },
+    "oracle": {
+      "value": 0.08333333333333333,
+      "bits": "0x3FB5555555555555"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "beta"
+    ],
+    "tol": {
+      "beta": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.digamma_4",
+    "tier": "trivial",
+    "inputs": {
+      "func": "digamma",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": -0.5772156649015329,
+      "bits": "0xBFE2788CFC6FB619"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.gammainc_5",
+    "tier": "trivial",
+    "inputs": {
+      "func": "gammainc",
+      "a": 2.0,
+      "x": 3.0
+    },
+    "oracle": {
+      "value": 0.8008517265285442,
+      "bits": "0x3FE9A093CCCC53D4"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammainc"
+    ],
+    "tol": {
+      "gammainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.besselj0_6",
+    "tier": "trivial",
+    "inputs": {
+      "func": "besselj0",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.7651976865579666,
+      "bits": "0x3FE87C7FDBD7B8F0"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj0"
+    ],
+    "tol": {
+      "besselj0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.ellipk_7",
+    "tier": "trivial",
+    "inputs": {
+      "func": "ellipk",
+      "m": 0.5
+    },
+    "oracle": {
+      "value": 1.8540746773013719,
+      "bits": "0x3FFDAA4A35759E4B"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipk"
+    ],
+    "tol": {
+      "ellipk": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.ellipe_8",
+    "tier": "trivial",
+    "inputs": {
+      "func": "ellipe",
+      "m": 0.5
+    },
+    "oracle": {
+      "value": 1.3506438810476755,
+      "bits": "0x3FF59C3CC21A46C8"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipe"
+    ],
+    "tol": {
+      "ellipe": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.trivial.zeta_9",
+    "tier": "trivial",
+    "inputs": {
+      "func": "zeta",
+      "s": 2.0
+    },
+    "oracle": {
+      "value": 1.6449340668482264,
+      "bits": "0x3FFA51A6625307D3"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.1
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erf_0",
+    "tier": "hard",
+    "inputs": {
+      "func": "erf",
+      "x": 0.1
+    },
+    "oracle": {
+      "value": 0.1124629160182849,
+      "bits": "0x3FBCCA5EA24FB334"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erf"
+    ],
+    "tol": {
+      "erf": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erf_1",
+    "tier": "hard",
+    "inputs": {
+      "func": "erf",
+      "x": 0.5
+    },
+    "oracle": {
+      "value": 0.5204998778130465,
+      "bits": "0x3FE0A7EF5C18EDD2"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erf"
+    ],
+    "tol": {
+      "erf": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erf_2",
+    "tier": "hard",
+    "inputs": {
+      "func": "erf",
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.9953222650189527,
+      "bits": "0x3FEFD9AE142795E3"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erf"
+    ],
+    "tol": {
+      "erf": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erf_3",
+    "tier": "hard",
+    "inputs": {
+      "func": "erf",
+      "x": -1.5
+    },
+    "oracle": {
+      "value": -0.9661051464753108,
+      "bits": "0xBFEEEA5557137AE0"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erf"
+    ],
+    "tol": {
+      "erf": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfc_4",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfc",
+      "x": 0.1
+    },
+    "oracle": {
+      "value": 0.8875370839817152,
+      "bits": "0x3FEC66B42BB6099A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfc"
+    ],
+    "tol": {
+      "erfc": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfc_5",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfc",
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.004677734981047266,
+      "bits": "0x3F7328F5EC350E67"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfc"
+    ],
+    "tol": {
+      "erfc": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfc_6",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfc",
+      "x": -1.5
+    },
+    "oracle": {
+      "value": 1.9661051464753108,
+      "bits": "0x3FFF752AAB89BD70"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfc"
+    ],
+    "tol": {
+      "erfc": 1e-13
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfinv_7",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.1
+    },
+    "oracle": {
+      "value": 0.08885599049425769,
+      "bits": "0x3FB6BF442539FD74"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfinv_8",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.9
+    },
+    "oracle": {
+      "value": 1.1630871536766743,
+      "bits": "0x3FF29C0146770651"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfinv_9",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfinv",
+      "x": -0.7
+    },
+    "oracle": {
+      "value": -0.7328690779592169,
+      "bits": "0xBFE773A9DA42B450"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfinv_10",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.999
+    },
+    "oracle": {
+      "value": 2.326753765513524,
+      "bits": "0x40029D311405CDB3"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfinv_11",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.9999
+    },
+    "oracle": {
+      "value": 2.7510639057120803,
+      "bits": "0x4006022DCB01EA51"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfcinv_12",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfcinv",
+      "x": 0.5
+    },
+    "oracle": {
+      "value": 0.4769362762044699,
+      "bits": "0x3FDE861FBB24C00A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfcinv"
+    ],
+    "tol": {
+      "erfcinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfcinv_13",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfcinv",
+      "x": 1.5
+    },
+    "oracle": {
+      "value": -0.4769362762044699,
+      "bits": "0xBFDE861FBB24C00A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfcinv"
+    ],
+    "tol": {
+      "erfcinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.erfcinv_14",
+    "tier": "hard",
+    "inputs": {
+      "func": "erfcinv",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": -0.0,
+      "bits": "0x8000000000000000"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfcinv"
+    ],
+    "tol": {
+      "erfcinv": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.beta_15",
+    "tier": "hard",
+    "inputs": {
+      "func": "beta",
+      "a": 0.5,
+      "b": 0.5
+    },
+    "oracle": {
+      "value": 3.1415926535897927,
+      "bits": "0x400921FB54442D17"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "beta"
+    ],
+    "tol": {
+      "beta": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.beta_16",
+    "tier": "hard",
+    "inputs": {
+      "func": "beta",
+      "a": 1.0,
+      "b": 5.0
+    },
+    "oracle": {
+      "value": 0.2,
+      "bits": "0x3FC999999999999A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "beta"
+    ],
+    "tol": {
+      "beta": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.beta_17",
+    "tier": "hard",
+    "inputs": {
+      "func": "beta",
+      "a": 3.0,
+      "b": 7.0
+    },
+    "oracle": {
+      "value": 0.003968253968253969,
+      "bits": "0x3F70410410410411"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "beta"
+    ],
+    "tol": {
+      "beta": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.beta_18",
+    "tier": "hard",
+    "inputs": {
+      "func": "beta",
+      "a": 10.0,
+      "b": 10.0
+    },
+    "oracle": {
+      "value": 1.0825088224469029e-06,
+      "bits": "0x3EB2295709965AB6"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "beta"
+    ],
+    "tol": {
+      "beta": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.beta_19",
+    "tier": "hard",
+    "inputs": {
+      "func": "beta",
+      "a": 2.5,
+      "b": 4.5
+    },
+    "oracle": {
+      "value": 0.02147573103039898,
+      "bits": "0x3F95FDBBE9BBA776"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "beta"
+    ],
+    "tol": {
+      "beta": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.betainc_20",
+    "tier": "hard",
+    "inputs": {
+      "func": "betainc",
+      "a": 2.0,
+      "b": 3.0,
+      "x": 0.5
+    },
+    "oracle": {
+      "value": 0.6875,
+      "bits": "0x3FE6000000000000"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "betainc"
+    ],
+    "tol": {
+      "betainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.betainc_21",
+    "tier": "hard",
+    "inputs": {
+      "func": "betainc",
+      "a": 0.5,
+      "b": 0.5,
+      "x": 0.3
+    },
+    "oracle": {
+      "value": 0.36901011956554536,
+      "bits": "0x3FD79DDC9EDB5511"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "betainc"
+    ],
+    "tol": {
+      "betainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.betainc_22",
+    "tier": "hard",
+    "inputs": {
+      "func": "betainc",
+      "a": 5.0,
+      "b": 2.0,
+      "x": 0.8
+    },
+    "oracle": {
+      "value": 0.65536,
+      "bits": "0x3FE4F8B588E368F1"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "betainc"
+    ],
+    "tol": {
+      "betainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.betainc_23",
+    "tier": "hard",
+    "inputs": {
+      "func": "betainc",
+      "a": 1.0,
+      "b": 1.0,
+      "x": 0.25
+    },
+    "oracle": {
+      "value": 0.25,
+      "bits": "0x3FD0000000000000"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "betainc"
+    ],
+    "tol": {
+      "betainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.betainc_24",
+    "tier": "hard",
+    "inputs": {
+      "func": "betainc",
+      "a": 10.0,
+      "b": 5.0,
+      "x": 0.6
+    },
+    "oracle": {
+      "value": 0.27925698723840003,
+      "bits": "0x3FD1DF58B2D79427"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "betainc"
+    ],
+    "tol": {
+      "betainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.digamma_25",
+    "tier": "hard",
+    "inputs": {
+      "func": "digamma",
+      "x": 0.5
+    },
+    "oracle": {
+      "value": -1.9635100260214235,
+      "bits": "0xBFFF6A897D3214FC"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.digamma_26",
+    "tier": "hard",
+    "inputs": {
+      "func": "digamma",
+      "x": 2.5
+    },
+    "oracle": {
+      "value": 0.7031566406452432,
+      "bits": "0x3FE680425AF12B5E"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.digamma_27",
+    "tier": "hard",
+    "inputs": {
+      "func": "digamma",
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 2.251752589066721,
+      "bits": "0x40020396DC85CC95"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.digamma_28",
+    "tier": "hard",
+    "inputs": {
+      "func": "digamma",
+      "x": -0.5
+    },
+    "oracle": {
+      "value": 0.03648997397857651,
+      "bits": "0x3FA2AED059BD6089"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.digamma_29",
+    "tier": "hard",
+    "inputs": {
+      "func": "digamma",
+      "x": 0.1
+    },
+    "oracle": {
+      "value": -10.423754940411076,
+      "bits": "0xC024D8F668552B02"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammainc_30",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammainc",
+      "a": 0.5,
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.8427007929497151,
+      "bits": "0x3FEAF767A741088D"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammainc"
+    ],
+    "tol": {
+      "gammainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammainc_31",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammainc",
+      "a": 3.0,
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.32332358381693654,
+      "bits": "0x3FD4B15566A13B83"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammainc"
+    ],
+    "tol": {
+      "gammainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammainc_32",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammainc",
+      "a": 5.0,
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 0.9707473119230389,
+      "bits": "0x3FEF105CAAAC75A9"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammainc"
+    ],
+    "tol": {
+      "gammainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammainc_33",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammainc",
+      "a": 10.0,
+      "x": 8.0
+    },
+    "oracle": {
+      "value": 0.28337574127298903,
+      "bits": "0x3FD222D4014FD2DE"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammainc"
+    ],
+    "tol": {
+      "gammainc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammaincc_34",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammaincc",
+      "a": 0.5,
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.15729920705028105,
+      "bits": "0x3FC4226162FBDD42"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammaincc"
+    ],
+    "tol": {
+      "gammaincc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammaincc_35",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammaincc",
+      "a": 3.0,
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.6766764161830634,
+      "bits": "0x3FE5A7554CAF623E"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammaincc"
+    ],
+    "tol": {
+      "gammaincc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.gammaincc_36",
+    "tier": "hard",
+    "inputs": {
+      "func": "gammaincc",
+      "a": 5.0,
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 0.029252688076961127,
+      "bits": "0x3F9DF46AAA714ADF"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "gammaincc"
+    ],
+    "tol": {
+      "gammaincc": 1e-10
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselj0_37",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselj0",
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.22389077914123562,
+      "bits": "0x3FCCA873FB24CEF6"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj0"
+    ],
+    "tol": {
+      "besselj0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselj0_38",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselj0",
+      "x": 5.0
+    },
+    "oracle": {
+      "value": -0.17759677131433835,
+      "bits": "0xBFC6BB7DB255CB8B"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj0"
+    ],
+    "tol": {
+      "besselj0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselj0_39",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselj0",
+      "x": 10.0
+    },
+    "oracle": {
+      "value": -0.24593576445134832,
+      "bits": "0xBFCF7AD2B89E1E53"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj0"
+    ],
+    "tol": {
+      "besselj0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselj1_40",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselj1",
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.5767248077568736,
+      "bits": "0x3FE27487958371F2"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj1"
+    ],
+    "tol": {
+      "besselj1": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselj1_41",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselj1",
+      "x": 5.0
+    },
+    "oracle": {
+      "value": -0.3275791375914652,
+      "bits": "0xBFD4F70E7CB3A99C"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj1"
+    ],
+    "tol": {
+      "besselj1": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselj1_42",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselj1",
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 0.0434727461688616,
+      "bits": "0x3FA6420F4E200928"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselj1"
+    ],
+    "tol": {
+      "besselj1": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseljn_43",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseljn",
+      "n": 2,
+      "x": 3.0
+    },
+    "oracle": {
+      "value": 0.4860912605858912,
+      "bits": "0x3FDF1C1E84C59EC9"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseljn"
+    ],
+    "tol": {
+      "besseljn": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseljn_44",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseljn",
+      "n": 3,
+      "x": 7.0
+    },
+    "oracle": {
+      "value": -0.16755558799533435,
+      "bits": "0xBFC572762559DB81"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseljn"
+    ],
+    "tol": {
+      "besseljn": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseljn_45",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseljn",
+      "n": 5,
+      "x": 12.0
+    },
+    "oracle": {
+      "value": -0.0734709631016586,
+      "bits": "0xBFB2CEFE37BA2CD2"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseljn"
+    ],
+    "tol": {
+      "besseljn": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.bessely0_46",
+    "tier": "hard",
+    "inputs": {
+      "func": "bessely0",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.088256964215677,
+      "bits": "0x3FB6980226F358E2"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "bessely0"
+    ],
+    "tol": {
+      "bessely0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.bessely0_47",
+    "tier": "hard",
+    "inputs": {
+      "func": "bessely0",
+      "x": 5.0
+    },
+    "oracle": {
+      "value": -0.3085176252490338,
+      "bits": "0xBFD3BEC0B5ABC9AC"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "bessely0"
+    ],
+    "tol": {
+      "bessely0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.bessely0_48",
+    "tier": "hard",
+    "inputs": {
+      "func": "bessely0",
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 0.05567116728359932,
+      "bits": "0x3FAC80EE65A05C4E"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "bessely0"
+    ],
+    "tol": {
+      "bessely0": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.bessely1_49",
+    "tier": "hard",
+    "inputs": {
+      "func": "bessely1",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": -0.7812128213002889,
+      "bits": "0xBFE8FFB207D66B96"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "bessely1"
+    ],
+    "tol": {
+      "bessely1": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.bessely1_50",
+    "tier": "hard",
+    "inputs": {
+      "func": "bessely1",
+      "x": 5.0
+    },
+    "oracle": {
+      "value": 0.14786314339122686,
+      "bits": "0x3FC2ED2DF29314FC"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "bessely1"
+    ],
+    "tol": {
+      "bessely1": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.bessely1_51",
+    "tier": "hard",
+    "inputs": {
+      "func": "bessely1",
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 0.24901542420695386,
+      "bits": "0x3FCFDFBCC7958F3B"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "bessely1"
+    ],
+    "tol": {
+      "bessely1": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselyn_52",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselyn",
+      "n": 2,
+      "x": 3.0
+    },
+    "oracle": {
+      "value": -0.1604003934849238,
+      "bits": "0xBFC488000624427E"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselyn"
+    ],
+    "tol": {
+      "besselyn": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselyn_53",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselyn",
+      "n": 3,
+      "x": 8.0
+    },
+    "oracle": {
+      "value": 0.026542159321058436,
+      "bits": "0x3F9B2DDE28FF25C7"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselyn"
+    ],
+    "tol": {
+      "besselyn": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseli_54",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseli",
+      "n": 0,
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 1.2660658777520084,
+      "bits": "0x3FF441CE4B386C2D"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseli"
+    ],
+    "tol": {
+      "besseli": 0.01
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseli_55",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseli",
+      "n": 1,
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 1.590636854637329,
+      "bits": "0x3FF9733FA167AC95"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseli"
+    ],
+    "tol": {
+      "besseli": 0.01
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseli_56",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseli",
+      "n": 2,
+      "x": 5.0
+    },
+    "oracle": {
+      "value": 17.505614966624236,
+      "bits": "0x4031816FFB8204EC"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseli"
+    ],
+    "tol": {
+      "besseli": 0.01
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseli_57",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseli",
+      "n": 0,
+      "x": 25.0
+    },
+    "oracle": {
+      "value": 5774560606.4663105,
+      "bits": "0x41F5830CD5E77602"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseli"
+    ],
+    "tol": {
+      "besseli": 0.01
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besseli_58",
+    "tier": "hard",
+    "inputs": {
+      "func": "besseli",
+      "n": 3,
+      "x": 4.0
+    },
+    "oracle": {
+      "value": 3.337275778420344,
+      "bits": "0x400AB2BDA4B062F6"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseli"
+    ],
+    "tol": {
+      "besseli": 0.01
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselk_59",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselk",
+      "n": 0,
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.42102443824070834,
+      "bits": "0x3FDAF2107C43E11A"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselk"
+    ],
+    "tol": {
+      "besselk": 1e-05
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselk_60",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselk",
+      "n": 1,
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.13986588181652246,
+      "bits": "0x3FC1E7200E1D3483"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselk"
+    ],
+    "tol": {
+      "besselk": 1e-05
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselk_61",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselk",
+      "n": 2,
+      "x": 5.0
+    },
+    "oracle": {
+      "value": 0.005308943712223459,
+      "bits": "0x3F75BED4B9ECC482"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselk"
+    ],
+    "tol": {
+      "besselk": 1e-05
+    }
+  },
+  {
+    "id": "specialfunctions.hard.besselk_62",
+    "tier": "hard",
+    "inputs": {
+      "func": "besselk",
+      "n": 0,
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 1.778006231616765e-05,
+      "bits": "0x3EF2A4CC9425B782"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besselk"
+    ],
+    "tol": {
+      "besselk": 1e-05
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipk_63",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipk",
+      "m": 0.1
+    },
+    "oracle": {
+      "value": 1.6124413487202192,
+      "bits": "0x3FF9CC8F4CB78B27"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipk"
+    ],
+    "tol": {
+      "ellipk": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipk_64",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipk",
+      "m": 0.5
+    },
+    "oracle": {
+      "value": 1.8540746773013719,
+      "bits": "0x3FFDAA4A35759E4B"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipk"
+    ],
+    "tol": {
+      "ellipk": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipk_65",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipk",
+      "m": 0.9
+    },
+    "oracle": {
+      "value": 2.5780921133481733,
+      "bits": "0x40049FEEC2073F58"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipk"
+    ],
+    "tol": {
+      "ellipk": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipk_66",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipk",
+      "m": 0.99
+    },
+    "oracle": {
+      "value": 3.6956373629898747,
+      "bits": "0x400D90AA525F5669"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipk"
+    ],
+    "tol": {
+      "ellipk": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipe_67",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipe",
+      "m": 0.1
+    },
+    "oracle": {
+      "value": 1.5307576368977633,
+      "bits": "0x3FF87DFBB849400C"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipe"
+    ],
+    "tol": {
+      "ellipe": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipe_68",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipe",
+      "m": 0.5
+    },
+    "oracle": {
+      "value": 1.3506438810476755,
+      "bits": "0x3FF59C3CC21A46C8"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipe"
+    ],
+    "tol": {
+      "ellipe": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipe_69",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipe",
+      "m": 0.9
+    },
+    "oracle": {
+      "value": 1.1047747327040733,
+      "bits": "0x3FF1AD2845269404"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipe"
+    ],
+    "tol": {
+      "ellipe": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.ellipe_70",
+    "tier": "hard",
+    "inputs": {
+      "func": "ellipe",
+      "m": 0.99
+    },
+    "oracle": {
+      "value": 1.015993545025224,
+      "bits": "0x3FF04182728D497C"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "ellipe"
+    ],
+    "tol": {
+      "ellipe": 1e-12
+    }
+  },
+  {
+    "id": "specialfunctions.hard.zeta_71",
+    "tier": "hard",
+    "inputs": {
+      "func": "zeta",
+      "s": 3.0
+    },
+    "oracle": {
+      "value": 1.2020569031595942,
+      "bits": "0x3FF33BA004F00621"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.1
+    }
+  },
+  {
+    "id": "specialfunctions.hard.zeta_72",
+    "tier": "hard",
+    "inputs": {
+      "func": "zeta",
+      "s": 5.0
+    },
+    "oracle": {
+      "value": 1.03692775514337,
+      "bits": "0x3FF097418ECA7CCE"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.1
+    }
+  },
+  {
+    "id": "specialfunctions.hard.zeta_73",
+    "tier": "hard",
+    "inputs": {
+      "func": "zeta",
+      "s": 1.5
+    },
+    "oracle": {
+      "value": 2.612375348685488,
+      "bits": "0x4004E6250BFBD89D"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.1
+    }
+  },
+  {
+    "id": "specialfunctions.hard.zeta_74",
+    "tier": "hard",
+    "inputs": {
+      "func": "zeta",
+      "s": 0.5
+    },
+    "oracle": {
+      "value": -1.4603545088095866,
+      "bits": "0xBFF75D9CB07E73FE"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.1
+    }
+  },
+  {
+    "id": "specialfunctions.hard.zeta_75",
+    "tier": "hard",
+    "inputs": {
+      "func": "zeta",
+      "s": -3.0
+    },
+    "oracle": {
+      "value": 0.008333333333333338,
+      "bits": "0x3F81111111111114"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.1
+    }
+  },
+  {
+    "id": "specialfunctions.hard.lambertw_76",
+    "tier": "hard",
+    "inputs": {
+      "func": "lambertw",
+      "x": 1.0
+    },
+    "oracle": {
+      "value": 0.5671432904097838,
+      "bits": "0x3FE22609AF8E9657"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "lambertw"
+    ],
+    "tol": {
+      "lambertw": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.lambertw_77",
+    "tier": "hard",
+    "inputs": {
+      "func": "lambertw",
+      "x": 2.0
+    },
+    "oracle": {
+      "value": 0.8526055020137254,
+      "bits": "0x3FEB488B55713C51"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "lambertw"
+    ],
+    "tol": {
+      "lambertw": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.lambertw_78",
+    "tier": "hard",
+    "inputs": {
+      "func": "lambertw",
+      "x": 10.0
+    },
+    "oracle": {
+      "value": 1.7455280027406994,
+      "bits": "0x3FFBEDAEC5606044"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "lambertw"
+    ],
+    "tol": {
+      "lambertw": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.hard.lambertw_79",
+    "tier": "hard",
+    "inputs": {
+      "func": "lambertw",
+      "x": 0.5
+    },
+    "oracle": {
+      "value": 0.35173371124919584,
+      "bits": "0x3FD682CE1CADD300"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "lambertw"
+    ],
+    "tol": {
+      "lambertw": 1e-09
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_oov_0",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.999999999999
+    },
+    "oracle": {
+      "value": 5.042031898572696,
+      "bits": "0x40142B0A68F708B9"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1.0
+    },
+    "inEnvelope": {
+      "erfinv": false
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_oov_1",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.9999999999999
+    },
+    "oracle": {
+      "value": 5.261483331372677,
+      "bits": "0x40150BC24952C774"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1.0
+    },
+    "inEnvelope": {
+      "erfinv": false
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_oov_2",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.99999999999999
+    },
+    "oracle": {
+      "value": 5.4725525174145355,
+      "bits": "0x4015E3E4CE9FC069"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1.0
+    },
+    "inEnvelope": {
+      "erfinv": false
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_oov_3",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": -0.999999999999
+    },
+    "oracle": {
+      "value": -5.042031898572696,
+      "bits": "0xC0142B0A68F708B9"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1.0
+    },
+    "inEnvelope": {
+      "erfinv": false
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_oov_4",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": -0.9999999999999
+    },
+    "oracle": {
+      "value": -5.261483331372677,
+      "bits": "0xC0150BC24952C774"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1.0
+    },
+    "inEnvelope": {
+      "erfinv": false
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_ok_0",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": 0.9999999999
+    },
+    "oracle": {
+      "value": 4.572824958544925,
+      "bits": "0x40124A92A03D21CD"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-07
+    }
+  },
+  {
+    "id": "specialfunctions.edge.erfinv_ok_1",
+    "tier": "edge",
+    "inputs": {
+      "func": "erfinv",
+      "x": -0.9999999999
+    },
+    "oracle": {
+      "value": -4.572824958544925,
+      "bits": "0xC0124A92A03D21CD"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "erfinv"
+    ],
+    "tol": {
+      "erfinv": 1e-07
+    }
+  },
+  {
+    "id": "specialfunctions.edge.besseli_ok_2",
+    "tier": "edge",
+    "inputs": {
+      "func": "besseli",
+      "n": 0,
+      "x": 0.0
+    },
+    "oracle": {
+      "value": 1.0,
+      "bits": "0x3FF0000000000000"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "besseli"
+    ],
+    "tol": {
+      "besseli": 1e-07
+    }
+  },
+  {
+    "id": "specialfunctions.edge.digamma_ok_3",
+    "tier": "edge",
+    "inputs": {
+      "func": "digamma",
+      "x": 0.25
+    },
+    "oracle": {
+      "value": -4.2274535333762655,
+      "bits": "0xC010E8E9943CD7C3"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "digamma"
+    ],
+    "tol": {
+      "digamma": 1e-08
+    }
+  },
+  {
+    "id": "specialfunctions.edge.zeta_ok_4",
+    "tier": "edge",
+    "inputs": {
+      "func": "zeta",
+      "s": -21.0
+    },
+    "oracle": {
+      "value": -281.4601449275372,
+      "bits": "0xC071975CC0ED7315"
+    },
+    "source": "scipy.special 1.17.1",
+    "strategies": [
+      "zeta"
+    ],
+    "tol": {
+      "zeta": 0.0001
+    }
+  }
+]

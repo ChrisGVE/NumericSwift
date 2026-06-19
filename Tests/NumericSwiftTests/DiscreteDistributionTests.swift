@@ -58,7 +58,7 @@ final class DiscreteDistributionTests: XCTestCase {
   func testBernoulliPPFRoundTrip() {
     let dist = BernoulliDistribution(p: 0.4)
     for q in [0.1, 0.3, 0.5, 0.7, 0.9] {
-      let k = dist.ppf(q)
+      let k = dist.ppf(q)!
       XCTAssertGreaterThanOrEqual(dist.cdf(k), q)
     }
   }
@@ -147,7 +147,7 @@ final class DiscreteDistributionTests: XCTestCase {
   func testBinomialPPFRoundTrip() {
     let dist = BinomialDistribution(n: 20, p: 0.3)
     for q in [0.05, 0.25, 0.5, 0.75, 0.95] {
-      let k = dist.ppf(q)
+      let k = dist.ppf(q)!
       XCTAssertGreaterThanOrEqual(dist.cdf(k), q)
       // Also verify k is the smallest such integer
       if k > 0 {
@@ -254,7 +254,7 @@ final class DiscreteDistributionTests: XCTestCase {
     // ppf(0) should be 0
     XCTAssertEqual(dist.ppf(0.0), 0)
     // ppf(1) should return some finite k
-    XCTAssertGreaterThanOrEqual(dist.ppf(1.0), 0)
+    XCTAssertGreaterThanOrEqual(dist.ppf(1.0)!, 0)
     // Median of Poisson(3) is 3
     XCTAssertEqual(dist.ppf(0.5), 3)
   }
@@ -262,7 +262,7 @@ final class DiscreteDistributionTests: XCTestCase {
   func testPoissonPPFRoundTrip() {
     let dist = PoissonDistribution(mu: 4.0)
     for q in [0.05, 0.25, 0.5, 0.75, 0.95] {
-      let k = dist.ppf(q)
+      let k = dist.ppf(q)!
       XCTAssertGreaterThanOrEqual(dist.cdf(k), q)
       if k > 0 {
         XCTAssertLessThan(dist.cdf(k - 1), q)
@@ -305,4 +305,36 @@ final class DiscreteDistributionTests: XCTestCase {
     XCTAssertFalse(modeValue.isInfinite)
     XCTAssertGreaterThan(modeValue, 0.0)
   }
+
+  /// PTRS sampling for large mu must produce mean and variance ≈ mu. Knuth's
+  /// exp(-mu) underflows for mu beyond ~745, returning a fixed ~1075 regardless of
+  /// mu; PTRS (mu >= 10) is correct and O(1).
+  func testPoissonLargeMuSamplingIsCorrect() {
+    let mu = 1000.0
+    let dist = PoissonDistribution(mu: mu)
+    let n = 20000
+    let samples = dist.rvs(n)
+    XCTAssertEqual(samples.count, n)
+    XCTAssertTrue(samples.allSatisfy { $0 >= 0 })
+    let mean = Double(samples.reduce(0, +)) / Double(n)
+    // SE of the mean = sqrt(mu/n) ≈ 0.22; 20 is a very safe band (Knuth would land
+    // near 1075, far outside).
+    XCTAssertEqual(mean, mu, accuracy: 20.0)
+    let variance = samples.reduce(0.0) { $0 + ($1.toDouble - mean) * ($1.toDouble - mean) } / Double(n - 1)
+    XCTAssertEqual(variance, mu, accuracy: mu * 0.15)  // Var(Poisson) = mu
+  }
+
+  /// Very large mu (beyond Knuth's exp(-mu) underflow) must still sample sanely and
+  /// not hang on a degenerate fixed loop.
+  func testPoissonHugeMuDoesNotDegenerate() {
+    let mu = 100_000.0
+    let dist = PoissonDistribution(mu: mu)
+    let samples = dist.rvs(2000)
+    let mean = Double(samples.reduce(0, +)) / Double(samples.count)
+    XCTAssertEqual(mean, mu, accuracy: mu * 0.05)
+  }
+}
+
+private extension Int {
+  var toDouble: Double { Double(self) }
 }

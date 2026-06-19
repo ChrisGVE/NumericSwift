@@ -24,6 +24,15 @@ public let optimDefaultMaxIter: Int = 500
 private let phi: Double = (1 + sqrt(5)) / 2
 private let resphi: Double = 2 - phi  // ≈ 0.382
 
+/// Relative step scale for central finite-difference Jacobians.
+///
+/// Each column step h_j = finiteDiffStepScale * max(1, |x_j|) follows the
+/// scipy.optimize.approx_derivative formula, giving O(h²) accuracy while
+/// keeping h above the floating-point ULP of x_j for any variable magnitude.
+///
+/// Reference: scipy.optimize._numdiff.approx_derivative (scipy.org)
+private let finiteDiffStepScale: Double = sqrt(Double.ulpOfOne)
+
 // MARK: - Result Types
 
 /// Result from scalar minimization
@@ -45,20 +54,47 @@ public struct MinimizeScalarResult {
     }
 }
 
-/// Result from scalar root finding
-public struct RootScalarResult {
+/// Result from scalar root finding.
+///
+/// The `diagnostics` field is the recoverable self-awareness channel
+/// (``NumericDiagnostic``). The bracketing methods (``bisect(_:a:b:xtol:maxiter:)``,
+/// ``brentq(_:a:b:xtol:rtol:maxiter:)``) append an
+/// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the supplied bracket
+/// has no sign change (`f(a)·f(b) > 0`) — bracketing root finders are mathematically
+/// invalid there. The open methods (``newton(_:fprime:x0:xtol:maxiter:)``,
+/// ``secant(_:x0:x1:xtol:maxiter:)``) append one when the derivative (or secant
+/// slope) collapses toward zero or the iteration diverges / exhausts its budget —
+/// regimes where the returned iterate is not a trustworthy root. A self-aware
+/// caller inspects `diagnostics` (mirroring SciPy's `ValueError`/`RuntimeWarning`).
+public struct RootScalarResult: Sendable {
     public let root: Double
     public let iterations: Int
     public let functionCalls: Int
     public let converged: Bool
     public let flag: String
 
-    public init(root: Double, iterations: Int, functionCalls: Int, converged: Bool, flag: String) {
+    /// Recoverable diagnostics emitted during root finding.
+    ///
+    /// Empty for a clean convergence inside the method's valid envelope. A
+    /// non-empty list with an ``NumericDiagnostic/outsideEnvelope(method:reason:)``
+    /// entry means the result may be unreliable (invalid bracket, vanishing
+    /// derivative, or divergence). See the type-level discussion above.
+    public let diagnostics: [NumericDiagnostic]
+
+    public init(
+        root: Double,
+        iterations: Int,
+        functionCalls: Int,
+        converged: Bool,
+        flag: String,
+        diagnostics: [NumericDiagnostic] = []
+    ) {
         self.root = root
         self.iterations = iterations
         self.functionCalls = functionCalls
         self.converged = converged
         self.flag = flag
+        self.diagnostics = diagnostics
     }
 }
 
@@ -320,11 +356,34 @@ public func bisect(
     var fa = f(a); nfev += 1
     var fb = f(b); nfev += 1
 
-    // Check for sign change
+    // A NaN endpoint evaluation defeats the sign-change test (`NaN * x > 0` is
+    // false for any x), so it would otherwise slip past the guard below and the
+    // iteration would propagate NaN while reporting `converged`. Detect it first.
+    if fa.isNaN || fb.isNaN {
+        return RootScalarResult(
+            root: .nan, iterations: 0, functionCalls: nfev,
+            converged: false, flag: "f(a) or f(b) is NaN",
+            diagnostics: [.outsideEnvelope(
+                method: "bisect",
+                reason: "f evaluated to NaN at a bracket endpoint — the function is "
+                    + "undefined on [\(a), \(b)] and no root can be bracketed"
+            )]
+        )
+    }
+
+    // Check for sign change. A bracketing method is mathematically invalid when
+    // f(a) and f(b) share a sign — there is no guaranteed root in [a, b]. SciPy
+    // raises a ValueError here; we surface a recoverable `outsideEnvelope`
+    // diagnostic so a self-aware caller can detect the misuse (workbench §5).
     if fa * fb > 0 {
         return RootScalarResult(
             root: .nan, iterations: 0, functionCalls: nfev,
-            converged: false, flag: "f(a) and f(b) must have different signs"
+            converged: false, flag: "f(a) and f(b) must have different signs",
+            diagnostics: [.outsideEnvelope(
+                method: "bisect",
+                reason: "f(a)·f(b) > 0 — bracket has no sign change; bisection is "
+                    + "invalid and cannot guarantee a root in [\(a), \(b)]"
+            )]
         )
     }
 
@@ -396,10 +455,17 @@ public func newton(
             fp = (fplus - fminus) / (2 * h)
         }
 
+        // A vanishing derivative makes the Newton step f(x)/f'(x) blow up — the
+        // method is outside its valid envelope (it needs f'(x) ≠ 0 near the root).
         if abs(fp) < 1e-14 {
             return RootScalarResult(
                 root: x, iterations: nit, functionCalls: nfev,
-                converged: false, flag: "derivative is zero"
+                converged: false, flag: "derivative is zero",
+                diagnostics: [.outsideEnvelope(
+                    method: "newton",
+                    reason: "|f'(x)| < 1e-14 at x=\(x) — near-zero derivative; the "
+                        + "Newton step is ill-defined and the result is unreliable"
+                )]
             )
         }
 
@@ -414,9 +480,17 @@ public func newton(
         }
     }
 
+    // Budget exhausted without meeting tolerance — Newton diverged or stalled
+    // (e.g. f'(x) carries the iterate away from the root). The last iterate is
+    // not a trustworthy root, so flag it outside the convergence envelope.
     return RootScalarResult(
         root: x, iterations: nit, functionCalls: nfev,
-        converged: false, flag: "maxiter reached"
+        converged: false, flag: "maxiter reached",
+        diagnostics: [.outsideEnvelope(
+            method: "newton",
+            reason: "exceeded maxiter=\(maxiter) without converging — the iteration "
+                + "diverged or stalled; the returned iterate may not be a root"
+        )]
     )
 }
 
@@ -447,10 +521,17 @@ public func secant(
     for _ in 0..<maxiter {
         nit += 1
 
+        // A vanishing secant slope f(x1)−f(x0) makes the update ill-defined — the
+        // iterates have stalled on a near-flat region, outside secant's envelope.
         if abs(f1 - f0) < 1e-14 {
             return RootScalarResult(
                 root: x1, iterations: nit, functionCalls: nfev,
-                converged: false, flag: "denominator too small"
+                converged: false, flag: "denominator too small",
+                diagnostics: [.outsideEnvelope(
+                    method: "secant",
+                    reason: "|f(x1)−f(x0)| < 1e-14 — secant slope collapsed near a "
+                        + "flat region; the update is ill-defined and unreliable"
+                )]
             )
         }
 
@@ -467,9 +548,173 @@ public func secant(
         }
     }
 
+    // Budget exhausted without meeting tolerance — the secant iteration diverged
+    // or stalled; the last iterate is not a trustworthy root.
     return RootScalarResult(
         root: x1, iterations: nit, functionCalls: nfev,
-        converged: false, flag: "maxiter reached"
+        converged: false, flag: "maxiter reached",
+        diagnostics: [.outsideEnvelope(
+            method: "secant",
+            reason: "exceeded maxiter=\(maxiter) without converging — the iteration "
+                + "diverged or stalled; the returned iterate may not be a root"
+        )]
+    )
+}
+
+// MARK: - Brent's method (bracketing root finder)
+
+/// Brent's method for scalar root finding (`scipy.optimize.brentq` analogue).
+///
+/// Combines the guaranteed convergence of bisection with the speed of inverse
+/// quadratic interpolation and the secant method. Requires a **bracket** `[a, b]`
+/// across which `f` changes sign (`f(a)·f(b) < 0`); within that bracket Brent's
+/// method always converges to a root.
+///
+/// Distinct from ``brent(_:a:b:xtol:maxiter:)``, which **minimizes** a scalar
+/// function. This routine finds a **root** (a zero), matching SciPy's `brentq`.
+///
+/// ## Limitation envelope
+///
+/// Like every bracketing method, `brentq` is mathematically invalid when the
+/// supplied endpoints do not straddle a root (`f(a)·f(b) > 0`). In that regime it
+/// returns `.nan` and appends an ``NumericDiagnostic/outsideEnvelope(method:reason:)``
+/// diagnostic (SciPy raises a `ValueError`). A self-aware caller inspects
+/// ``RootScalarResult/diagnostics``.
+///
+/// - Parameters:
+///   - f: Function whose root is sought.
+///   - a: Left bracket endpoint.
+///   - b: Right bracket endpoint.
+///   - xtol: Absolute tolerance on the root location.
+///   - rtol: Relative tolerance on the root location.
+///   - maxiter: Maximum iterations.
+/// - Returns: Root finding result, with diagnostics for out-of-envelope brackets.
+///
+/// Reference: R. P. Brent, *Algorithms for Minimization without Derivatives* (1973);
+/// scipy.optimize.brentq.
+public func brentq(
+    _ f: (Double) -> Double,
+    a: Double,
+    b: Double,
+    xtol: Double = optimDefaultXTol,
+    rtol: Double = 4 * Double.ulpOfOne,
+    maxiter: Int = optimDefaultMaxIter
+) -> RootScalarResult {
+    var xa = a, xb = b
+    var nfev = 0
+
+    var fa = f(xa); nfev += 1
+    var fb = f(xb); nfev += 1
+
+    // A NaN endpoint evaluation defeats the sign-change test below (`NaN * x > 0`
+    // is false), so guard it first — otherwise Brent's iteration would propagate
+    // NaN iterates while falsely reporting `converged`.
+    if fa.isNaN || fb.isNaN {
+        return RootScalarResult(
+            root: .nan, iterations: 0, functionCalls: nfev,
+            converged: false, flag: "f(a) or f(b) is NaN",
+            diagnostics: [.outsideEnvelope(
+                method: "brentq",
+                reason: "f evaluated to NaN at a bracket endpoint — the function is "
+                    + "undefined on [\(a), \(b)] and no root can be bracketed"
+            )]
+        )
+    }
+
+    // Exact roots at the endpoints.
+    if fa == 0 {
+        return RootScalarResult(root: xa, iterations: 0, functionCalls: nfev, converged: true, flag: "converged")
+    }
+    if fb == 0 {
+        return RootScalarResult(root: xb, iterations: 0, functionCalls: nfev, converged: true, flag: "converged")
+    }
+
+    // No sign change → invalid bracket → outside the envelope.
+    if fa * fb > 0 {
+        return RootScalarResult(
+            root: .nan, iterations: 0, functionCalls: nfev,
+            converged: false, flag: "f(a) and f(b) must have different signs",
+            diagnostics: [.outsideEnvelope(
+                method: "brentq",
+                reason: "f(a)·f(b) > 0 — bracket has no sign change; Brent's method "
+                    + "is invalid and cannot guarantee a root in [\(a), \(b)]"
+            )]
+        )
+    }
+
+    // Brent's method state. `xb` holds the best estimate; `xc` the contrapoint.
+    var xc = xa, fc = fa
+    var d = xb - xa, e = d
+    var nit = 0
+
+    while nit < maxiter {
+        nit += 1
+
+        // Ensure |f(b)| <= |f(c)| so b is the better root estimate.
+        if abs(fc) < abs(fb) {
+            xa = xb; xb = xc; xc = xa
+            fa = fb; fb = fc; fc = fa
+        }
+
+        let tol = 2 * rtol * abs(xb) + xtol / 2
+        let m = 0.5 * (xc - xb)
+
+        if abs(m) <= tol || fb == 0 {
+            return RootScalarResult(
+                root: xb, iterations: nit, functionCalls: nfev,
+                converged: true, flag: "converged"
+            )
+        }
+
+        if abs(e) < tol || abs(fa) <= abs(fb) {
+            // Bisection step.
+            d = m; e = m
+        } else {
+            // Attempt inverse quadratic interpolation (or secant if a == c).
+            let s = fb / fa
+            var p: Double, q: Double
+            if xa == xc {
+                p = 2 * m * s
+                q = 1 - s
+            } else {
+                let qq = fa / fc
+                let r = fb / fc
+                p = s * (2 * m * qq * (qq - r) - (xb - xa) * (r - 1))
+                q = (qq - 1) * (r - 1) * (s - 1)
+            }
+            if p > 0 { q = -q } else { p = -p }
+            // Accept interpolation only if it stays within bounds and shrinks.
+            if 2 * p < min(3 * m * q - abs(tol * q), abs(e * q)) {
+                e = d
+                d = p / q
+            } else {
+                d = m; e = m
+            }
+        }
+
+        xa = xb; fa = fb
+        // Step at least `tol` toward the root.
+        if abs(d) > tol {
+            xb += d
+        } else {
+            xb += (m > 0 ? tol : -tol)
+        }
+        fb = f(xb); nfev += 1
+
+        // Maintain the bracket: c becomes the endpoint with opposite sign to b.
+        if (fb > 0) == (fc > 0) {
+            xc = xa; fc = fa
+            d = xb - xa; e = d
+        }
+    }
+
+    return RootScalarResult(
+        root: xb, iterations: nit, functionCalls: nfev,
+        converged: false, flag: "maxiter reached",
+        diagnostics: [.outsideEnvelope(
+            method: "brentq",
+            reason: "exceeded maxiter=\(maxiter) without converging"
+        )]
     )
 }
 
@@ -492,6 +737,13 @@ public func nelderMead(
     maxiter: Int? = nil
 ) -> MinimizeResult {
     let n = x0.count
+    // A zero-dimensional start point traps the simplex loop (`for i in 1...n` with
+    // n == 0) and has no minimum to find.
+    guard n > 0 else {
+        return MinimizeResult(
+            x: x0, fun: .nan, nfev: 0, nit: 0,
+            success: false, message: "nelderMead requires a non-empty x0.")
+    }
     let maxIterations = maxiter ?? 200 * n
     var nfev = 0
     var nit = 0
@@ -636,6 +888,17 @@ public func newtonMulti(
         nit += 1
         let fx = f(x); nfev += 1
 
+        // A residual whose dimension differs from x0 makes the zero-norm check
+        // report a false "root" (for an empty fx) and traps later Jacobian indexing
+        // (for a short fx). Reject rather than proceed on a malformed system.
+        guard fx.count == n else {
+            return RootResult(
+                x: x, fun: fx, success: false,
+                message: "residual dimension (\(fx.count)) does not match x0 (\(n)).",
+                nfev: nfev, nit: nit
+            )
+        }
+
         // Check convergence
         let norm = sqrt(fx.reduce(0) { $0 + $1 * $1 })
         if norm < tol {
@@ -645,15 +908,37 @@ public func newtonMulti(
             )
         }
 
-        // Compute Jacobian numerically
+        // Compute Jacobian numerically using per-variable relative step sizing.
+        //
+        // Step formula: h_j = finiteDiffStepScale * max(1, |x_j|)
+        // This matches scipy.optimize.approx_fprime and prevents underflow
+        // for large-magnitude variables (where a global h would be below the
+        // floating-point ULP of x_j, making x_j + h == x_j).
+        //
+        // Reference: scipy.optimize._numdiff.approx_derivative (scipy.org)
+        //
+        // Central differences — accuracy O(h²) vs. O(h) for forward differences —
+        // are preferred here because the solver calls f once per iteration anyway
+        // and the 2n evaluations amortise well over Newton steps.
         var jacobian = [[Double]](repeating: [Double](repeating: 0, count: n), count: n)
-        let h = sqrt(Double.ulpOfOne)
         for j in 0..<n {
-            var xp = x
-            xp[j] += h
+            let h_j = finiteDiffStepScale * max(1.0, abs(x[j]))
+            var xp = x; xp[j] += h_j
+            var xm = x; xm[j] -= h_j
             let fxp = f(xp); nfev += 1
+            let fxm = f(xm); nfev += 1
+            // The residual dimension can drift under perturbation; a short probe
+            // result would trap the fxp[i]/fxm[i] indexing below.
+            guard fxp.count == n, fxm.count == n else {
+                return RootResult(
+                    x: x, fun: fx, success: false,
+                    message: "residual dimension changed under perturbation "
+                        + "(expected \(n), got \(fxp.count)/\(fxm.count)).",
+                    nfev: nfev, nit: nit
+                )
+            }
             for i in 0..<n {
-                jacobian[i][j] = (fxp[i] - fx[i]) / h
+                jacobian[i][j] = (fxp[i] - fxm[i]) / (2.0 * h_j)
             }
         }
 
@@ -821,16 +1106,32 @@ public func leastSquares(
     let maxStagnant = 10
 
     for _ in 0..<maxiter {
-        // Compute Jacobian numerically (m x n matrix)
+        // Compute Jacobian numerically using per-variable relative step sizing.
+        //
+        // Step formula: h_j = finiteDiffStepScale * max(1, |x_j|)
+        // See: scipy.optimize.approx_derivative (scipy.org)
+        //
+        // Central differences give O(h²) accuracy without a current-residual
+        // baseline dependency, which is safer near bounds where r may be stale.
+        // Don't project the perturbed point — we need the unconstrained derivative.
         var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
-        let h = sqrt(Double.ulpOfOne) * max(1.0, x.map { abs($0) }.max() ?? 1.0)
         for j in 0..<n {
-            var xp = x
-            xp[j] += h
-            // Don't project when computing Jacobian - we need the true derivative
+            let h_j = finiteDiffStepScale * max(1.0, abs(x[j]))
+            var xp = x; xp[j] += h_j
+            var xm = x; xm[j] -= h_j
             let rp = residuals(xp); nfev += 1
+            let rm = residuals(xm); nfev += 1
+            // Residual dimension can drift under perturbation; a short probe would
+            // trap the rp[i]/rm[i] indexing.
+            guard rp.count == m, rm.count == m else {
+                return LeastSquaresResult(
+                    x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+                    success: false,
+                    message: "residual dimension changed under perturbation "
+                        + "(expected \(m), got \(rp.count)/\(rm.count)).")
+            }
             for i in 0..<m {
-                J[i][j] = (rp[i] - r[i]) / h
+                J[i][j] = (rp[i] - rm[i]) / (2.0 * h_j)
             }
         }
         njev += 1
@@ -930,6 +1231,14 @@ public func leastSquares(
         xNew = project(xNew)  // Project onto bounds
 
         let rNew = residuals(xNew); nfev += 1
+        // A trial residual whose length drifted would trap the later r[k] access
+        // once accepted (r = rNew); reject the dimension change.
+        guard rNew.count == m else {
+          return LeastSquaresResult(
+            x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+            success: false,
+            message: "residual dimension changed during the solve (expected \(m), got \(rNew.count)).")
+        }
         let costNew = 0.5 * rNew.reduce(0) { $0 + $1 * $1 }
 
         // Compute actual step after projection
@@ -1048,15 +1357,31 @@ private func leastSquaresUnbounded(
     let lambdaDown = 0.1
 
     for _ in 0..<maxiter {
-        // Compute Jacobian numerically (m x n matrix)
+        // Compute Jacobian numerically using per-variable relative step sizing.
+        //
+        // Step formula: h_j = finiteDiffStepScale * max(1, |x_j|)
+        // See: scipy.optimize.approx_derivative (scipy.org)
+        //
+        // Central differences give O(h²) accuracy; preferred over forward
+        // differences which require a fresh baseline r evaluation each step.
         var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
-        let h = sqrt(Double.ulpOfOne) * max(1.0, x.map { abs($0) }.max() ?? 1.0)
         for j in 0..<n {
-            var xp = x
-            xp[j] += h
+            let h_j = finiteDiffStepScale * max(1.0, abs(x[j]))
+            var xp = x; xp[j] += h_j
+            var xm = x; xm[j] -= h_j
             let rp = residuals(xp); nfev += 1
+            let rm = residuals(xm); nfev += 1
+            // Residual dimension can drift under perturbation; a short probe would
+            // trap the rp[i]/rm[i] indexing.
+            guard rp.count == m, rm.count == m else {
+                return LeastSquaresResult(
+                    x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+                    success: false,
+                    message: "residual dimension changed under perturbation "
+                        + "(expected \(m), got \(rp.count)/\(rm.count)).")
+            }
             for i in 0..<m {
-                J[i][j] = (rp[i] - r[i]) / h
+                J[i][j] = (rp[i] - rm[i]) / (2.0 * h_j)
             }
         }
         njev += 1
@@ -1134,6 +1459,14 @@ private func leastSquaresUnbounded(
         }
 
         let rNew = residuals(xNew); nfev += 1
+        // A trial residual whose length drifted would trap the later r[k] access
+        // once accepted (r = rNew); reject the dimension change.
+        guard rNew.count == m else {
+          return LeastSquaresResult(
+            x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+            success: false,
+            message: "residual dimension changed during the solve (expected \(m), got \(rNew.count)).")
+        }
         let costNew = 0.5 * rNew.reduce(0) { $0 + $1 * $1 }
 
         // Check if step is accepted
@@ -1198,6 +1531,14 @@ public func curveFit(
     let n = p0.count
     let m = xdata.count
 
+    // The residual closure indexes ydata[i] for i in 0..<m: mismatched x/y lengths
+    // (or empty data / no parameters) are caller contract violations that would
+    // otherwise trap with an opaque out-of-range error deep in the solver.
+    precondition(
+        ydata.count == m && m > 0 && n > 0,
+        "curveFit requires xdata.count == ydata.count > 0 and a non-empty p0 "
+            + "(got xdata.count=\(m), ydata.count=\(ydata.count), p0.count=\(n))")
+
     // Create residuals function
     let residuals: ([Double]) -> [Double] = { params in
         var r = [Double](repeating: 0, count: m)
@@ -1210,20 +1551,21 @@ public func curveFit(
     // Run least squares
     let result = leastSquares(residuals, x0: p0, ftol: ftol, xtol: xtol, maxiter: maxiter)
 
-    // Estimate covariance matrix
-    let h = sqrt(Double.ulpOfOne) * max(1.0, result.x.map { abs($0) }.max() ?? 1.0)
+    // Estimate covariance matrix via a central-difference Jacobian at the solution.
+    //
+    // Per-variable step formula: h_j = finiteDiffStepScale * max(1, |p_j|)
+    // See: scipy.optimize.approx_derivative (scipy.org)
     var J = [[Double]](repeating: [Double](repeating: 0, count: n), count: m)
 
     for j in 0..<n {
-        var pp = result.x
-        var pm = result.x
-        pp[j] += h
-        pm[j] -= h
+        let h_j = finiteDiffStepScale * max(1.0, abs(result.x[j]))
+        var pp = result.x; pp[j] += h_j
+        var pm = result.x; pm[j] -= h_j
 
         for i in 0..<m {
             let fp = f(pp, xdata[i])
             let fm = f(pm, xdata[i])
-            J[i][j] = (fp - fm) / (2 * h)
+            J[i][j] = (fp - fm) / (2.0 * h_j)
         }
     }
 

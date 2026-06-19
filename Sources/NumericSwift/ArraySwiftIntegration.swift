@@ -178,10 +178,10 @@ extension NDArray {
     ///
     /// - Returns: Tuple of (U, s, Vt) where A = U * diag(s) * Vt, or nil if not a 2D array
     public func svd() -> (U: NDArray, s: NDArray, Vt: NDArray)? {
-        guard let matrix = self.toMatrix() else {
+        guard let matrix = self.toMatrix(),
+              let result = LinAlg.svd(matrix) else {
             return nil
         }
-        let result = LinAlg.svd(matrix)
         let sArray = NDArray(result.s)
         return (result.U.toNDArray(), sArray, result.Vt.toNDArray())
     }

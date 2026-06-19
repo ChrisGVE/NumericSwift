@@ -26,20 +26,20 @@ extension NumericDispatch {
 
     /// matrix / complex scalar: element-wise division by complex.
     ///
-    /// (mr+0i) / (c+di) = [(mr*c + 0*d) + i*(0*c - mr*d)] / (c²+d²)
-    ///                   = (mr*c/(c²+d²)) + i*(-mr*d/(c²+d²))
+    /// `(mr+0i) / d = mr · (1/d)`. The reciprocal `1/d` is formed via the
+    /// Smith/C99-hardened `Double / Complex` operator, so a large-magnitude
+    /// divisor does not overflow `c²+d²` to ±inf (which previously zeroed the
+    /// result) and an exact-zero divisor yields ±inf per C99 Annex G §G.5.1.
     static func evalMatrixDivComplex(
         matrix: LinAlg.Matrix, divisor: Complex
     ) throws -> NumericValue {
         let cm = promoteToComplexMatrix(matrix)
         try LinAlg.checkSoftCap(rows: cm.rows, cols: cm.cols)
-        let denom = divisor.re * divisor.re + divisor.im * divisor.im
+        let recip = 1.0 / divisor   // hardened reciprocal
         let size = cm.size
         var outReal = [Double](repeating: 0, count: size)
         var outImag = [Double](repeating: 0, count: size)
-        let scaleRe = divisor.re / denom
-        let scaleIm = -divisor.im / denom
-        var sRe = scaleRe, sIm = scaleIm
+        var sRe = recip.re, sIm = recip.im
         vDSP_vsmulD(cm.real, 1, &sRe, &outReal, 1, vDSP_Length(size))
         vDSP_vsmulD(cm.real, 1, &sIm, &outImag, 1, vDSP_Length(size))
         return .complexMatrix(LinAlg.ComplexMatrix(

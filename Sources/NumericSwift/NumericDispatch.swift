@@ -50,9 +50,9 @@ import Foundation
 ///
 /// Every truth-table cell marked **EVAL** in §15 is implemented across the
 /// `extension NumericDispatch` files (`+BinaryOps`, `+ComplexMatrixArithmetic`,
-/// `+ComplexMatrixFunctions`, `+MatrixPower`). The only remaining deferral is
-/// `complexMatrix^scalar` (`evalComplexMatrixPow`, §14), which throws
-/// `MathExprError.unsupportedNode`.
+/// `+ComplexMatrixFunctions`, `+MatrixPower`) — including `complexMatrix^scalar`
+/// (`evalComplexMatrixPow`, §14), which now performs exponentiation-by-squaring
+/// (and `cinv` for negative exponents).
 ///
 /// ## Error boundary
 ///

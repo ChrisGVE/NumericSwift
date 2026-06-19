@@ -210,7 +210,7 @@ extension MathExpr {
         case ("floor", 1): return floor(args[0])
         case ("ceil", 1): return ceil(args[0])
         case ("round", 1): return Foundation.round(args[0])
-        case ("trunc", 1): return trunc(args[0])
+        case ("trunc", 1): return Foundation.trunc(args[0])
         // Min/max and interpolation
         case ("min", 2): return Swift.min(args[0], args[1])
         case ("max", 2): return Swift.max(args[0], args[1])

@@ -105,6 +105,7 @@ print(popt)  // Optimal parameters
 ### Root Finding
 
 - ``bisect(_:a:b:xtol:maxiter:)``
+- ``brentq(_:a:b:xtol:rtol:maxiter:)``
 - ``newton(_:fprime:x0:xtol:maxiter:)``
 - ``brent(_:a:b:xtol:maxiter:)``
 - ``secant(_:x0:x1:xtol:maxiter:)``

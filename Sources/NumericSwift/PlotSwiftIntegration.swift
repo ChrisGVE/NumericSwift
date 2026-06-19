@@ -279,12 +279,15 @@ public func normalDistributionCurve(
     xMax: Double? = nil,
     points: Int = 100
 ) -> [(x: Double, y: Double)] {
+    guard points >= 1 else { return [] }  // points < 1 → invalid `0..<points` range
     let minX = xMin ?? (mean - 4 * stddev)
     let maxX = xMax ?? (mean + 4 * stddev)
-    let step = (maxX - minX) / Double(points - 1)
-
     let norm = NormalDistribution(loc: mean, scale: stddev)
 
+    // A single point avoids the `points - 1 == 0` division (NaN step).
+    if points == 1 { return [(minX, norm.pdf(minX))] }
+
+    let step = (maxX - minX) / Double(points - 1)
     return (0..<points).map { i in
         let x = minX + Double(i) * step
         return (x, norm.pdf(x))
@@ -301,11 +304,15 @@ public func histogramBins(
     _ data: [Double],
     bins: Int = 10
 ) -> [(center: Double, count: Int)] {
+    guard bins >= 1 else { return [] }  // non-positive bins → invalid count / index
     guard let minVal = data.min(), let maxVal = data.max() else {
         return []
     }
 
     let range = maxVal - minVal
+    // Constant data (range == 0) → binWidth == 0 → Int((value - minVal)/0) =
+    // Int(NaN), a trap. All values are identical: report a single bin at that value.
+    guard range > 0 else { return [(minVal, data.count)] }
     let binWidth = range / Double(bins)
 
     var counts = [Int](repeating: 0, count: bins)

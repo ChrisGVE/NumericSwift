@@ -84,7 +84,7 @@ let package = Package(
     .testTarget(
       name: "NumericSwiftTests",
       dependencies: {
-        var deps: [Target.Dependency] = ["NumericSwift"]
+        var deps: [Target.Dependency] = ["NumericSwift", "NumericSwiftWorkbenchKit"]
         if includeArraySwift {
           deps.append(.product(name: "ArraySwift", package: "ArraySwift"))
         }
@@ -118,6 +118,26 @@ let package = Package(
       name: "NumericSwiftBench",
       dependencies: ["NumericSwift"],
       path: "Sources/NumericSwiftBench"
+    ),
+    // E2E functional workbench — shared library of the fixture model, strategy
+    // and envelope registries, runner, and per-domain suites. NOT part of the
+    // NumericSwift library product, so remote SPM consumers (e.g. LuaSwift) are
+    // unaffected. Depended on by BOTH the workbench executable AND the XCTest
+    // gate target (an XCTest target cannot import an executable target, so the
+    // runner lives here).
+    .target(
+      name: "NumericSwiftWorkbenchKit",
+      dependencies: ["NumericSwift"],
+      path: "Sources/NumericSwiftWorkbenchKit"
+    ),
+    // E2E functional workbench executable — thin CLI over NumericSwiftWorkbenchKit.
+    // Build explicitly:  swift build --product NumericSwiftWorkbench
+    // Run:               .build/debug/NumericSwiftWorkbench [domain...]
+    // CI gate:           swift test --filter WorkbenchGateTests
+    .executableTarget(
+      name: "NumericSwiftWorkbench",
+      dependencies: ["NumericSwiftWorkbenchKit"],
+      path: "Sources/NumericSwiftWorkbench"
     ),
   ]
 )

@@ -92,9 +92,13 @@ extension LinAlg {
     }
 
     /// Compute the matrix rank via SVD.
+    ///
+    /// Returns `0` when the SVD fails to converge or the matrix has no singular
+    /// values (defensive — the largest singular value `s[0]` is read for the
+    /// tolerance, so an empty `s` must be guarded).
     public static func rank(_ m: Matrix) -> Int {
-        let (s, _, _) = svd(m)
-        let tol = max(Double(m.rows), Double(m.cols)) * s[0] * 2.220446049250313e-16
+        guard let (s, _, _) = svd(m), let sMax = s.first else { return 0 }
+        let tol = max(Double(m.rows), Double(m.cols)) * sMax * 2.220446049250313e-16
         var r = 0
         for sv in s {
             if sv > tol { r += 1 }
@@ -103,8 +107,11 @@ extension LinAlg {
     }
 
     /// Compute the condition number of a matrix.
+    ///
+    /// Returns `NaN` when the SVD fails to converge (the condition number is
+    /// undefined), and `+inf` for a singular matrix (`σ_min` below tolerance).
     public static func cond(_ m: Matrix) -> Double {
-        let (s, _, _) = svd(m)
+        guard let (s, _, _) = svd(m) else { return Double.nan }
         let sMax = s.first ?? 0
         let sMin = s.last ?? 0
         let tol = max(Double(m.rows), Double(m.cols)) * sMax * 2.220446049250313e-16
@@ -113,7 +120,12 @@ extension LinAlg {
     }
 
     /// Compute the Moore-Penrose pseudoinverse.
-    public static func pinv(_ m: Matrix, rcond: Double = 1e-15) -> Matrix {
+    ///
+    /// - Returns: The pseudoinverse (shape `cols × rows`), or `nil` when the
+    ///   underlying SVD (`dgesvd`) fails to converge. Previously this returned the
+    ///   input matrix on failure, which is both the wrong value and — for
+    ///   rectangular input — the wrong shape.
+    public static func pinv(_ m: Matrix, rcond: Double = 1e-15) -> Matrix? {
         let minDim = min(m.rows, m.cols)
 
         var a = toColumnMajor(m)
@@ -144,7 +156,7 @@ extension LinAlg {
         var lda2 = __CLPK_integer(m.rows)
         dgesvd_(&jobu, &jobvt, &m2, &n2, &a, &lda2, &s, &u, &ldu, &vt, &ldvt, &work, &lwork, &info)
 
-        if info != 0 { return m }
+        if info != 0 { return nil }
 
         let tol = rcond * s[0]
 
@@ -236,8 +248,10 @@ extension LinAlg {
             }
             return maxSum
         } else if p == 2 {
-            // Spectral norm = largest singular value (SciPy ord=2).
-            return svd(m).s.max() ?? 0
+            // Spectral norm = largest singular value (SciPy ord=2). A non-convergent
+            // SVD yields NaN (the norm is undefined when the factorization fails).
+            guard let s = svd(m)?.s else { return Double.nan }
+            return s.max() ?? 0
         } else if p == Double.infinity {
             var maxSum = 0.0
             for i in 0..<m.rows {

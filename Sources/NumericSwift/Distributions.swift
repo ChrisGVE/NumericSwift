@@ -50,11 +50,16 @@ public func randomNormal() -> Double {
 
 /// Generate n standard normal random variates.
 public func randomNormal(_ n: Int) -> [Double] {
-  (0..<n).map { _ in randomNormal() }
+  guard n > 0 else { return [] }
+  return (0..<n).map { _ in randomNormal() }
 }
 
 /// Gamma random variate using Marsaglia and Tsang's method.
 public func randomGamma(_ shape: Double) -> Double {
+  // A non-finite or non-positive shape has no valid Gamma variate; NaN in
+  // particular would make the rejection loop's comparisons never accept (an
+  // infinite hang). Reject with NaN.
+  guard shape.isFinite, shape > 0 else { return .nan }
   if shape < 1 {
     // For shape < 1, use shape + 1 and transform
     return randomGamma(shape + 1) * Darwin.pow(Double.random(in: 0..<1), 1.0 / shape)
@@ -87,7 +92,8 @@ public func randomGamma(_ shape: Double) -> Double {
 
 /// Generate n gamma random variates.
 public func randomGamma(_ shape: Double, n: Int) -> [Double] {
-  (0..<n).map { _ in randomGamma(shape) }
+  guard n > 0 else { return [] }
+  return (0..<n).map { _ in randomGamma(shape) }
 }
 
 // MARK: - Normal Distribution
@@ -130,7 +136,8 @@ public struct NormalDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -223,7 +230,8 @@ public struct UniformDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -297,7 +305,8 @@ public struct ExponentialDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -399,6 +408,60 @@ public struct TDistribution {
     return loc + scale * x
   }
 
+  /// Percent point function paired with a limitation diagnostic.
+  ///
+  /// This is the **self-aware** overload of ``ppf(_:)``. It returns the same
+  /// best-effort quantile, but wrapped in a ``Diagnosed`` so the caller can tell
+  /// whether the input lies inside the method's accuracy envelope.
+  ///
+  /// Per the documented limitation (CLAUDE.md *Known Limitations §1*), the
+  /// Student-t `ppf` achieves only ~5 significant digits in the **extreme
+  /// tails** (`p < 1e-4` or `p > 1 - 1e-4`, i.e. `|p|` beyond `0.9999`); the
+  /// central and near-tail regions reach full double precision. When `p` is in
+  /// the extreme tail this overload attaches an
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` diagnostic; otherwise
+  /// the returned ``Diagnosed/diagnostics`` array is empty.
+  ///
+  /// The bare ``ppf(_:)`` is unchanged and remains the right entry point when a
+  /// caller does not need the envelope signal.
+  ///
+  /// - Note: This overload exists only on ``TDistribution`` because the
+  ///   extreme-tail precision loss is specific to the Student-t quantile (it
+  ///   inverts the regularized incomplete beta, whose tail conditioning is the
+  ///   documented limitation). ``NormalDistribution``/``ChiSquaredDistribution``
+  ///   etc. reach full double precision across their domain via the (now
+  ///   accurate) ``erfinv(_:)`` path and so need no `ppfDiagnosed` companion.
+  ///
+  /// - Parameter p: Requested probability in `[0, 1]`.
+  /// - Returns: A ``Diagnosed`` wrapping the quantile and any diagnostic.
+  public func ppfDiagnosed(_ p: Double) -> Diagnosed<Double> {
+    let value = ppf(p)
+    // Extreme-tail envelope: p in (0, ppfTailEnvelope) ∪ (1 − ppfTailEnvelope, 1),
+    // i.e. beyond the 0.9999 probability mark on either side. Only flag finite,
+    // in-domain probabilities — out-of-domain p is the bare ppf's NaN contract,
+    // not an accuracy-envelope concern.
+    if p >= 0, p <= 1, p < TDistribution.ppfTailEnvelope || p > 1.0 - TDistribution.ppfTailEnvelope {
+      return Diagnosed(
+        value,
+        diagnostics: [
+          .outsideEnvelope(
+            method: "TDistribution.ppf",
+            reason: "p=\(p) is in the extreme tail (p < \(TDistribution.ppfTailEnvelope) "
+              + "or p > \(1.0 - TDistribution.ppfTailEnvelope)) — precision is ~5 digits, not full double"
+          )
+        ]
+      )
+    }
+    return Diagnosed(value)
+  }
+
+  /// Tail distance from 0 or 1 beyond which ``ppfDiagnosed(_:)`` flags the
+  /// Student-t quantile as outside its full-precision envelope (`p < 1e-4` or
+  /// `p > 1 − 1e-4`, i.e. `|p|` past the 0.9999 mark). Public so a caller can
+  /// test its probability against the boundary before calling, mirroring
+  /// ``LinAlg/solveConditionEnvelope`` and ``erfinvEnvelopeBoundary``.
+  public static let ppfTailEnvelope = 1e-4
+
   /// Random variate sampling using ratio of normal and chi-squared.
   public func rvs() -> Double {
     let z = randomNormal()
@@ -408,7 +471,8 @@ public struct TDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -541,12 +605,26 @@ public struct ChiSquaredDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
+  ///
+  /// Computed in closed form rather than as `log(pdf(x))`: once `pdf` underflows
+  /// to `0` (e.g. far in the tail or for large `df`), `log(0) = -inf` discards the
+  /// true log-density. The direct form stays finite across the whole support.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z < 0 { return -.infinity }
+    let k2 = df / 2.0
+    if z == 0 {
+      if df < 2 { return .infinity }
+      if df == 2 { return Foundation.log(0.5 / scale) }
+      return -.infinity  // df > 2: density 0
+    }
+    let logPdf = (k2 - 1) * Foundation.log(z) - z / 2.0 - k2 * Foundation.log(2.0) - lgamma(k2)
+    return logPdf - Foundation.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -593,15 +671,27 @@ public struct FDistribution {
   }
 
   /// Probability density function.
+  ///
+  /// Evaluated through the log-density and exponentiated. The direct product
+  /// form `(dfn·z)^(dfn/2) · dfd^(dfd/2) / (dfn·z+dfd)^((dfn+dfd)/2)` overflows to
+  /// `inf/inf = NaN` for moderate-to-large degrees of freedom; the log form,
+  /// using `lgamma` for `log B(dfn/2, dfd/2)`, stays finite.
+  /// Log of the standard (loc=0, scale=1) F density at `z > 0`. Shared by `pdf`,
+  /// `logpdf`, and the `ppf` Newton step so all three are overflow-safe.
+  private func logPdfStandard(_ z: Double) -> Double {
+    let halfN = dfn / 2.0
+    let halfD = dfd / 2.0
+    // log B(halfN, halfD) = lgamma(halfN) + lgamma(halfD) - lgamma(halfN + halfD)
+    let logBeta = lgamma(halfN) + lgamma(halfD) - lgamma(halfN + halfD)
+    return halfN * Foundation.log(dfn * z) + halfD * Foundation.log(dfd)
+      - (halfN + halfD) * Foundation.log(dfn * z + dfd)
+      - Foundation.log(z) - logBeta
+  }
+
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
     if z <= 0 { return 0.0 }
-
-    let num = Darwin.pow(dfn * z, dfn / 2.0) * Darwin.pow(dfd, dfd / 2.0)
-    let den = Darwin.pow(dfn * z + dfd, (dfn + dfd) / 2.0)
-    let coef = 1.0 / (z * beta(dfn / 2.0, dfd / 2.0))
-
-    return coef * num / den / scale
+    return Foundation.exp(logPdfStandard(z)) / scale
   }
 
   /// Cumulative distribution function.
@@ -624,9 +714,8 @@ public struct FDistribution {
       let u = dfn * x / (dfn * x + dfd)
       let cdfVal = betainc(dfn / 2.0, dfd / 2.0, u)
 
-      let num = Darwin.pow(dfn * x, dfn / 2.0) * Darwin.pow(dfd, dfd / 2.0)
-      let den = Darwin.pow(dfn * x + dfd, (dfn + dfd) / 2.0)
-      let pdfVal = num / den / (x * beta(dfn / 2.0, dfd / 2.0))
+      // Log-space standard density (overflow-safe for large df), same as `pdf`.
+      let pdfVal = Foundation.exp(logPdfStandard(x))
 
       if pdfVal < 1e-30 { break }
       let dx = (cdfVal - p) / pdfVal
@@ -647,12 +736,18 @@ public struct FDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
+  ///
+  /// Closed form via the shared log-density, so tail underflow does not collapse
+  /// a finite log density to `-inf` (as `log(pdf(x))` would).
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z <= 0 { return -.infinity }
+    return logPdfStandard(z) - Foundation.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -711,7 +806,14 @@ public struct GammaDistribution {
   /// Probability density function.
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
-    if z <= 0 { return 0.0 }
+    if z < 0 { return 0.0 }
+    // Support boundary z == 0 (SciPy parity): shape < 1 diverges, shape == 1 is
+    // the exponential density 1/scale, shape > 1 vanishes.
+    if z == 0 {
+      if shape < 1 { return .infinity }
+      if shape == 1 { return 1.0 / scale }
+      return 0.0
+    }
     // Log-space: tgamma(shape) overflows to Inf for shape > 171, silently
     // zeroing the density. lgamma keeps it finite.
     let logPdf = (shape - 1) * Foundation.log(z) - z - lgamma(shape)
@@ -752,12 +854,23 @@ public struct GammaDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
+  ///
+  /// Closed form `(shape−1)·ln z − z − lgamma(shape) − ln(scale)`, so the tail
+  /// stays finite where `log(pdf(x))` would collapse to `-inf` after underflow.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z < 0 { return -.infinity }
+    if z == 0 {
+      if shape < 1 { return .infinity }
+      if shape == 1 { return -Foundation.log(scale) }  // log(1/scale)
+      return -.infinity
+    }
+    return (shape - 1) * Foundation.log(z) - z - lgamma(shape) - Foundation.log(scale)
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -806,7 +919,20 @@ public struct BetaDistribution {
   /// Probability density function.
   public func pdf(_ x: Double) -> Double {
     let z = (x - loc) / scale
-    if z <= 0 || z >= 1 { return 0.0 }
+    if z < 0 || z > 1 { return 0.0 }
+    // Support boundaries (SciPy parity). At z == 0 the density is governed by a:
+    // a < 1 diverges, a == 1 gives 1/B(1,b) = b, a > 1 vanishes. At z == 1 it is
+    // governed symmetrically by b. Values are divided by `scale`.
+    if z == 0 {
+      if a < 1 { return .infinity }
+      if a == 1 { return b / scale }
+      return 0.0
+    }
+    if z == 1 {
+      if b < 1 { return .infinity }
+      if b == 1 { return a / scale }
+      return 0.0
+    }
     return Darwin.pow(z, a - 1) * Darwin.pow(1 - z, b - 1) / beta(a, b) / scale
   }
 
@@ -847,12 +973,31 @@ public struct BetaDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
+  ///
+  /// Closed form `(a−1)·ln z + (b−1)·ln(1−z) − log B(a,b) − ln(scale)` (with
+  /// `log B(a,b) = lgamma(a)+lgamma(b)−lgamma(a+b)`), matching the SciPy-parity
+  /// boundary values of `pdf` and avoiding tail collapse from `log(pdf(x))`.
   public func logpdf(_ x: Double) -> Double {
-    Darwin.log(pdf(x))
+    let z = (x - loc) / scale
+    if z < 0 || z > 1 { return -.infinity }
+    let logScale = Foundation.log(scale)
+    if z == 0 {
+      if a < 1 { return .infinity }
+      if a == 1 { return Foundation.log(b) - logScale }  // log(b/scale)
+      return -.infinity
+    }
+    if z == 1 {
+      if b < 1 { return .infinity }
+      if b == 1 { return Foundation.log(a) - logScale }  // log(a/scale)
+      return -.infinity
+    }
+    let logBeta = lgamma(a) + lgamma(b) - lgamma(a + b)
+    return (a - 1) * Foundation.log(z) + (b - 1) * Foundation.log(1 - z) - logBeta - logScale
   }
 
   /// Survival function (complementary CDF): `1 - cdf(x)`.
@@ -894,8 +1039,8 @@ public func ttest1Sample(_ sample: [Double], popmean: Double) -> TestResult? {
   guard sample.count >= 2 else { return nil }
 
   let n = Double(sample.count)
-  let sampleMean = mean(sample)
-  let sampleStd = stddev(sample, ddof: 1)
+  let sampleMean = Stats.mean(sample)
+  let sampleStd = Stats.stddev(sample, ddof: 1)
   let se = sampleStd / Darwin.sqrt(n)
 
   guard se > 0 else { return TestResult(statistic: .nan, pvalue: .nan) }
@@ -918,10 +1063,10 @@ public func ttestIndependent(_ sample1: [Double], _ sample2: [Double], equalVari
 
   let n1 = Double(sample1.count)
   let n2 = Double(sample2.count)
-  let mean1 = mean(sample1)
-  let mean2 = mean(sample2)
-  let var1 = NumericSwift.variance(sample1, ddof: 1)
-  let var2 = NumericSwift.variance(sample2, ddof: 1)
+  let mean1 = Stats.mean(sample1)
+  let mean2 = Stats.mean(sample2)
+  let var1 = Stats.variance(sample1, ddof: 1)
+  let var2 = Stats.variance(sample2, ddof: 1)
 
   let tStat: Double
   let df: Double
@@ -954,8 +1099,8 @@ public func pearsonr(_ x: [Double], _ y: [Double]) -> TestResult? {
   guard x.count == y.count, x.count >= 3 else { return nil }
 
   let n = Double(x.count)
-  let meanX = mean(x)
-  let meanY = mean(y)
+  let meanX = Stats.mean(x)
+  let meanY = Stats.mean(y)
 
   var sumXY = 0.0
   var sumX2 = 0.0
@@ -1044,8 +1189,8 @@ public func describe(_ data: [Double]) -> DescribeResult? {
 
   let n = data.count
   let nDouble = Double(n)
-  let dataMean = mean(data)
-  let dataVar = NumericSwift.variance(data, ddof: 1)
+  let dataMean = Stats.mean(data)
+  let dataVar = Stats.variance(data, ddof: 1)
   let dataStd = Darwin.sqrt(dataVar)
 
   // Skewness (Fisher's definition)
@@ -1089,8 +1234,8 @@ public func describe(_ data: [Double]) -> DescribeResult? {
 public func zscore(_ data: [Double], ddof: Int = 0) -> [Double] {
   guard data.count > ddof else { return [] }
 
-  let dataMean = mean(data)
-  let dataStd = stddev(data, ddof: ddof)
+  let dataMean = Stats.mean(data)
+  let dataStd = Stats.stddev(data, ddof: ddof)
 
   guard dataStd > 0 else {
     return data.map { _ in Double.nan }
@@ -1104,8 +1249,8 @@ public func skew(_ data: [Double]) -> Double {
   guard data.count >= 3 else { return .nan }
 
   let n = Double(data.count)
-  let dataMean = mean(data)
-  let dataStd = stddev(data, ddof: 1)
+  let dataMean = Stats.mean(data)
+  let dataStd = Stats.stddev(data, ddof: 1)
 
   guard dataStd > 0 else { return .nan }
 
@@ -1127,8 +1272,8 @@ public func kurtosis(_ data: [Double], fisher: Bool = true) -> Double {
   guard data.count >= 4 else { return .nan }
 
   let n = Double(data.count)
-  let dataMean = mean(data)
-  let dataVar = NumericSwift.variance(data, ddof: 1)
+  let dataMean = Stats.mean(data)
+  let dataVar = Stats.variance(data, ddof: 1)
 
   guard dataVar > 0 else { return .nan }
 

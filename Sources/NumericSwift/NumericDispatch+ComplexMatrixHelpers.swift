@@ -23,7 +23,13 @@
 //  Each product is a LinAlg.dot call (BLAS/Accelerate-backed, Group-B).
 //
 //  Soft-cap policy (§4.8 / CONS-07): every operation that allocates a result
-//  or intermediate matrix calls `LinAlg.checkSoftCap` BEFORE the allocation.
+//  or intermediate matrix checks the soft cap BEFORE the allocation.
+//  `complexMatmul` uses a *peak-aware* admission check (Issue #13 / CR-D7):
+//  rather than calling `checkSoftCap` on the result shape alone, it divides
+//  the cap by `complexMatmulWorkingSetMultiplier` (= 6) and verifies the
+//  result element count does not exceed that scaled limit.  This ensures the
+//  four intermediate real products plus the two output arrays cannot exceed
+//  the intended memory ceiling in aggregate.
 //
 //  Group-A errors are pre-validated and throw before any LinAlg call,
 //  preventing process-trapping preconditions. Group-B errors propagate via
@@ -106,26 +112,56 @@ extension NumericDispatch {
     static func divideComplex(
         re: Double, im: Double, by divisor: Complex
     ) -> (re: Double, im: Double) {
-        let denom = divisor.re * divisor.re + divisor.im * divisor.im
-        let outRe = (re * divisor.re + im * divisor.im) / denom
-        let outIm = (im * divisor.re - re * divisor.im) / denom
-        return (outRe, outIm)
+        // Delegate to the Smith/C99-hardened `Complex / Complex` operator: the
+        // naive `(ac+bd)/(c²+d²)` form overflowed the denominator to ±inf for a
+        // large-magnitude divisor (zeroing the result) and produced NaN for an
+        // exact-zero divisor instead of the C99 ±inf.
+        let q = Complex(re: re, im: im) / divisor
+        return (q.re, q.im)
     }
 
     // MARK: Core complex matmul
 
+    /// The working-set multiplier for ``complexMatmul(_:_:)`` peak admission control.
+    ///
+    /// The real-block decomposition (Cr = Ar·Br − Ai·Bi, Ci = Ar·Bi + Ai·Br)
+    /// allocates four intermediate `LinAlg.Matrix` objects, each of size M×N
+    /// (same as the result), plus two output `[Double]` arrays (crData, ciData)
+    /// of the same size.  All six buffers are live simultaneously when the two
+    /// vDSP combine passes run, giving a peak working set of 6× the result size.
+    ///
+    /// The multiplier is the TRUE peak (6), so the admission test
+    /// `resultElements × 6 ≤ cap` guarantees the actual peak working set never
+    /// exceeds the soft cap. (A smaller multiplier would admit inputs whose 6×
+    /// peak overshoots the cap — e.g. with 5, an input at `cap/5` peaks at
+    /// `6·cap/5 = 1.2× cap`. Codex pre-0.3.0 audit fix.)
+    ///
+    /// Reference: Issue #13 / CR-D7 cumulative-bounding fix.
+    static let complexMatmulWorkingSetMultiplier: Int = 6
+
     /// Implements CM*CM via real-block decomposition: Cr=Ar·Br−Ai·Bi, Ci=Ar·Bi+Ai·Br.
     ///
-    /// - Performs Group-A shape pre-validation.
-    /// - Soft-cap is checked once against the result shape. The four intermediate
-    ///   real products (`arBr`, `aiBi`, `arBi`, `aiBr`) each have that same shape,
-    ///   so every individual allocation is within the cap. The *aggregate* peak
-    ///   working set (≈ 4–5× the result size held simultaneously) is NOT bounded
-    ///   here — that is the cumulative-working-set limitation documented on
-    ///   ``LinAlg/checkSoftCap(rows:cols:)`` (MF-5 / §5), deferred to v-next.
+    /// ## Soft-cap admission (§4.8 / Issue #13)
+    ///
+    /// Admission control bounds the **peak working set**, not just the result shape.
+    /// The four intermediate real products (Ar·Br, Ai·Bi, Ar·Bi, Ai·Br) each have
+    /// the result shape (M×N), and all four are live simultaneously alongside the
+    /// two output arrays when the final vDSP combine passes run.  The peak allocation
+    /// is therefore `resultElements × complexMatmulWorkingSetMultiplier`.
+    ///
+    /// The check is:
+    /// ```
+    /// resultElements × 6 ≤ maxEvaluatorMatrixElements
+    /// ```
+    /// equivalently: `resultElements ≤ cap / 6` (integer division, conservative).
+    /// This is computed overflow-safely by verifying the result first passes the
+    /// ordinary cap, then scaling the cap down before re-checking.
+    ///
+    /// - Performs Group-A shape pre-validation (throws ``MathExprError/shapeMismatch(_:)``).
+    /// - Performs peak-aware soft-cap check (throws ``LinAlg/LinAlgError/invalidParameter(_:)``).
     /// - Calls `coerce1x1Complex` for the 1×1 vec·vec → .complex collapse (§4.3a).
     ///
-    /// Each real product is delegated to LinAlg.dot (BLAS/Accelerate-backed).
+    /// Each real product is delegated to ``LinAlg/dot(_:_:)`` (BLAS/Accelerate-backed).
     static func complexMatmul(
         lhs: LinAlg.ComplexMatrix,
         rhs: LinAlg.ComplexMatrix
@@ -138,9 +174,29 @@ extension NumericDispatch {
         let isVecDot = lhs.cols == 1 && rhs.cols == 1
         let resultRows = isVecDot ? 1 : lhs.rows
         let resultCols = isVecDot ? 1 : rhs.cols
-        // §4.8 soft-cap: guard the result shape (each of the four intermediate
-        // real products shares this shape; aggregate working set is unbounded — §5).
-        try LinAlg.checkSoftCap(rows: resultRows, cols: resultCols)
+
+        // §4.8 / Issue #13: peak-aware admission control.
+        //
+        // The decomposition allocates `complexMatmulWorkingSetMultiplier` (= 6)
+        // buffers of shape (resultRows × resultCols) simultaneously.  Bound the
+        // peak by requiring resultElements × 6 ≤ maxEvaluatorMatrixElements,
+        // i.e. resultElements ≤ cap / 6 (floor division, safe from overflow).
+        //
+        // Implementation: divide the cap by the multiplier and call checkSoftCap
+        // with the scaled-down cap limit.  This avoids overflow in the product
+        // `resultElements * 6` while still producing an informative error message.
+        let cap = LinAlg.maxEvaluatorMatrixElements
+        let scaledCap = cap / complexMatmulWorkingSetMultiplier
+        let (resultElements, overflow) = LinAlg.elementCount(rows: resultRows, cols: resultCols)
+        guard !overflow && resultElements <= scaledCap else {
+            let desc = overflow ? "overflows Int" : "\(resultElements)"
+            throw LinAlg.LinAlgError.invalidParameter(
+                "complexMatmul peak working set (\(desc) × \(complexMatmulWorkingSetMultiplier)"
+                + " = \(overflow ? "overflow" : "\(resultElements * complexMatmulWorkingSetMultiplier)")"
+                + " elements) exceeds soft cap \(cap)"
+                + " (result shape \(resultRows)×\(resultCols),"
+                + " per-matrix limit \(scaledCap) for complex matmul)")
+        }
 
         // Extract real and imaginary blocks
         let ar = realBlock(lhs)
@@ -164,5 +220,29 @@ extension NumericDispatch {
         let result = NumericValue.complexMatrix(LinAlg.ComplexMatrix(
             rows: resultRows, cols: resultCols, real: crData, imag: ciData))
         return coerce1x1Complex(result)
+    }
+
+    /// Multiply two complex matrices, always returning a `ComplexMatrix` (no 1×1
+    /// scalar coercion). Used by ``evalComplexMatrixPow(cm:exponent:)`` for
+    /// exponentiation-by-squaring, where the running base/accumulator must stay a
+    /// matrix. Uses the same real-block decomposition as ``complexMatmul(lhs:rhs:)``
+    /// (Cr = Ar·Br − Ai·Bi, Ci = Ar·Bi + Ai·Br); callers supply square operands of
+    /// the already cap-checked shape, so admission control is not repeated here.
+    static func complexMatrixMultiply(
+        _ a: LinAlg.ComplexMatrix, _ b: LinAlg.ComplexMatrix
+    ) -> LinAlg.ComplexMatrix {
+        let ar = realBlock(a), ai = imagBlock(a)
+        let br = realBlock(b), bi = imagBlock(b)
+        let arBr = LinAlg.dot(ar, br)
+        let aiBi = LinAlg.dot(ai, bi)
+        let arBi = LinAlg.dot(ar, bi)
+        let aiBr = LinAlg.dot(ai, br)
+        let count = arBr.size
+        var crData = [Double](repeating: 0, count: count)
+        var ciData = [Double](repeating: 0, count: count)
+        vDSP_vsubD(aiBi.data, 1, arBr.data, 1, &crData, 1, vDSP_Length(count))
+        vDSP_vaddD(arBi.data, 1, aiBr.data, 1, &ciData, 1, vDSP_Length(count))
+        return LinAlg.ComplexMatrix(
+            rows: arBr.rows, cols: arBr.cols, real: crData, imag: ciData)
     }
 }

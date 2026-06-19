@@ -185,7 +185,10 @@ enum UnifiedEvaluatorMatrix {
             throw MathExprError.invalidArguments(
                 "rank requires a real matrix operand, got \(operand.typeAndShapeDescription)")
         }
-        let svdResult = LinAlg.svd(m)
+        guard let svdResult = LinAlg.svd(m) else {
+            throw MathExprError.invalidArguments(
+                "rank: the singular value decomposition failed to converge")
+        }
         let sigmas = svdResult.s
         guard !sigmas.isEmpty else { return .scalar(0) }
         let sigMax = sigmas[0]  // SVD returns singular values in descending order

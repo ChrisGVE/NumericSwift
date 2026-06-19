@@ -116,7 +116,10 @@ extension MathExpr {
               guard let v else { return "nan" }
               if v.isNaN { return "nan" }
               if v.isInfinite { return v > 0 ? "inf" : "-inf" }
-              if v == Foundation.floor(v) && !v.isInfinite { return String(Int64(v)) }
+              // `Int64(v)` traps for a finite integral value outside Int64 range
+              // (e.g. 1e20). `Int64(exactly:)` is non-nil only for an in-range
+              // integral value, so a huge integral Double falls through to String(v).
+              if let i = Int64(exactly: v) { return String(i) }
               return String(v)
           case .variable(let name):
               return name

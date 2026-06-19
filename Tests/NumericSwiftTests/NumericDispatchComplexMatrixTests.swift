@@ -486,6 +486,32 @@ final class NumericDispatchComplexMatrixTests: XCTestCase {
         XCTAssertEqual(c.imag[0], -2.0, accuracy: 1e-12)
     }
 
+    /// matrix / large-magnitude complex divisor must stay finite. The naive
+    /// `c²+d²` denominator overflowed to ±inf (zeroing the result); the hardened
+    /// reciprocal path returns the correct scaled value. 1.0 / (1e200+1e200i) =
+    /// 5e-201 − 5e-201i, so [[1]] / (1e200+1e200i) matches.
+    func testMatrixDivComplex_largeDivisorStaysFinite() throws {
+        let m = LinAlg.Matrix(rows: 1, cols: 1, data: [1.0])
+        let result = try NumericDispatch.applyBinary(
+            .div, lhs: .matrix(m), rhs: .complex(Complex(re: 1e200, im: 1e200)))
+        guard case .complexMatrix(let c) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertTrue(c.real[0].isFinite && c.imag[0].isFinite, "result must be finite")
+        XCTAssertEqual(c.real[0],  5e-201, accuracy: 5e-201 * 1e-9)
+        XCTAssertEqual(c.imag[0], -5e-201, accuracy: 5e-201 * 1e-9)
+    }
+
+    /// complexMatrix / large-magnitude complex divisor (the `divideComplex`
+    /// helper path) must likewise stay finite. [[1+0i]] / (1e200+1e200i).
+    func testComplexMatrixDivComplex_largeDivisorStaysFinite() throws {
+        let a = cmFrom(real: [[1]], imag: [[0]])
+        let result = try NumericDispatch.applyBinary(
+            .div, lhs: .complexMatrix(a), rhs: .complex(Complex(re: 1e200, im: 1e200)))
+        guard case .complexMatrix(let c) = result else { return XCTFail("Expected complexMatrix") }
+        XCTAssertTrue(c.real[0].isFinite && c.imag[0].isFinite, "result must be finite")
+        XCTAssertEqual(c.real[0],  5e-201, accuracy: 5e-201 * 1e-9)
+        XCTAssertEqual(c.imag[0], -5e-201, accuracy: 5e-201 * 1e-9)
+    }
+
     // MARK: - Mixed-promotion cells
 
     func testScalarMulComplexMatrix_commutative() throws {
@@ -595,14 +621,19 @@ final class NumericDispatchComplexMatrixTests: XCTestCase {
         XCTAssertEqual(c.imag.count, 12)
     }
 
-    // MARK: - Soft-cap pre-check (§4.8 / Task 15.20)
+    // MARK: - Soft-cap pre-check (§4.8 / Task 15.20 / Issue #13)
 
-    func testSoftCap_CMmulCM_resultUnderCap_succeeds() throws {
+    /// Peak-aware admission: result 4 elements × 5× working-set multiplier = 20 ≤ cap 100.
+    ///
+    /// This test verifies the success path after the Issue #13 fix.  The cap of 100
+    /// accommodates the full peak working set (4 × 5 = 20 elements), so the matmul
+    /// must succeed.  Pre-fix the cap was applied to the result shape only (4 ≤ 100);
+    /// post-fix the peak is checked (20 ≤ 100) — both accept this input, so the
+    /// success expectation is unchanged.
+    func testSoftCap_CMmulCM_peakUnderCap_succeeds() throws {
         try LinAlg.setMaxEvaluatorMatrixElements(100)
-        // 5×5 result = 25 elements < 100 cap
-        let a = cmFrom(
-            real: Array(repeating: Array(repeating: 1.0, count: 5), count: 5),
-            imag: Array(repeating: Array(repeating: 0.0, count: 5), count: 5))
+        // 2×2 result = 4 elements; peak = 4 × 5 = 20 ≤ 100 → must succeed
+        let a = cmFrom(real: [[1, 0], [0, 1]], imag: [[0, 0], [0, 0]])
         XCTAssertNoThrow(
             try NumericDispatch.applyBinary(.mul, lhs: .complexMatrix(a), rhs: .complexMatrix(a)))
     }

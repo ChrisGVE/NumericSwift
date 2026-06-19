@@ -241,7 +241,7 @@ final class LinAlgTests: XCTestCase {
 
     func testSVD() throws  {
         let a = LinAlg.Matrix([[1, 2], [3, 4], [5, 6]])
-        let (s, U, Vt) = LinAlg.svd(a)
+        let (s, _, _) = try XCTUnwrap(LinAlg.svd(a))
 
         XCTAssertEqual(s.count, 2)
         XCTAssertTrue(s[0] >= s[1])  // Singular values in descending order
@@ -250,7 +250,7 @@ final class LinAlgTests: XCTestCase {
     func testEigenvalues() throws  {
         // Symmetric matrix has real eigenvalues
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (real, imag) = try LinAlg.eigvals(a)
+        let (real, imag) = try XCTUnwrap(LinAlg.eigvals(a))
 
         // Eigenvalues should be 3 and 1
         XCTAssertTrue(imag.allSatisfy { abs($0) < 1e-10 })  // All real
@@ -261,7 +261,7 @@ final class LinAlgTests: XCTestCase {
 
     func testEig() throws  {
         let a = LinAlg.Matrix([[2, 1], [1, 2]])
-        let (values, imag, vectors) = try LinAlg.eig(a)
+        let (values, _, vectors) = try XCTUnwrap(LinAlg.eig(a))
 
         XCTAssertEqual(values.count, 2)
         XCTAssertEqual(vectors.rows, 2)
@@ -364,6 +364,20 @@ final class LinAlgTests: XCTestCase {
         XCTAssertEqual(result[1], b[1], accuracy: 1e-10)
     }
 
+    /// luSolve with a singular U factor (zero pivot) must throw invalidParameter,
+    /// not silently divide by zero and return ±inf/NaN.
+    func testLuSolveSingularUThrows() throws {
+        let L = LinAlg.Matrix([[1, 0], [0, 1]])
+        let U = LinAlg.Matrix([[1, 2], [0, 0]])  // zero pivot at (1,1)
+        let P = LinAlg.eye(2)
+        let b = LinAlg.Matrix([1, 2])
+        XCTAssertThrowsError(try LinAlg.luSolve(L, U, P, b)) { err in
+            guard case LinAlg.LinAlgError.invalidParameter = err else {
+                return XCTFail("singular U must throw invalidParameter, got \(err)")
+            }
+        }
+    }
+
     // MARK: - Matrix Functions
 
     func testExpm() throws  {
@@ -438,6 +452,377 @@ final class LinAlgTests: XCTestCase {
         }
         XCTAssertEqual(cosZ[0, 0], 1, accuracy: 1e-10)
         XCTAssertEqual(cosZ[1, 1], 1, accuracy: 1e-10)
+    }
+
+    // MARK: - Matrix Functions: Complex-Eigenvalue and Defective Matrix Tests (Issue #7)
+    // Oracle: scipy.linalg.logm / sqrtm / funm (Python scipy 1.x)
+
+    /// Rotation matrix R(π/4) has complex-conjugate eigenvalues e^{±iπ/4}.
+    /// logm(R) and sqrtm(R) are both purely real — verified via scipy.
+    func testLogmRotationMatrix() throws {
+        // R = [[cos θ, -sin θ], [sin θ, cos θ]], θ = π/4
+        let c = 0.7071067811865476  // cos(π/4)
+        let s = 0.7071067811865476  // sin(π/4)
+        let R = LinAlg.Matrix([[c, -s], [s, c]])
+
+        // Current implementation bails (returns nil) because dgeev sees imaginary eigenvalues.
+        // After fix: must return a real matrix matching scipy oracle values.
+        guard let logR = try LinAlg.logm(R) else {
+            XCTFail("logm must succeed on rotation matrix with complex-conjugate eigenvalues")
+            return
+        }
+        // scipy: logm(R) ≈ [[0, -π/4], [π/4, 0]]
+        XCTAssertEqual(logR[0, 0],  0.0,                  accuracy: 1e-10)
+        XCTAssertEqual(logR[0, 1], -0.7853981633974478,   accuracy: 1e-10)
+        XCTAssertEqual(logR[1, 0],  0.7853981633974483,   accuracy: 1e-10)
+        XCTAssertEqual(logR[1, 1],  0.0,                  accuracy: 1e-10)
+    }
+
+    func testSqrtmRotationMatrix() throws {
+        let c = 0.7071067811865476
+        let s = 0.7071067811865476
+        let R = LinAlg.Matrix([[c, -s], [s, c]])
+
+        guard let sqrtR = try LinAlg.sqrtm(R) else {
+            XCTFail("sqrtm must succeed on rotation matrix with complex-conjugate eigenvalues")
+            return
+        }
+        // scipy: sqrtm(R) = rotation by π/8 — [[cos(π/8), -sin(π/8)], [sin(π/8), cos(π/8)]]
+        XCTAssertEqual(sqrtR[0, 0],  0.9238795325112867,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtR[0, 1], -0.3826834323650897,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtR[1, 0],  0.3826834323650897,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtR[1, 1],  0.9238795325112867,  accuracy: 1e-10)
+
+        // Defining identity: sqrtm(R)^2 ≈ R
+        let sqrtR2 = LinAlg.dot(sqrtR, sqrtR)
+        XCTAssertEqual(sqrtR2[0, 0], c, accuracy: 1e-10)
+        XCTAssertEqual(sqrtR2[0, 1], -s, accuracy: 1e-10)
+        XCTAssertEqual(sqrtR2[1, 0], s, accuracy: 1e-10)
+        XCTAssertEqual(sqrtR2[1, 1], c, accuracy: 1e-10)
+    }
+
+    /// A = [[1, 2], [-2, 1]] has eigenvalues 1±2i (complex conjugate pair).
+    /// logm(A) and sqrtm(A) are real. funm(A, .exp) is real and equals expm(A).
+    func testLogmComplexEigenvalues() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0], [-2.0, 1.0]])
+
+        guard let logA = try LinAlg.logm(A) else {
+            XCTFail("logm must succeed on matrix with complex-conjugate eigenvalues")
+            return
+        }
+        // scipy oracle values
+        XCTAssertEqual(logA[0, 0],  0.80471895621705,     accuracy: 1e-10)
+        XCTAssertEqual(logA[0, 1],  1.1071487177940904,   accuracy: 1e-10)
+        XCTAssertEqual(logA[1, 0], -1.1071487177940904,   accuracy: 1e-10)
+        XCTAssertEqual(logA[1, 1],  0.80471895621705,     accuracy: 1e-10)
+    }
+
+    func testSqrtmComplexEigenvalues() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0], [-2.0, 1.0]])
+
+        guard let sqrtA = try LinAlg.sqrtm(A) else {
+            XCTFail("sqrtm must succeed on matrix with complex-conjugate eigenvalues")
+            return
+        }
+        // scipy oracle values
+        XCTAssertEqual(sqrtA[0, 0],  1.272019649514069,    accuracy: 1e-10)
+        XCTAssertEqual(sqrtA[0, 1],  0.7861513777574233,   accuracy: 1e-10)
+        XCTAssertEqual(sqrtA[1, 0], -0.7861513777574233,   accuracy: 1e-10)
+        XCTAssertEqual(sqrtA[1, 1],  1.272019649514069,    accuracy: 1e-10)
+
+        // Defining identity: sqrtm(A)^2 ≈ A
+        let sqrtA2 = LinAlg.dot(sqrtA, sqrtA)
+        XCTAssertEqual(sqrtA2[0, 0], 1.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtA2[0, 1], 2.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtA2[1, 0], -2.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtA2[1, 1], 1.0, accuracy: 1e-9)
+    }
+
+    func testFunmComplexEigenvalues() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0], [-2.0, 1.0]])
+
+        // funm(A, .exp) must equal expm(A)
+        guard let funmAExp = try LinAlg.funm(A, .exp) else {
+            XCTFail("funm(.exp) must succeed on matrix with complex-conjugate eigenvalues")
+            return
+        }
+        // scipy oracle: funm(A, exp) = expm(A)
+        XCTAssertEqual(funmAExp[0, 0], -1.1312043837568135, accuracy: 1e-9)
+        XCTAssertEqual(funmAExp[0, 1],  2.471726672004819,  accuracy: 1e-9)
+        XCTAssertEqual(funmAExp[1, 0], -2.4717266720048183, accuracy: 1e-9)
+        XCTAssertEqual(funmAExp[1, 1], -1.1312043837568135, accuracy: 1e-9)
+    }
+
+    /// J = [[2, 1], [0, 2]] is a defective Jordan block: eigenvalue 2 with multiplicity 2
+    /// but only one independent eigenvector. The current eigendecomposition approach
+    /// produces a near-singular V and numerically garbage results. Schur-based logm/sqrtm
+    /// handles this correctly.
+    func testLogmDefectiveMatrix() throws {
+        let J = LinAlg.Matrix([[2.0, 1.0], [0.0, 2.0]])
+
+        guard let logJ = try LinAlg.logm(J) else {
+            XCTFail("logm must succeed on defective Jordan block matrix")
+            return
+        }
+        // scipy: logm([[2,1],[0,2]]) = [[ln2, 0.5], [0, ln2]]
+        XCTAssertEqual(logJ[0, 0], 0.6931471805599453, accuracy: 1e-10)
+        XCTAssertEqual(logJ[0, 1], 0.5,                accuracy: 1e-10)
+        XCTAssertEqual(logJ[1, 0], 0.0,                accuracy: 1e-10)
+        XCTAssertEqual(logJ[1, 1], 0.6931471805599453, accuracy: 1e-10)
+    }
+
+    func testSqrtmDefectiveMatrix() throws {
+        let J = LinAlg.Matrix([[2.0, 1.0], [0.0, 2.0]])
+
+        guard let sqrtJ = try LinAlg.sqrtm(J) else {
+            XCTFail("sqrtm must succeed on defective Jordan block matrix")
+            return
+        }
+        // scipy: sqrtm([[2,1],[0,2]]) = [[√2, 1/(2√2)], [0, √2]]
+        XCTAssertEqual(sqrtJ[0, 0], 1.4142135623730951,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtJ[0, 1], 0.35355339059327373, accuracy: 1e-10)
+        XCTAssertEqual(sqrtJ[1, 0], 0.0,                 accuracy: 1e-10)
+        XCTAssertEqual(sqrtJ[1, 1], 1.4142135623730951,  accuracy: 1e-10)
+
+        // Defining identity: sqrtm(J)^2 ≈ J
+        let sqrtJ2 = LinAlg.dot(sqrtJ, sqrtJ)
+        XCTAssertEqual(sqrtJ2[0, 0], 2.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtJ2[0, 1], 1.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtJ2[1, 0], 0.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtJ2[1, 1], 2.0, accuracy: 1e-9)
+    }
+
+    func testFunmDefectiveMatrix() throws {
+        // funm on a defective matrix: the Schur-Parlett recurrence handles
+        // J = [[2,1],[0,2]] with degenerate eigenvalue 2.
+        // scipy funm (Parlett diagonal-only) gives [ln2, ln2] (wrong off-diagonal),
+        // whereas logm gives the correct [[ln2, 0.5],[0, ln2]].
+        // funm(.log) should match logm for non-defective Schur blocks;
+        // for truly defective blocks, scipy flags inaccuracy — we document this limitation.
+        let J = LinAlg.Matrix([[2.0, 1.0], [0.0, 2.0]])
+
+        // funm(.exp) on Jordan block: diag approach gives [[e^2, 0],[0, e^2]] but
+        // correct value is [[e^2, e^2],[0, e^2]] (derivative correction).
+        // We only require at least the diagonal to be correct (scipy reports approx err=1).
+        guard let funmJExp = try LinAlg.funm(J, .exp) else {
+            XCTFail("funm must not return nil on defective matrix")
+            return
+        }
+        XCTAssertEqual(funmJExp[0, 0], exp(2.0), accuracy: 1e-8)
+        XCTAssertEqual(funmJExp[1, 1], exp(2.0), accuracy: 1e-8)
+    }
+
+    /// sqrtmComplex / logmComplex: new APIs returning ComplexMatrix for matrices
+    /// whose square root / logarithm is genuinely complex.
+    func testSqrtmComplexResult() throws {
+        // B = diag(-1, -4) has negative eigenvalues → sqrtm gives purely imaginary diagonal.
+        let B = LinAlg.Matrix([[-1.0, 0.0], [0.0, -4.0]])
+
+        guard let sqrtB = try LinAlg.sqrtmComplex(B) else {
+            XCTFail("sqrtmComplex must succeed for negative-definite matrix")
+            return
+        }
+        // scipy: sqrtm(B) = [[0+i, 0], [0, 0+2i]]
+        XCTAssertEqual(sqrtB[0, 0].re,  0.0, accuracy: 1e-10)
+        XCTAssertEqual(sqrtB[0, 0].im,  1.0, accuracy: 1e-10)
+        XCTAssertEqual(sqrtB[1, 1].re,  0.0, accuracy: 1e-10)
+        XCTAssertEqual(sqrtB[1, 1].im,  2.0, accuracy: 1e-10)
+        XCTAssertEqual(sqrtB[0, 1].re,  0.0, accuracy: 1e-10)
+        XCTAssertEqual(sqrtB[0, 1].im,  0.0, accuracy: 1e-10)
+    }
+
+    func testLogmComplexResult() throws {
+        // B = diag(-1, -4): logm has imaginary part ±iπ (principal branch)
+        let B = LinAlg.Matrix([[-1.0, 0.0], [0.0, -4.0]])
+
+        guard let logB = try LinAlg.logmComplex(B) else {
+            XCTFail("logmComplex must succeed for negative-definite matrix")
+            return
+        }
+        // scipy: logm(B) = [[iπ, 0], [0, ln4+iπ]]
+        XCTAssertEqual(logB[0, 0].re, 0.0,                 accuracy: 1e-10)
+        XCTAssertEqual(logB[0, 0].im, Double.pi,            accuracy: 1e-10)
+        XCTAssertEqual(logB[1, 1].re, 1.386294361119893,    accuracy: 1e-10)
+        XCTAssertEqual(logB[1, 1].im, Double.pi,            accuracy: 1e-10)
+    }
+
+    /// 3×3 rotation-like matrix with complex eigenvalues and a real eigenvalue 2.
+    /// logm and sqrtm return real matrices. (All imaginary parts ≈ 0.)
+    func testLogmSqrtm3x3ComplexEigenvalues() throws {
+        // D = [[0,-1,0],[1,0,0],[0,0,2]] — eigenvalues ±i, 2
+        let D = LinAlg.Matrix([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 2.0]])
+
+        guard let logD = try LinAlg.logm(D) else {
+            XCTFail("logm must succeed on 3×3 matrix with complex+real eigenvalues")
+            return
+        }
+        // scipy oracle: logm(D) ≈ [[0, -π/2, 0], [π/2, 0, 0], [0, 0, ln2]]
+        XCTAssertEqual(logD[0, 0], 0.0,                 accuracy: 1e-10)
+        XCTAssertEqual(logD[0, 1], -1.5707963267948966, accuracy: 1e-10)
+        XCTAssertEqual(logD[1, 0],  1.5707963267948966, accuracy: 1e-10)
+        XCTAssertEqual(logD[1, 1], 0.0,                 accuracy: 1e-10)
+        XCTAssertEqual(logD[2, 2], 0.6931471805599453,  accuracy: 1e-10)
+
+        guard let sqrtD = try LinAlg.sqrtm(D) else {
+            XCTFail("sqrtm must succeed on 3×3 matrix with complex+real eigenvalues")
+            return
+        }
+        // scipy: sqrtm(D) = [[1/√2, -1/√2, 0], [1/√2, 1/√2, 0], [0, 0, √2]]
+        XCTAssertEqual(sqrtD[0, 0],  0.7071067811865475,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtD[0, 1], -0.7071067811865476,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtD[1, 0],  0.7071067811865476,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtD[1, 1],  0.7071067811865475,  accuracy: 1e-10)
+        XCTAssertEqual(sqrtD[2, 2],  1.4142135623730951,  accuracy: 1e-10)
+
+        // Defining identity: sqrtm(D)^2 ≈ D
+        let sqrtD2 = LinAlg.dot(sqrtD, sqrtD)
+        XCTAssertEqual(sqrtD2[0, 0],  0.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtD2[0, 1], -1.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtD2[1, 0],  1.0, accuracy: 1e-9)
+        XCTAssertEqual(sqrtD2[2, 2],  2.0, accuracy: 1e-9)
+    }
+
+    /// Parlett recurrence with non-zero cross-terms between a 2×2 and a 1×1 Schur block.
+    ///
+    /// A = [[1,2,1],[-2,1,1],[0,0,2]] is already in real Schur form:
+    /// rows 0–1 form a 2×2 block (eigenvalues 1±2i), row 2 is a 1×1 block (eigenvalue 2).
+    /// The off-diagonal entries T[0,2]=T[1,2]=1 produce non-zero cross-terms F[0,2]
+    /// and F[1,2] that require the 2×2 block Sylvester solver, not the scalar divisor.
+    /// Frozen oracle: scipy.linalg.logm / sqrtm (scipy 1.x, numpy principal branch).
+    func testParlettCrossTermTwoByOneSylvester() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0, 1.0], [-2.0, 1.0, 1.0], [0.0, 0.0, 2.0]])
+
+        // logm(A) — result is real (all eigenvalues have positive real part).
+        guard let logA = try LinAlg.logm(A) else {
+            XCTFail("logm must succeed: eigenvalues 1±2i and 2 all have positive real part")
+            return
+        }
+        // scipy.linalg.logm frozen literals:
+        XCTAssertEqual(logA[0, 0],  0.80471895621705,       accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 1],  1.1071487177940904,     accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 2],  0.15448667816455516,    accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logA[1, 0], -1.1071487177940904,     accuracy: 1e-9)
+        XCTAssertEqual(logA[1, 1],  0.80471895621705,       accuracy: 1e-9)
+        XCTAssertEqual(logA[1, 2],  0.6866035858078751,     accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logA[2, 0],  0.0,                    accuracy: 1e-12)
+        XCTAssertEqual(logA[2, 1],  0.0,                    accuracy: 1e-12)
+        XCTAssertEqual(logA[2, 2],  0.6931471805599453,     accuracy: 1e-9)
+
+        // sqrtm(A) — result is also real.
+        guard let sqrtA = try LinAlg.sqrtm(A) else {
+            XCTFail("sqrtm must succeed: all eigenvalues have positive real part")
+            return
+        }
+        // scipy.linalg.sqrtm frozen literals:
+        XCTAssertEqual(sqrtA[0, 0],  1.272019649514069,     accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[0, 1],  0.7861513777574233,    accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[0, 2],  0.24254662326690027,   accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(sqrtA[1, 0], -0.7861513777574233,    accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[1, 1],  1.272019649514069,     accuracy: 1e-9)
+        XCTAssertEqual(sqrtA[1, 2],  0.4432520440826487,    accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(sqrtA[2, 0],  0.0,                   accuracy: 1e-12)
+        XCTAssertEqual(sqrtA[2, 1],  0.0,                   accuracy: 1e-12)
+        XCTAssertEqual(sqrtA[2, 2],  1.4142135623730951,    accuracy: 1e-9)
+
+        // Defining identity: logm and sqrtm are inverse-consistent.
+        let sqrtA2 = LinAlg.dot(sqrtA, sqrtA)
+        XCTAssertEqual(sqrtA2[0, 0],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[0, 1],  2.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[0, 2],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[1, 0], -2.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[1, 1],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[1, 2],  1.0, accuracy: 1e-8)
+        XCTAssertEqual(sqrtA2[2, 2],  2.0, accuracy: 1e-8)
+    }
+
+    /// Parlett recurrence: 1×1 block followed by 2×2 block — tests the
+    /// `!rowIs2x2 && colIs2x2` Sylvester branch (row 0 vs block {1,2}).
+    ///
+    /// B = [[1,5,3],[0,3,2],[0,-2,3]]: eigenvalue 1 (1×1) then 3±2i (2×2).
+    /// Already in real Schur form; T[0,1]=5, T[0,2]=3 are non-zero cross-terms.
+    /// Frozen oracle: scipy.linalg.logm.
+    func testParlettCrossTermOneByTwoSylvester() throws {
+        let B = LinAlg.Matrix([[1.0, 5.0, 3.0], [0.0, 3.0, 2.0], [0.0, -2.0, 3.0]])
+
+        guard let logB = try LinAlg.logm(B) else {
+            XCTFail("logm must succeed: all eigenvalues have positive real part")
+            return
+        }
+        // scipy.linalg.logm frozen literals:
+        XCTAssertEqual(logB[0, 0],  0.0,                     accuracy: 1e-10)
+        XCTAssertEqual(logB[0, 1],  2.8589506592353198,      accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logB[0, 2],  0.5347678677297507,      accuracy: 1e-9)  // cross-term
+        XCTAssertEqual(logB[1, 1],  1.2824746787307686,      accuracy: 1e-9)
+        XCTAssertEqual(logB[1, 2],  0.5880026035475676,      accuracy: 1e-9)
+        XCTAssertEqual(logB[2, 1], -0.5880026035475674,      accuracy: 1e-9)
+        XCTAssertEqual(logB[2, 2],  1.2824746787307681,      accuracy: 1e-9)
+    }
+
+    /// Parlett recurrence: 4×4 with two 2×2 blocks — tests the 2×2 vs 2×2
+    /// (vectorised 4×4 Sylvester) branch.
+    ///
+    /// A = [[1,2,3,4],[-2,1,5,6],[0,0,0,1],[0,0,-1,0]]: already in real Schur
+    /// form with two 2×2 blocks (eigenvalues 1±2i and 0±i); T[0:2, 2:4] are
+    /// non-zero, exercising the cross-block Sylvester solver.
+    /// Frozen oracle: scipy.linalg.logm.
+    func testParlettCrossTermTwoByTwoSylvester() throws {
+        let A = LinAlg.Matrix([[1.0, 2.0, 3.0, 4.0],
+                               [-2.0, 1.0, 5.0, 6.0],
+                               [0.0, 0.0, 0.0, 1.0],
+                               [0.0, 0.0, -1.0, 0.0]])
+
+        guard let logA = try LinAlg.logm(A) else {
+            XCTFail("logm must succeed: all eigenvalues have positive real part")
+            return
+        }
+        // scipy.linalg.logm frozen literals:
+        XCTAssertEqual(logA[0, 0],  0.80471895621705,       accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 1],  1.1071487177940904,     accuracy: 1e-9)
+        XCTAssertEqual(logA[0, 2], -0.7567595443934897,     accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[0, 3],  1.0778249583392425,     accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[1, 2],  6.956010175427716,      accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[1, 3],  1.6573973242576612,     accuracy: 1e-9)  // cross 2×2→2×2
+        XCTAssertEqual(logA[2, 2],  0.0,                    accuracy: 1e-9)
+        XCTAssertEqual(logA[2, 3],  1.5707963267948966,     accuracy: 1e-9)
+        XCTAssertEqual(logA[3, 2], -1.5707963267948966,     accuracy: 1e-9)
+        XCTAssertEqual(logA[3, 3],  0.0,                    accuracy: 1e-9)
+    }
+
+    /// Defining identity expm(logm(A)) ≈ A for a real-logm case.
+    func testExpmLogmDefiningIdentity() throws {
+        // R(π/4): expm(logm(R)) ≈ R
+        let c = 0.7071067811865476
+        let s = 0.7071067811865476
+        let R = LinAlg.Matrix([[c, -s], [s, c]])
+
+        guard let logR = try LinAlg.logm(R) else {
+            XCTFail("logm must succeed")
+            return
+        }
+        let expLogR = try LinAlg.expm(logR)
+        XCTAssertEqual(expLogR[0, 0], c, accuracy: 1e-9)
+        XCTAssertEqual(expLogR[0, 1], -s, accuracy: 1e-9)
+        XCTAssertEqual(expLogR[1, 0], s, accuracy: 1e-9)
+        XCTAssertEqual(expLogR[1, 1], c, accuracy: 1e-9)
+    }
+
+    /// Regression: existing tests — diagonalizable matrices with real positive eigenvalues
+    /// must still produce correct results after the Schur-based rewrite.
+    func testLogmSqrtmRegressionDiagonalizable() throws {
+        // C = [[1,2],[3,4]]: real eigenvalues but logm/sqrtm are complex in scipy.
+        // Our real-returning API returns nil for genuinely complex results — that is correct.
+        let C = LinAlg.Matrix([[1.0, 2.0], [3.0, 4.0]])
+        // eigenvalues: -0.372, 5.372 — one negative → logm is complex
+        let logC = try LinAlg.logm(C)
+        XCTAssertNil(logC, "logm returns nil for matrix with negative eigenvalue (complex result)")
+
+        // But logmComplex should succeed
+        guard let logCComplex = try LinAlg.logmComplex(C) else {
+            XCTFail("logmComplex must succeed even when result is complex")
+            return
+        }
+        // scipy real part of logm(C)[0,0] = -0.35043981399855517
+        XCTAssertEqual(logCComplex[0, 0].re, -0.35043981399855517, accuracy: 1e-8)
     }
 
     // MARK: - Complex Matrix Tests
@@ -520,7 +905,7 @@ final class LinAlgTests: XCTestCase {
 
     func testCSVD() throws  {
         let m = LinAlg.ComplexMatrix(LinAlg.Matrix([[1, 0], [0, 2]]))
-        guard let (s, U, Vt) = LinAlg.csvd(m) else {
+        guard let (s, _, _) = LinAlg.csvd(m) else {
             XCTFail("csvd should succeed")
             return
         }
@@ -536,7 +921,7 @@ final class LinAlgTests: XCTestCase {
     func testPinv() throws  {
         // For invertible matrix, pinv = inv
         let A = LinAlg.Matrix([[1, 2], [3, 4]])
-        let pA = LinAlg.pinv(A)
+        let pA = try XCTUnwrap(LinAlg.pinv(A))
         guard let invA = try LinAlg.inv(A) else {
             XCTFail("inv should succeed")
             return
@@ -608,8 +993,8 @@ final class LinAlgTests: XCTestCase {
     func testMatrixInstancePinvMatchesStaticPinv() throws  {
         // For an invertible matrix, pinv should match inv
         let a = LinAlg.Matrix([[1, 2], [3, 4]])
-        let instancePinv = a.pinv()
-        let staticPinv = LinAlg.pinv(a)
+        let instancePinv = try XCTUnwrap(a.pinv())
+        let staticPinv = try XCTUnwrap(LinAlg.pinv(a))
         for i in 0..<2 {
             for j in 0..<2 {
                 XCTAssertEqual(instancePinv[i, j], staticPinv[i, j], accuracy: 1e-10)
@@ -620,7 +1005,7 @@ final class LinAlgTests: XCTestCase {
     func testMatrixInstancePinvNonSquare() throws  {
         // pinv of a tall matrix: (3x2) -> (2x3)
         let a = LinAlg.Matrix([[1, 0], [0, 1], [0, 0]])
-        let p = a.pinv()
+        let p = try XCTUnwrap(a.pinv())
         XCTAssertEqual(p.rows, 2)
         XCTAssertEqual(p.cols, 3)
     }

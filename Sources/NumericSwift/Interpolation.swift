@@ -63,10 +63,95 @@ public enum InterpolationKind: String {
 }
 
 /// Boundary condition types for cubic splines.
-public enum SplineBoundaryCondition: String {
+///
+/// ## Raw-value mapping (published 0.2.x surface, restored)
+///
+/// `SplineBoundaryCondition` conforms to `RawRepresentable` with `RawValue == String`.
+/// The raw strings are frozen as part of the public API and must not be changed:
+///
+/// | Case                    | `rawValue`    |
+/// |-------------------------|---------------|
+/// | `.natural`              | `"natural"`   |
+/// | `.clamped(dStart:dEnd:)`| `"clamped"`   |
+/// | `.notAKnot`             | `"not-a-knot"`|
+///
+/// `init?(rawValue: "clamped")` returns `.clamped(dStart: 0, dEnd: 0)` — the
+/// historic zero-slope default — because the raw value names the *kind* of
+/// boundary condition, not the derivative values.
+///
+/// ## Clamped boundary — user-specified endpoint derivatives
+///
+/// The `.clamped` case accepts explicit first-derivative values at the start
+/// and end of the data domain, matching SciPy's
+/// `CubicSpline(bc_type=((1, dStart), (1, dEnd)))`.
+///
+/// Use the zero-argument shorthand `.clamped` to keep the historic f′ = 0
+/// behaviour; supply explicit derivatives via `.clamped(dStart:dEnd:)`.
+public enum SplineBoundaryCondition {
   case natural
-  case clamped
-  case notAKnot = "not-a-knot"
+  /// Clamped boundary: user-specified first-derivative values at both ends.
+  ///
+  /// - Parameters:
+  ///   - dStart: First derivative at x[0].
+  ///   - dEnd:   First derivative at x[n-1].
+  case clamped(dStart: Double, dEnd: Double)
+  case notAKnot
+
+  /// Zero-slope clamped boundary — f′(x₀) = f′(xₙ) = 0.
+  ///
+  /// This static property lets existing call sites keep writing `.clamped`
+  /// without any change; it is equivalent to `.clamped(dStart: 0, dEnd: 0)`.
+  public static var clamped: SplineBoundaryCondition {
+    .clamped(dStart: 0.0, dEnd: 0.0)
+  }
+}
+
+// MARK: - RawRepresentable
+
+/// Manual `RawRepresentable` conformance required because the enum has an
+/// associated-value case (`clamped(dStart:dEnd:)`), which prevents the
+/// compiler from synthesising the `: String` raw-value conformance.
+///
+/// The raw strings are identical to the 0.2.x synthesised values so that
+/// existing call sites using `.rawValue` or `init?(rawValue:)` continue to
+/// compile and behave identically after this additive change.
+extension SplineBoundaryCondition: RawRepresentable {
+  public typealias RawValue = String
+
+  /// The raw string for this boundary condition kind.
+  ///
+  /// `.clamped(dStart:dEnd:)` always returns `"clamped"` regardless of the
+  /// derivative values — the raw value identifies the *kind*, not the parameters.
+  public var rawValue: String {
+    switch self {
+    case .natural:
+      return "natural"
+    case .clamped:
+      return "clamped"
+    case .notAKnot:
+      return "not-a-knot"
+    }
+  }
+
+  /// Construct a boundary condition from its raw string.
+  ///
+  /// `init?(rawValue: "clamped")` returns `.clamped(dStart: 0, dEnd: 0)`,
+  /// preserving the historic zero-slope default for callers that round-trip
+  /// through the raw value without carrying derivative state.
+  ///
+  /// Returns `nil` for unrecognised strings.
+  public init?(rawValue: String) {
+    switch rawValue {
+    case "natural":
+      self = .natural
+    case "clamped":
+      self = .clamped(dStart: 0.0, dEnd: 0.0)
+    case "not-a-knot":
+      self = .notAKnot
+    default:
+      return nil
+    }
+  }
 }
 
 // MARK: - Binary Search
@@ -102,6 +187,9 @@ public func findInterval(_ xs: [Double], _ x: Double) -> Int {
 public func solveTridiagonal(diag: [Double], offDiag: [Double], rhs: [Double]) -> [Double] {
   let n = diag.count
   guard n > 0 else { return [] }
+  // rhs is indexed at [0] and [i] up to n-1; a short rhs would trap. (offDiag is
+  // already accessed defensively below, so only rhs needs a length match.)
+  guard rhs.count == n else { return [] }
 
   var cPrime = [Double](repeating: 0, count: n)
   var dPrime = [Double](repeating: 0, count: n)
@@ -134,15 +222,22 @@ public func solveTridiagonal(diag: [Double], offDiag: [Double], rhs: [Double]) -
 /// Compute cubic spline coefficients.
 ///
 /// - Parameters:
-///   - x: x-coordinates (must be sorted, strictly increasing)
-///   - y: y-coordinates (function values)
-///   - bc: Boundary condition type (natural, clamped, not-a-knot)
-/// - Returns: Array of cubic coefficients for each segment
+///   - x:  x-coordinates (must be sorted, strictly increasing)
+///   - y:  y-coordinates (function values, same length as x)
+///   - bc: Boundary condition.
+///         `.natural`  — zero second derivative at both ends.
+///         `.clamped`  — zero first derivative at both ends (f′ = 0).
+///         `.clamped(dStart:dEnd:)` — prescribed first derivatives;
+///                       matches SciPy `CubicSpline(bc_type=((1,d0),(1,d1)))`.
+///         `.notAKnot` — third-derivative continuity at the second and
+///                       second-to-last knots (default; requires n ≥ 4).
+/// - Returns: Array of `CubicCoeffs` for each of the n−1 segments.
 public func computeSplineCoeffs(x: [Double], y: [Double], bc: SplineBoundaryCondition = .notAKnot)
   -> [CubicCoeffs]
 {
   let n = x.count
-  guard n >= 2 else { return [] }
+  // y is indexed up to n-1 in lockstep with x; require matching non-empty arrays.
+  guard n >= 2, y.count == n else { return [] }
 
   // Compute intervals h[i] = x[i+1] - x[i]
   var h = [Double](repeating: 0, count: n - 1)
@@ -173,10 +268,17 @@ public func computeSplineCoeffs(x: [Double], y: [Double], bc: SplineBoundaryCond
       offDiag[n - 2] = 0
     }
 
-  case .clamped:
-    // Clamped: f'(x0) = 0, f'(xn) = 0
-    let fp0 = 0.0
-    let fpn = 0.0
+  case .clamped(let fp0, let fpn):
+    // Clamped boundary condition: prescribed first derivatives at both ends.
+    //
+    // The tridiagonal system for the second-derivative coefficients c[i] is:
+    //   Row 0:   2h₀·c[0] + h₀·c[1]               = 3((y₁-y₀)/h₀ - fp0)
+    //   Row i:   hᵢ₋₁·c[i-1] + 2(hᵢ₋₁+hᵢ)·c[i] + hᵢ·c[i+1]
+    //                = 3((y[i+1]-y[i])/hᵢ - (y[i]-y[i-1])/hᵢ₋₁)
+    //   Row n-1: hₙ₋₂·c[n-2] + 2hₙ₋₂·c[n-1]      = 3(fpn - (yₙ₋₁-yₙ₋₂)/hₙ₋₂)
+    //
+    // Reference: de Boor, "A Practical Guide to Splines" (Springer, 2001),
+    // Chapter IV, §4.2 (clamped-end conditions).
 
     diag[0] = 2.0 * h[0]
     rhs[0] = 3.0 * ((y[1] - y[0]) / h[0] - fp0)
@@ -290,6 +392,8 @@ public func evalCubicSpline(
   x: [Double], coeffs: [CubicCoeffs], xNew: Double, extrapolate: Bool = true
 ) -> Double {
   let n = x.count
+  // Indexes x[0], x[n-1], x[n-2], coeffs[0]; malformed input returns NaN.
+  guard n >= 2, !coeffs.isEmpty else { return .nan }
 
   // Check bounds
   if xNew < x[0] {
@@ -321,6 +425,7 @@ public func evalCubicSplineDerivative(
   x: [Double], coeffs: [CubicCoeffs], xNew: Double, order: Int = 1
 ) -> Double {
   let n = x.count
+  guard n >= 2, !coeffs.isEmpty else { return .nan }
 
   // Clamp to domain
   let xEval = max(x[0], min(xNew, x[n - 1]))
@@ -336,6 +441,7 @@ public func evalCubicSplineDerivative(
 public func integrateCubicSpline(x: [Double], coeffs: [CubicCoeffs], a: Double, b: Double) -> Double
 {
   let n = x.count
+  guard n >= 2, !coeffs.isEmpty else { return .nan }
 
   // Clamp to domain
   let x0 = max(x[0], min(a, x[n - 1]))
@@ -406,7 +512,7 @@ private func pchipEdgeDerivative(h1: Double, h2: Double, d1: Double, d2: Double)
 /// - Returns: Derivative values at each point
 public func computePchipDerivatives(x: [Double], y: [Double]) -> [Double] {
   let n = x.count
-  guard n >= 2 else { return [] }
+  guard n >= 2, y.count == n else { return [] }
 
   // Compute slopes and intervals
   var h = [Double](repeating: 0, count: n - 1)
@@ -444,6 +550,8 @@ public func computePchipDerivatives(x: [Double], y: [Double]) -> [Double] {
 /// Evaluate PCHIP interpolation at a point.
 public func evalPchip(x: [Double], y: [Double], d: [Double], xNew: Double) -> Double {
   let n = x.count
+  // Indexes x/y/d at [0], [n-1], and [i+1]; require matching non-empty arrays.
+  guard n >= 1, y.count == n, d.count == n else { return .nan }
 
   // Extrapolation
   if xNew <= x[0] {
@@ -481,7 +589,7 @@ public func evalPchip(x: [Double], y: [Double], d: [Double], xNew: Double) -> Do
 /// - Returns: Cubic coefficients for each segment
 public func computeAkimaCoeffs(x: [Double], y: [Double]) -> [CubicCoeffs] {
   let n = x.count
-  guard n >= 2 else { return [] }
+  guard n >= 2, y.count == n else { return [] }
 
   // Compute slopes between points
   var m = [Double](repeating: 0, count: n + 3)
@@ -526,6 +634,8 @@ public func computeAkimaCoeffs(x: [Double], y: [Double]) -> [CubicCoeffs] {
 /// Evaluate Akima interpolation at a point.
 public func evalAkima(x: [Double], coeffs: [CubicCoeffs], xNew: Double) -> Double {
   let n = x.count
+  // Indexes x[0], x[n-1], x[n-2], coeffs[0], coeffs[n-2]; needs n-1 coefficients.
+  guard n >= 2, coeffs.count >= n - 1 else { return .nan }
 
   // Extrapolation
   if xNew <= x[0] {
@@ -557,6 +667,8 @@ public func evalAkima(x: [Double], coeffs: [CubicCoeffs], xNew: Double) -> Doubl
 /// - Returns: Interpolated value
 public func evalLagrange(x: [Double], y: [Double], xNew: Double) -> Double {
   let n = x.count
+  // y is indexed in lockstep with x; require matching lengths.
+  guard y.count == n else { return .nan }
   var result = 0.0
 
   for i in 0..<n {
@@ -605,6 +717,8 @@ public func computeBarycentricWeights(x: [Double]) -> [Double] {
 /// - Returns: Interpolated value
 public func evalBarycentric(x: [Double], y: [Double], w: [Double], xNew: Double) -> Double {
   let n = x.count
+  // x, y, and w are indexed in lockstep; require matching lengths.
+  guard y.count == n, w.count == n else { return .nan }
 
   // Check for exact match
   for i in 0..<n {
@@ -647,6 +761,10 @@ public func interp1d(
   coeffs: [CubicCoeffs]? = nil
 ) -> Double {
   let n = x.count
+
+  // Reject malformed input (empty grid or mismatched x/y lengths) by returning the
+  // fill value rather than trapping on x[0] / x[n-1] / y[...] below.
+  guard n > 0, y.count == n else { return fillValue }
 
   // Check bounds
   if xNew < x[0] || xNew > x[n - 1] {
@@ -718,4 +836,127 @@ public func interp1d(
       kind: kind, fillValue: fillValue,
       boundsError: boundsError, coeffs: coeffs)
   }
+}
+
+// MARK: - Extrapolation-aware evaluators (limitation diagnostics)
+
+/// Reports whether a query point lies outside the closed knot interval `[x[0], x[n-1]]`.
+///
+/// All 1-D interpolants in this module are constructed to *interpolate* — their
+/// documented accuracy holds only inside the convex hull of the sample abscissae.
+/// Past the endpoints they fall back to extrapolation (typically a linear or
+/// last-segment-cubic continuation), where no accuracy guarantee applies. This
+/// helper is the single predicate the diagnosed evaluators below share.
+///
+/// - Parameters:
+///   - x: Sample abscissae (assumed sorted, strictly increasing).
+///   - xNew: Query point.
+/// - Returns: `true` when `xNew < x[0]` or `xNew > x[n-1]`.
+@usableFromInline
+internal func interpQueryOutsideKnots(_ x: [Double], _ xNew: Double) -> Bool {
+  guard let lo = x.first, let hi = x.last else { return false }
+  return xNew < lo || xNew > hi
+}
+
+/// Build the `outsideEnvelope` diagnostic for an out-of-range interpolation query.
+private func interpExtrapolationDiagnostic(
+  method: String, x: [Double], xNew: Double
+) -> NumericDiagnostic {
+  let lo = x.first ?? .nan
+  let hi = x.last ?? .nan
+  return .outsideEnvelope(
+    method: method,
+    reason: "query point \(xNew) is outside the knot range [\(lo), \(hi)] — "
+      + "the interpolant is extrapolating and its accuracy guarantee does not hold"
+  )
+}
+
+/// Evaluate a cubic spline at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalCubicSpline(x:coeffs:xNew:extrapolate:)``:
+/// it returns the same best-effort value wrapped in a ``Diagnosed`` so a caller
+/// can detect when the query point lies outside `[x[0], x[n-1]]`. Inside the knot
+/// range the returned ``Diagnosed/diagnostics`` is empty; outside it carries a
+/// single ``NumericDiagnostic/outsideEnvelope(method:reason:)``. The bare
+/// evaluator is unchanged and remains the right call when extrapolation is
+/// intended and the warning is unwanted.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - coeffs: Spline coefficients from ``computeSplineCoeffs(x:y:bc:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalCubicSplineDiagnosed(
+  x: [Double], coeffs: [CubicCoeffs], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalCubicSpline(x: x, coeffs: coeffs, xNew: xNew, extrapolate: true)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "cubicSpline", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
+
+/// Evaluate PCHIP at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalPchip(x:y:d:xNew:)`` — see
+/// ``evalCubicSplineDiagnosed(x:coeffs:xNew:)`` for the envelope contract.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - y: Sample ordinates.
+///   - d: PCHIP derivatives from ``computePchipDerivatives(x:y:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalPchipDiagnosed(
+  x: [Double], y: [Double], d: [Double], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalPchip(x: x, y: y, d: d, xNew: xNew)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "pchip", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
+
+/// Evaluate Akima interpolation at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalAkima(x:coeffs:xNew:)`` — see
+/// ``evalCubicSplineDiagnosed(x:coeffs:xNew:)`` for the envelope contract.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - coeffs: Akima coefficients from ``computeAkimaCoeffs(x:y:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalAkimaDiagnosed(
+  x: [Double], coeffs: [CubicCoeffs], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalAkima(x: x, coeffs: coeffs, xNew: xNew)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "akima", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
+}
+
+/// Evaluate barycentric interpolation at `xNew`, reporting an extrapolation diagnostic.
+///
+/// Additive, source-compatible companion to ``evalBarycentric(x:y:w:xNew:)`` —
+/// see ``evalCubicSplineDiagnosed(x:coeffs:xNew:)`` for the envelope contract.
+/// Barycentric (global polynomial) extrapolation is especially unreliable — the
+/// Runge phenomenon makes values past the endpoints diverge rapidly — so the
+/// diagnostic is particularly important here.
+///
+/// - Parameters:
+///   - x: Knot abscissae (sorted, strictly increasing).
+///   - y: Sample ordinates.
+///   - w: Barycentric weights from ``computeBarycentricWeights(x:)``.
+///   - xNew: Query point.
+/// - Returns: The interpolated value with an extrapolation diagnostic when out of range.
+public func evalBarycentricDiagnosed(
+  x: [Double], y: [Double], w: [Double], xNew: Double
+) -> Diagnosed<Double> {
+  let value = evalBarycentric(x: x, y: y, w: w, xNew: xNew)
+  if interpQueryOutsideKnots(x, xNew) {
+    return Diagnosed(value, diagnostics: [interpExtrapolationDiagnostic(method: "barycentric", x: x, xNew: xNew)])
+  }
+  return Diagnosed(value)
 }

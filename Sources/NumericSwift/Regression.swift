@@ -13,7 +13,7 @@ import Foundation
 // MARK: - OLS Regression Result
 
 /// Result of OLS/WLS regression.
-public struct OLSResult {
+public struct OLSResult: Sendable {
   // Per-parameter metrics
   /// Estimated coefficients.
   public let params: [Double]
@@ -89,6 +89,132 @@ public struct OLSResult {
   public let conditionNumber: Double
   /// Eigenvalues of X'X.
   public let eigenvalues: [Double]
+
+  /// Workbench diagnostics for this regression result.
+  ///
+  /// Empty by default. Populated by the workbench detection layer (wave 2) with
+  /// entries such as ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when
+  /// the design matrix is ill-conditioned beyond the declared envelope, or
+  /// ``NumericDiagnostic/precisionDegraded(method:approxDigits:)`` when
+  /// the OLS normal-equation solve loses significant digits.
+  public let diagnostics: [NumericDiagnostic]
+
+  // swiftlint:disable:next function_parameter_count
+  public init(
+    params: [Double],
+    bse: [Double],
+    tvalues: [Double],
+    pvalues: [Double],
+    confInt: [[Double]],
+    bseHC0: [Double],
+    bseHC1: [Double],
+    bseHC2: [Double],
+    bseHC3: [Double],
+    bseHC4: [Double],
+    bseHC5: [Double],
+    residuals: [Double],
+    fittedValues: [Double],
+    hatDiag: [Double],
+    studentizedResiduals: [Double],
+    cooksDistance: [Double],
+    dffits: [Double],
+    rsquared: Double,
+    rsquaredAdj: Double,
+    fvalue: Double,
+    fPvalue: Double,
+    llf: Double,
+    aic: Double,
+    bic: Double,
+    ssr: Double,
+    ess: Double,
+    mse: Double,
+    tss: Double,
+    nobs: Int,
+    dfModel: Int,
+    dfResid: Int,
+    conditionNumber: Double,
+    eigenvalues: [Double],
+    diagnostics: [NumericDiagnostic] = []
+  ) {
+    self.params = params
+    self.bse = bse
+    self.tvalues = tvalues
+    self.pvalues = pvalues
+    self.confInt = confInt
+    self.bseHC0 = bseHC0
+    self.bseHC1 = bseHC1
+    self.bseHC2 = bseHC2
+    self.bseHC3 = bseHC3
+    self.bseHC4 = bseHC4
+    self.bseHC5 = bseHC5
+    self.residuals = residuals
+    self.fittedValues = fittedValues
+    self.hatDiag = hatDiag
+    self.studentizedResiduals = studentizedResiduals
+    self.cooksDistance = cooksDistance
+    self.dffits = dffits
+    self.rsquared = rsquared
+    self.rsquaredAdj = rsquaredAdj
+    self.fvalue = fvalue
+    self.fPvalue = fPvalue
+    self.llf = llf
+    self.aic = aic
+    self.bic = bic
+    self.ssr = ssr
+    self.ess = ess
+    self.mse = mse
+    self.tss = tss
+    self.nobs = nobs
+    self.dfModel = dfModel
+    self.dfResid = dfResid
+    self.conditionNumber = conditionNumber
+    self.eigenvalues = eigenvalues
+    self.diagnostics = diagnostics
+  }
+}
+
+// MARK: - Regression limitation envelopes (self-awareness)
+
+/// The design-matrix condition-number ceiling beyond which a regression fit is
+/// declared *outside its accuracy envelope* (multicollinearity / ill-conditioning).
+///
+/// OLS/WLS/GLM all solve a system governed by the design matrix `X`. The
+/// estimated coefficients lose roughly `log10(cond(X))` significant digits to the
+/// conditioning of `X`. Near-perfect collinearity drives `cond(X)` toward
+/// infinity, so the coefficients become dominated by round-off and are no longer
+/// trustworthy — statsmodels surfaces the same regime through its
+/// `condition_number` diagnostic and a large-`cond` warning.
+///
+/// The threshold `1e10` sits inside the `1e10–1e12` band recommended for the
+/// design-matrix condition number (the *square root* of the `X'X` condition
+/// number ceiling used by the linear-system solvers, ``LinAlg/solveConditionEnvelope``):
+/// past it, fewer than ~6 of a `Double`'s ~16 significant digits survive. The
+/// reported `conditionNumber` field of ``OLSResult`` is `cond(X) = sqrt(cond(X'X))`,
+/// so the comparison is apples-to-apples.
+///
+/// - Note: This gate flags *near-degeneracy*, not the *moderate* multicollinearity
+///   statsmodels warns about. statsmodels reports `cond(X'X)` and calls a value
+///   `> ~1000` "strong" — which is only `cond(X) ≈ 31`. By design this envelope is
+///   far more permissive: moderate collinearity (`cond(X)` ≈ 10³–10⁹) is left to
+///   the caller's judgement (inspect ``OLSResult/conditionNumber`` directly), and
+///   only an essentially-degenerate design trips the diagnostic.
+public let regressionConditionEnvelope: Double = 1e10
+
+/// Build the multicollinearity / ill-conditioning diagnostic for a design matrix
+/// whose condition number exceeds ``regressionConditionEnvelope``, or `nil` when
+/// the design is inside the envelope.
+///
+/// `conditionNumber` is `cond(X) = sqrt(cond(X'X))` as computed from the
+/// eigenvalues of `X'WX`; an exactly rank-deficient design yields `+inf` and
+/// trips the diagnostic.
+internal func collinearityDiagnostic(method: String, conditionNumber: Double) -> NumericDiagnostic? {
+  guard conditionNumber > regressionConditionEnvelope else { return nil }
+  return .outsideEnvelope(
+    method: method,
+    reason: "design matrix is ill-conditioned / multicollinear (cond ≈ \(conditionNumber)) "
+      + "— exceeds the cond ≤ \(regressionConditionEnvelope) accuracy envelope; "
+      + "the estimated coefficients may be dominated by round-off and unreliable"
+  )
 }
 
 // MARK: - OLS/WLS Regression
@@ -107,10 +233,25 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
   let k = X.first?.count ?? 0
   guard k > 0, n > k else { return nil }
 
+  // Reject ragged design matrices: every observation row must have k columns,
+  // otherwise the XWork[i][j] / X[i][j] indexing below traps on a short row.
+  guard X.allSatisfy({ $0.count == k }) else { return nil }
+
+  // Weights, if provided, must match n and be finite & non-negative. WLS forms
+  // √w (line below); a negative or non-finite weight yields NaN that silently
+  // poisons LAPACK, and a wrong-length array would otherwise be skipped for the
+  // fit yet still indexed for the statistics (`w[i]`, line ~321) — an
+  // inconsistent / trapping mix. Reject up front so fit and statistics agree.
+  if let weights {
+    guard weights.count == n,
+      weights.allSatisfy({ $0.isFinite && $0 >= 0 })
+    else { return nil }
+  }
+
   // Apply weights if provided (WLS)
   var yWork = y
   var XWork = X
-  if let w = weights, w.count == n {
+  if let w = weights {
     for i in 0..<n {
       let sqrtW = Darwin.sqrt(w[i])
       yWork[i] *= sqrtW
@@ -467,6 +608,15 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
     bseHC5 = computeHCStdErrors(omega: omegaHC5)
   }
 
+  // Self-awareness: an ill-conditioned / multicollinear design matrix is the
+  // OLS out-of-envelope regime (WORKBENCH.md §5). The diagnostic gate uses the
+  // robust SVD-based cond(X) (``designConditionNumber``) rather than the reported
+  // `conditionNumber` field — the latter's sqrt(cond(X'X)) estimate collapses for
+  // near-collinear designs once X'X squares the condition number past the
+  // eigen-solver's resolution.
+  let olsDiagnostics = collinearityDiagnostic(
+    method: "ols", conditionNumber: designConditionNumber(X)).map { [$0] } ?? []
+
   return OLSResult(
     params: params,
     bse: bse,
@@ -500,7 +650,8 @@ public func ols(_ y: [Double], _ X: [[Double]], weights: [Double]? = nil) -> OLS
     dfModel: dfModel,
     dfResid: dfResid,
     conditionNumber: conditionNumber,
-    eigenvalues: eigenvalues
+    eigenvalues: eigenvalues,
+    diagnostics: olsDiagnostics
   )
 }
 
@@ -535,7 +686,7 @@ public enum GLMLink: String {
 }
 
 /// Result of GLM fitting.
-public struct GLMResult {
+public struct GLMResult: Sendable {
   /// Estimated coefficients.
   public let params: [Double]
   /// Standard errors.
@@ -572,6 +723,56 @@ public struct GLMResult {
   public let converged: Bool
   /// Number of iterations.
   public let iterations: Int
+  /// Workbench diagnostics for this GLM result.
+  ///
+  /// Empty by default. Populated by the workbench detection layer (wave 2) with
+  /// entries such as ``NumericDiagnostic/nonConvergence(method:reason:)`` when
+  /// IRLS exhausts its iteration budget, or
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` for inputs outside the
+  /// declared GLM family envelope.
+  public let diagnostics: [NumericDiagnostic]
+
+  public init(
+    params: [Double],
+    bse: [Double],
+    zvalues: [Double],
+    pvalues: [Double],
+    mu: [Double],
+    eta: [Double],
+    residResponse: [Double],
+    deviance: Double,
+    nullDeviance: Double,
+    pearsonChi2: Double,
+    llf: Double,
+    aic: Double,
+    bic: Double,
+    nobs: Int,
+    dfModel: Int,
+    dfResid: Int,
+    converged: Bool,
+    iterations: Int,
+    diagnostics: [NumericDiagnostic] = []
+  ) {
+    self.params = params
+    self.bse = bse
+    self.zvalues = zvalues
+    self.pvalues = pvalues
+    self.mu = mu
+    self.eta = eta
+    self.residResponse = residResponse
+    self.deviance = deviance
+    self.nullDeviance = nullDeviance
+    self.pearsonChi2 = pearsonChi2
+    self.llf = llf
+    self.aic = aic
+    self.bic = bic
+    self.nobs = nobs
+    self.dfModel = dfModel
+    self.dfResid = dfResid
+    self.converged = converged
+    self.iterations = iterations
+    self.diagnostics = diagnostics
+  }
 }
 
 /// Fit Generalized Linear Model using IRLS.
@@ -597,6 +798,9 @@ public func glm(
 
   let k = X.first?.count ?? 0
   guard k > 0, n > k else { return nil }
+
+  // Reject ragged design matrices: the IRLS loop indexes X[i][j] for j in 0..<k.
+  guard X.allSatisfy({ $0.count == k }) else { return nil }
 
   // Use canonical link if not specified
   let actualLink: GLMLink
@@ -730,6 +934,23 @@ public func glm(
   let aic = -2.0 * llf + 2.0 * Double(k)
   let bic = -2.0 * llf + Double(k) * Darwin.log(Double(n))
 
+  // Self-awareness (WORKBENCH.md §5). Two out-of-envelope regimes for GLM:
+  //   1. IRLS exhausted its iteration budget without converging — the returned
+  //      coefficients are the last (non-converged) iterate.
+  //   2. The design matrix is ill-conditioned / multicollinear beyond the
+  //      regression condition envelope.
+  var glmDiagnostics: [NumericDiagnostic] = []
+  if !converged {
+    glmDiagnostics.append(.nonConvergence(
+      method: "glm",
+      reason: "IRLS did not converge within maxiter=\(maxiter) iterations (\(family.rawValue) family); "
+        + "the returned coefficients are the last iterate"))
+  }
+  if let collinear = collinearityDiagnostic(
+    method: "glm", conditionNumber: designConditionNumber(X)) {
+    glmDiagnostics.append(collinear)
+  }
+
   return GLMResult(
     params: beta,
     bse: bse,
@@ -748,11 +969,38 @@ public func glm(
     dfModel: dfModel,
     dfResid: dfResid,
     converged: converged,
-    iterations: iterations
+    iterations: iterations,
+    diagnostics: glmDiagnostics
   )
 }
 
 // MARK: - Helper Functions
+
+/// The SVD-based 2-norm condition number `cond(X)` of a design matrix `X`.
+///
+/// This is the *robust* condition estimate used to drive the multicollinearity
+/// self-awareness check (the ``collinearityDiagnostic(method:conditionNumber:)``
+/// gate). It is computed directly from the singular values of `X` via
+/// ``LinAlg/cond(_:)`` (LAPACK `dgesvd`), NOT from the eigenvalues of `X'X`:
+/// forming `X'X` squares the condition number, so for a design with `cond(X)`
+/// already near `1e8` the smallest `X'X` eigenvalue underflows the eigen-solver's
+/// resolution and the `sqrt(cond(X'X))` estimate collapses to a spuriously small
+/// value. Working on `X` directly avoids that loss and returns `+inf` for an
+/// exactly rank-deficient design.
+///
+/// The reported `OLSResult.conditionNumber` field keeps its `sqrt(cond(X'X))`
+/// definition for statsmodels parity; this helper is only the diagnostic gate.
+internal func designConditionNumber(_ X: [[Double]]) -> Double {
+  let n = X.count
+  guard n > 0, let k = X.first?.count, k > 0 else { return .infinity }
+  var flat = [Double](repeating: 0.0, count: n * k)
+  for i in 0..<n {
+    let row = X[i]
+    guard row.count == k else { return .infinity }
+    for j in 0..<k { flat[i * k + j] = row[j] }
+  }
+  return LinAlg.cond(LinAlg.Matrix(rows: n, cols: k, data: flat))
+}
 
 /// Detect whether a design matrix contains a constant (intercept) column,
 /// following statsmodels' `k_constant` rule: a column whose entries are all
@@ -1071,7 +1319,7 @@ public func addConstant(_ x: [Double]) -> [[Double]] {
 // MARK: - ARIMA (AutoRegressive Integrated Moving Average)
 
 /// Result of ARIMA model fitting.
-public struct ARIMAResult {
+public struct ARIMAResult: Sendable {
   /// AR coefficients.
   public let arParams: [Double]
   /// MA coefficients.
@@ -1104,6 +1352,52 @@ public struct ARIMAResult {
   public let original: [Double]
   /// Order (p, d, q).
   public let order: (p: Int, d: Int, q: Int)
+  /// Workbench diagnostics for this ARIMA result.
+  ///
+  /// Empty by default. Populated by the workbench detection layer (wave 2) with
+  /// entries such as ``NumericDiagnostic/nonConvergence(method:reason:)`` when CSS
+  /// estimation does not converge within `maxiter`, or
+  /// ``NumericDiagnostic/outsideEnvelope(method:reason:)`` when the series is too
+  /// short relative to the requested (p, d, q) order.
+  public let diagnostics: [NumericDiagnostic]
+
+  public init(
+    arParams: [Double],
+    maParams: [Double],
+    arBse: [Double],
+    maBse: [Double],
+    residuals: [Double],
+    fittedValues: [Double],
+    yDiff: [Double],
+    sigma2: Double,
+    llf: Double,
+    aic: Double,
+    bic: Double,
+    nobs: Int,
+    converged: Bool,
+    iterations: Int,
+    original: [Double],
+    order: (p: Int, d: Int, q: Int),
+    diagnostics: [NumericDiagnostic] = []
+  ) {
+    self.arParams = arParams
+    self.maParams = maParams
+    self.arBse = arBse
+    self.maBse = maBse
+    self.residuals = residuals
+    self.fittedValues = fittedValues
+    self.yDiff = yDiff
+    self.sigma2 = sigma2
+    self.llf = llf
+    self.aic = aic
+    self.bic = bic
+    self.nobs = nobs
+    self.converged = converged
+    self.iterations = iterations
+    self.original = original
+    self.order = order
+    self.diagnostics = diagnostics
+  }
 }
 
 /// Fit ARIMA(p, d, q) model using CSS (Conditional Sum of Squares).
@@ -1122,6 +1416,10 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
   let originalN = y.count
   guard originalN > 2 else { return nil }
 
+  // Negative orders are invalid: a negative `d` makes `0..<d` an invalid range and
+  // a negative `p`/`q` allocates an array with a negative count — both trap. Reject.
+  guard p >= 0, d >= 0, q >= 0, maxiter >= 0 else { return nil }
+
   // Apply differencing
   var yDiff = y
   for _ in 0..<d {
@@ -1136,66 +1434,73 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
   let n = yDiff.count
   guard n > max(p, q) else { return nil }
 
-  // Initialize parameters
+  // Parameter arrays; overwritten by the estimation step below.
   var arParams = [Double](repeating: 0.0, count: p)
   var maParams = [Double](repeating: 0.0, count: q)
 
-  // Initialize AR params with small values
-  for i in 0..<p {
-    arParams[i] = 0.1 / Double(i + 1)
-  }
-
-  // CSS estimation using iterative refinement
+  // CSS estimation: minimise Q(phi, theta) = sum_{t=start}^{n} e_t^2 jointly.
+  //
+  // When q > 0, estimating AR on raw y while ignoring MA dynamics produces biased
+  // AR parameters (issue #10).  We fix this with the Hannan-Rissanen two-step
+  // estimator followed by iterated linear regression (backfitting), which converges
+  // to the CSS minimiser without requiring a nonlinear solver:
+  //
+  //   Step 1 — pre-filter: fit a long AR(m) (m = min(n/4, max(p,q)+10)) to obtain
+  //            approximate innovations e_hat.
+  //   Step 2 — joint OLS: regress y on [y_{t-1}…y_{t-p}, e_{t-1}…e_{t-q}] to
+  //            get initial AR and MA estimates.
+  //   Step 3 — iterate: re-compute residuals from current params and repeat OLS
+  //            until convergence (Cochrane-Orcutt-style).
+  //
+  // Reference: Hannan & Rissanen (1982), Biometrika 69(1); also Hamilton (1994),
+  //            "Time Series Analysis", §5.3.
   var converged = false
   var iterations = 0
 
-  for iter in 0..<maxiter {
-    iterations = iter + 1
+  if p == 0 && q == 0 {
+    converged = true
+    iterations = 1
+  } else if q == 0 {
+    // Pure AR: OLS on lagged y is exact and unbiased.
+    for iter in 0..<maxiter {
+      iterations = iter + 1
+      guard let newAR = estimateARParams(y: yDiff, p: p) else { break }
+      var maxChange = 0.0
+      for i in 0..<p { maxChange = max(maxChange, abs(newAR[i] - arParams[i])) }
+      arParams = newAR
+      if maxChange < tol { converged = true; break }
+    }
+  } else {
+    // Mixed AR+MA or pure MA: Hannan-Rissanen initialisation followed by iterated
+    // joint OLS backfitting.
 
-    // Compute residuals with current parameters
-    var resid = computeARMAResiduals(y: yDiff, ar: arParams, ma: maParams)
-
-    // Update AR parameters using least squares
-    if p > 0 {
-      if let newParams = estimateARParams(y: yDiff, p: p) {
-        var maxChange = 0.0
-        for i in 0..<p {
-          let change = abs(newParams[i] - arParams[i])
-          if change > maxChange { maxChange = change }
-        }
-        arParams = newParams
-
-        // Recompute residuals with updated AR
-        resid = computeARMAResiduals(y: yDiff, ar: arParams, ma: maParams)
-
-        if maxChange < tol && q == 0 {
-          converged = true
-          break
-        }
-      }
+    // Step 1: fit a long auxiliary AR to get approximate innovations.
+    let auxiliaryAROrder = min(n / 4, max(p, q) + 10)
+    let auxResid: [Double]
+    if auxiliaryAROrder > 0, let auxAR = estimateARParams(y: yDiff, p: auxiliaryAROrder) {
+      auxResid = computeARMAResiduals(y: yDiff, ar: auxAR, ma: [])
+    } else {
+      auxResid = [Double](repeating: 0.0, count: n)
     }
 
-    // Update MA parameters using innovations algorithm approximation
-    if q > 0 {
-      if let newParams = estimateMAParams(resid: resid, q: q) {
-        var maxChange = 0.0
-        for j in 0..<q {
-          let change = abs(newParams[j] - maParams[j])
-          if change > maxChange { maxChange = change }
-        }
-        maParams = newParams
-
-        if maxChange < tol {
-          converged = true
-          break
-        }
-      }
+    // Step 2: joint OLS of y on [lagged y, lagged aux-residuals].
+    if let initialParams = estimateARMAParamsJointOLS(y: yDiff, auxResid: auxResid, p: p, q: q) {
+      arParams = Array(initialParams[0..<p])
+      maParams = Array(initialParams[p..<(p + q)])
     }
 
-    // Check overall convergence
-    if p == 0 && q == 0 {
-      converged = true
-      break
+    // Step 3: iterate — recompute innovations, re-run joint OLS.
+    for iter in 0..<maxiter {
+      iterations = iter + 1
+      let resid = computeARMAResiduals(y: yDiff, ar: arParams, ma: maParams)
+      guard let newParams = estimateARMAParamsJointOLS(y: yDiff, auxResid: resid, p: p, q: q)
+      else { break }
+      var maxChange = 0.0
+      for i in 0..<p { maxChange = max(maxChange, abs(newParams[i] - arParams[i])) }
+      for j in 0..<q { maxChange = max(maxChange, abs(newParams[p + j] - maParams[j])) }
+      arParams = Array(newParams[0..<p])
+      maParams = Array(newParams[p..<(p + q)])
+      if maxChange < tol { converged = true; break }
     }
   }
 
@@ -1246,6 +1551,30 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
     maBse[j] = baseSE
   }
 
+  // Self-awareness (WORKBENCH.md §5). Two out-of-envelope regimes for ARIMA:
+  //   1. The differenced series is too short relative to the requested order —
+  //      CSS estimation needs comfortably more effective observations than free
+  //      parameters. We require validCount ≥ 3·(p+q) + 1 (the conventional
+  //      "≥ a few times the parameter count" rule of thumb); below that, the
+  //      estimates are unidentified / dominated by noise even though a finite
+  //      value is returned.
+  //   2. CSS estimation did not converge within `maxiter`.
+  var arimaDiagnostics: [NumericDiagnostic] = []
+  let minEffectiveObs = 3 * (p + q) + 1
+  if validCount < minEffectiveObs {
+    arimaDiagnostics.append(.outsideEnvelope(
+      method: "arima",
+      reason: "series too short for ARIMA(\(p),\(d),\(q)): \(validCount) effective observation(s) "
+        + "after differencing for \(p + q) parameter(s) — need ≥ \(minEffectiveObs); "
+        + "the estimated coefficients are unidentified and unreliable"))
+  }
+  if !converged {
+    arimaDiagnostics.append(.nonConvergence(
+      method: "arima",
+      reason: "CSS estimation did not converge within maxiter=\(maxiter) iterations; "
+        + "the returned coefficients are the last iterate"))
+  }
+
   return ARIMAResult(
     arParams: arParams,
     maParams: maParams,
@@ -1262,7 +1591,8 @@ public func arima(_ y: [Double], p: Int, d: Int, q: Int, maxiter: Int = 100, tol
     converged: converged,
     iterations: iterations,
     original: y,
-    order: (p, d, q)
+    order: (p, d, q),
+    diagnostics: arimaDiagnostics
   )
 }
 
@@ -1440,6 +1770,44 @@ private func computeARMAResiduals(y: [Double], ar: [Double], ma: [Double]) -> [D
   return resid
 }
 
+/// Estimate AR and MA parameters jointly via OLS using pre-computed innovations.
+///
+/// Constructs a design matrix whose columns are lagged `y` values (for the AR part)
+/// and lagged `auxResid` values (for the MA part), then solves for all p+q
+/// coefficients in one OLS step.  This is the core step of the Hannan-Rissanen
+/// estimator: when `auxResid` are the true innovations, the estimator is consistent;
+/// iterated with the residuals from the previous round it converges to CSS.
+///
+/// Returns a flat array [phi_1, …, phi_p, theta_1, …, theta_q], or nil if OLS fails.
+///
+/// Reference: Hannan & Rissanen (1982), Biometrika 69(1); Hamilton (1994) §5.3.
+private func estimateARMAParamsJointOLS(
+  y: [Double], auxResid: [Double], p: Int, q: Int
+) -> [Double]? {
+  let n = y.count
+  let k = p + q
+  guard k > 0 else { return [] }
+  let startRow = max(p, q)
+  let nEff = n - startRow
+  guard nEff > k else { return nil }
+
+  // Build design matrix: each row t contains [y_{t-1}…y_{t-p}, e_{t-1}…e_{t-q}].
+  var X = [[Double]](repeating: [Double](repeating: 0.0, count: k), count: nEff)
+  var yTarget = [Double](repeating: 0.0, count: nEff)
+
+  for row in 0..<nEff {
+    let t = row + startRow
+    yTarget[row] = y[t]
+    for i in 0..<p { X[row][i] = y[t - i - 1] }
+    for j in 0..<q {
+      let idx = t - j - 1
+      X[row][p + j] = idx >= 0 ? auxResid[idx] : 0.0
+    }
+  }
+
+  return solveSimpleOLS(X: X, y: yTarget)
+}
+
 /// Estimate AR parameters using OLS on lagged values.
 private func estimateARParams(y: [Double], p: Int) -> [Double]? {
   let n = y.count
@@ -1462,37 +1830,6 @@ private func estimateARParams(y: [Double], p: Int) -> [Double]? {
 
   // Solve using OLS
   return solveSimpleOLS(X: X, y: yTarget)
-}
-
-/// Estimate MA parameters using autocorrelation matching.
-private func estimateMAParams(resid: [Double], q: Int) -> [Double]? {
-  let n = resid.count
-  guard q > 0 && n > q else { return nil }
-
-  var maParams = [Double](repeating: 0.0, count: q)
-
-  // Compute autocorrelations of residuals
-  var gamma = [Double](repeating: 0.0, count: q + 1)
-  for lag in 0...q {
-    var sum = 0.0
-    var count = 0
-    for t in lag..<n {
-      sum += resid[t] * resid[t - lag]
-      count += 1
-    }
-    gamma[lag] = count > 0 ? sum / Double(count) : 0.0
-  }
-
-  // Simple estimation: theta_j ≈ -gamma[j] / gamma[0]
-  if abs(gamma[0]) > 1e-10 {
-    for j in 0..<q {
-      maParams[j] = -gamma[j + 1] / gamma[0]
-      // Bound to ensure invertibility
-      maParams[j] = max(-0.99, min(0.99, maParams[j]))
-    }
-  }
-
-  return maParams
 }
 
 /// Simple OLS solver for ARIMA.

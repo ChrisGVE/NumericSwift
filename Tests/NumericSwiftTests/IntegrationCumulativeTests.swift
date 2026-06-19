@@ -84,13 +84,24 @@ final class IntegrationCumulativeTests: XCTestCase {
   }
 
   func testCumulativeSimpsonQuadratic() {
-    // y = x^2 on [0, 4] with dx=1: Simpson should be exact for quadratics
-    // Integral of x^2 from 0 to k = k^3/3
+    // y = x^2 on [0, 4] with dx=1: Simpson is EXACT for quadratics. Cumulative
+    // integral of x^2 from 0 to k = k^3/3, at every point (not just the last).
     let y = [0.0, 1.0, 4.0, 9.0, 16.0]
     let result = cumulativeSimpson(y, dx: 1.0)
     XCTAssertEqual(result.count, 4)
-    // Last value should be close to 64/3 ≈ 21.333...
-    XCTAssertEqual(result[3], 64.0 / 3.0, accuracy: 0.5)
+    XCTAssertEqual(result[0], 1.0 / 3.0, accuracy: 1e-12)   // ∫₀¹
+    XCTAssertEqual(result[1], 8.0 / 3.0, accuracy: 1e-12)   // ∫₀²
+    XCTAssertEqual(result[2], 9.0, accuracy: 1e-12)         // ∫₀³ = 27/3
+    XCTAssertEqual(result[3], 64.0 / 3.0, accuracy: 1e-12)  // ∫₀⁴
+  }
+
+  /// Minimal 3-point quadratic: y = x^2 at x = 0,1,2 must integrate to the exact
+  /// Simpson value 8/3, not the trapezoidal 3.0 the previous implementation gave.
+  func testCumulativeSimpsonThreePointQuadratic() {
+    let result = cumulativeSimpson([0.0, 1.0, 4.0], dx: 1.0)
+    XCTAssertEqual(result.count, 2)
+    XCTAssertEqual(result[0], 1.0 / 3.0, accuracy: 1e-12)
+    XCTAssertEqual(result[1], 8.0 / 3.0, accuracy: 1e-12)
   }
 
   func testCumulativeSimpsonTooFewPoints() {

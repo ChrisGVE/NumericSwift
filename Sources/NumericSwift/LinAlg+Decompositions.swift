@@ -107,8 +107,12 @@ extension LinAlg {
     /// Singular Value Decomposition.
     ///
     /// - Parameter m: Matrix (m×n)
-    /// - Returns: (s, U, Vt) where U @ diag(s) @ Vt = m
-    public static func svd(_ m: Matrix) -> (s: [Double], U: Matrix, Vt: Matrix) {
+    /// - Returns: (s, U, Vt) where U @ diag(s) @ Vt = m, or `nil` when the LAPACK
+    ///   driver (`dgesvd`) fails to converge. Per the ``LinAlgError`` contract,
+    ///   a numerical no-answer on well-formed input is modelled as `nil` rather
+    ///   than a thrown error; returning the partially-filled buffers as if they
+    ///   were a valid factorization would be silently wrong.
+    public static func svd(_ m: Matrix) -> (s: [Double], U: Matrix, Vt: Matrix)? {
         let minDim = min(m.rows, m.cols)
 
         var a = toColumnMajor(m)
@@ -139,6 +143,11 @@ extension LinAlg {
         var lda2 = __CLPK_integer(m.rows)
         dgesvd_(&jobu, &jobvt, &m2, &n2, &a, &lda2, &s, &u, &ldu, &vt, &ldvt, &work, &lwork, &info)
 
+        // info > 0: superdiagonals of an intermediate bidiagonal form did not
+        // converge; info < 0: illegal argument. Either way s/u/vt are not a valid
+        // factorization — signal failure rather than return garbage.
+        guard info == 0 else { return nil }
+
         var U = [Double](repeating: 0, count: m.rows * m.rows)
         for i in 0..<m.rows {
             for j in 0..<m.rows {
@@ -160,9 +169,11 @@ extension LinAlg {
     /// Eigenvalue decomposition.
     ///
     /// - Parameter m: Square matrix
-    /// - Returns: (eigenvalues, imagParts, eigenvectors)
+    /// - Returns: (eigenvalues, imagParts, eigenvectors), or `nil` when the LAPACK
+    ///   driver (`dgeev`) fails to converge (a numerical no-answer on well-formed
+    ///   input, per the ``LinAlgError`` contract).
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
-    public static func eig(_ m: Matrix) throws -> (values: [Double], imagParts: [Double], vectors: Matrix) {
+    public static func eig(_ m: Matrix) throws -> (values: [Double], imagParts: [Double], vectors: Matrix)? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
@@ -193,6 +204,10 @@ extension LinAlg {
         var lda2 = __CLPK_integer(n)
         dgeev_(&jobvl, &jobvr, &n2, &a, &lda2, &wr, &wi, &vl, &ldvl, &vr, &ldvr, &work, &lwork, &info)
 
+        // info != 0: the QR algorithm failed to compute all eigenvalues (info > 0)
+        // or an argument was illegal (info < 0). wr/wi/vr are not trustworthy.
+        guard info == 0 else { return nil }
+
         var vecs = [Double](repeating: 0, count: n * n)
         for i in 0..<n {
             for j in 0..<n {
@@ -204,8 +219,10 @@ extension LinAlg {
     }
 
     /// Eigenvalues only (more efficient than full decomposition).
+    /// - Returns: (real, imag) eigenvalue parts, or `nil` when the LAPACK driver
+    ///   (`dgeev`) fails to converge.
     /// - Throws: ``LinAlgError/notSquare(rows:cols:)`` when `m` is not square.
-    public static func eigvals(_ m: Matrix) throws -> (real: [Double], imag: [Double]) {
+    public static func eigvals(_ m: Matrix) throws -> (real: [Double], imag: [Double])? {
         guard m.rows == m.cols else { throw LinAlgError.notSquare(rows: m.rows, cols: m.cols) }
         let n = m.rows
 
@@ -235,6 +252,10 @@ extension LinAlg {
         var n2 = __CLPK_integer(n)
         var lda2 = __CLPK_integer(n)
         dgeev_(&jobvl, &jobvr, &n2, &a, &lda2, &wr, &wi, &vl, &ldvl, &vr, &ldvr, &work, &lwork, &info)
+
+        // info != 0: QR algorithm did not converge (info > 0) or illegal argument
+        // (info < 0); the eigenvalue arrays are not trustworthy.
+        guard info == 0 else { return nil }
 
         return (wr, wi)
     }

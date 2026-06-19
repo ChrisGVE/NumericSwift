@@ -324,6 +324,150 @@ final class SizeCapTests: XCTestCase {
     }
 
     // -------------------------------------------------------------------------
+    // MARK: - complexMatmul peak working-set cap (MF-5 / §5, Issue #13)
+    //
+    // The real-block decomposition for CM*CM allocates four intermediate real
+    // matrices (Ar·Br, Ai·Bi, Ar·Bi, Ai·Br), each of shape (M×N), plus two
+    // output arrays (crData, ciData), also M×N each.  At peak, all six buffers
+    // are live simultaneously = 6× the logical result size.  To honour the
+    // spirit of the soft cap the admission check must bound the *peak working
+    // set*, not just the result shape.
+    //
+    // Design constraint (§4.8): "each individual allocation within cap" means
+    // the per-allocation check (result shape) is necessary but not sufficient.
+    // The cumulative-bounding check must prevent:
+    //   peakElements = resultElements * WORKING_SET_MULTIPLIER > cap
+    //
+    // WORKING_SET_MULTIPLIER = 6 (the true peak):
+    //   4 intermediate LinAlg.Matrix objects (each resultElements doubles)
+    //   + 2 output [Double] arrays (crData, ciData), each resultElements doubles,
+    //   all live simultaneously during the final vDSP combine passes = 6× peak.
+    //   Using the true peak (6) guarantees the admitted peak never exceeds the cap.
+    //
+    // Test strategy:
+    //   • Lower the soft cap so that a small but concrete result size triggers the
+    //     peak-working-set check without actually allocating large matrices.
+    //   • result fits individually (resultElements <= cap) but peak set does not
+    //     (resultElements * 6 > cap) → must throw.
+    //   • result fits even with peak multiplier → must not throw.
+    //   • Boundary cases: exactly at peak-scaled threshold → must not throw;
+    //     one over → must throw.
+    //   • vec·vec path (result is 1×1): always under cap since even 5×1 << cap.
+    //   • Rectangular matrix case.
+    // -------------------------------------------------------------------------
+
+    // Constructs a zero ComplexMatrix of given size from scalars.
+    private func zeroCM(rows: Int, cols: Int) -> LinAlg.ComplexMatrix {
+        let n = rows * cols
+        return LinAlg.ComplexMatrix(rows: rows, cols: cols,
+                                    real: [Double](repeating: 0, count: n),
+                                    imag: [Double](repeating: 0, count: n))
+    }
+
+    /// Result fits soft cap individually, but peak working set (5×) exceeds it → must throw.
+    func testComplexMatmulPeakWorkingSetExceedsCapThrows() throws {
+        // Set cap to 100 elements.
+        // Result shape: 10×10 = 100 — exactly at cap (passes individual check).
+        // Peak working set: 100 * 6 = 600 > 100 → must throw.
+        try LinAlg.setMaxEvaluatorMatrixElements(100)
+
+        // A square (10×10) × (10×10) complex matmul
+        let a = zeroCM(rows: 10, cols: 10)
+        let b = zeroCM(rows: 10, cols: 10)
+
+        XCTAssertThrowsError(
+            try NumericDispatch.complexMatmul(lhs: a, rhs: b)
+        ) { error in
+            guard case LinAlg.LinAlgError.invalidParameter? = error as? LinAlg.LinAlgError else {
+                XCTFail("expected LinAlgError.invalidParameter for peak-WS overflow, got \(error)")
+                return
+            }
+        }
+    }
+
+    /// Result well within cap including peak multiplier → must succeed.
+    func testComplexMatmulComfortablyUnderCapSucceeds() throws {
+        // cap = 10000, result 4×4 = 16, peak = 96 — both well under cap.
+        try LinAlg.setMaxEvaluatorMatrixElements(10_000)
+        let a = zeroCM(rows: 4, cols: 4)
+        let b = zeroCM(rows: 4, cols: 4)
+        // Should not throw
+        let result = try NumericDispatch.complexMatmul(lhs: a, rhs: b)
+        // 4×4 complexMatrix result (no 1×1 coercion)
+        if case .complexMatrix(let cm) = result {
+            XCTAssertEqual(cm.rows, 4)
+            XCTAssertEqual(cm.cols, 4)
+        } else {
+            XCTFail("expected .complexMatrix, got \(result)")
+        }
+    }
+
+    /// Peak working set exactly equal to the cap limit → must succeed (boundary inclusive).
+    func testComplexMatmulPeakAtCapBoundarySucceeds() throws {
+        // Set cap = 600.
+        // result = 10×10 = 100; peak = 100 * 6 = 600 == cap → must not throw.
+        try LinAlg.setMaxEvaluatorMatrixElements(600)
+        let a = zeroCM(rows: 10, cols: 10)
+        let b = zeroCM(rows: 10, cols: 10)
+        // Should succeed: peak == cap is accepted
+        _ = try NumericDispatch.complexMatmul(lhs: a, rhs: b)
+    }
+
+    /// Peak working set one over the cap limit → must throw.
+    func testComplexMatmulPeakOneOverCapThrows() throws {
+        // Set cap = 599.
+        // result = 10×10 = 100; peak = 100 * 6 = 600 > 599 → must throw.
+        try LinAlg.setMaxEvaluatorMatrixElements(599)
+        let a = zeroCM(rows: 10, cols: 10)
+        let b = zeroCM(rows: 10, cols: 10)
+        XCTAssertThrowsError(
+            try NumericDispatch.complexMatmul(lhs: a, rhs: b)
+        ) { error in
+            guard case LinAlg.LinAlgError.invalidParameter? = error as? LinAlg.LinAlgError else {
+                XCTFail("expected LinAlgError.invalidParameter, got \(error)")
+                return
+            }
+        }
+    }
+
+    /// Rectangular matmul: result fits but peak does not → throws.
+    func testComplexMatmulRectangularPeakExceedsCapThrows() throws {
+        // A (2×6) × (6×5) = result 2×5 = 10 elements.
+        // Set cap = 10; individual result fits (10 == cap), peak = 60 > 10 → throw.
+        try LinAlg.setMaxEvaluatorMatrixElements(10)
+        let a = zeroCM(rows: 2, cols: 6)
+        let b = zeroCM(rows: 6, cols: 5)
+        XCTAssertThrowsError(
+            try NumericDispatch.complexMatmul(lhs: a, rhs: b)
+        ) { error in
+            guard case LinAlg.LinAlgError.invalidParameter? = error as? LinAlg.LinAlgError else {
+                XCTFail("expected LinAlgError.invalidParameter for rectangular peak, got \(error)")
+                return
+            }
+        }
+    }
+
+    /// vec·vec dotProduct (1×N · N×1 = 1×1 result): always accepted even at tiny cap.
+    func testComplexVecDotProductAlwaysUnderCap() throws {
+        // vec·vec gives a 1×1 result (peak = 6 elements).
+        // The 1×1 result is coerced to .complex (scalar), not a 1×1 CM.
+        // The key contract: 1×1 result shape → peak = 6 elements.
+        // At cap=10 (>6): succeeds.
+        try LinAlg.setMaxEvaluatorMatrixElements(10)
+        let n = 3
+        let a = zeroCM(rows: n, cols: 1)  // n×1 column vector
+        let b = zeroCM(rows: n, cols: 1)  // n×1 column vector
+        // vec·vec: 1×1 result, peak = 6; 6 <= 10 → must succeed
+        let result = try NumericDispatch.complexMatmul(lhs: a, rhs: b)
+        // 1×1 is coerced to .complex by coerce1x1Complex
+        if case .complex(_) = result {
+            // correct coercion
+        } else {
+            XCTFail("expected 1×1 vec·dot to coerce to .complex, got \(result)")
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // MARK: - SEC-05: setter isolation from mathlex/Lua bridge
     // -------------------------------------------------------------------------
 

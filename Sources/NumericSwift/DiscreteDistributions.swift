@@ -43,8 +43,12 @@ public struct BernoulliDistribution {
   }
 
   /// Percent point function (inverse CDF). Returns smallest k such that cdf(k) >= q.
-  public func ppf(_ q: Double) -> Int {
-    precondition(q >= 0 && q <= 1, "BernoulliDistribution.ppf: q must be in [0, 1]")
+  ///
+  /// Out-of-domain `q` (NaN, `< 0`, or `> 1`) returns `nil` rather than trapping,
+  /// mirroring the continuous `ppf` NaN contract through the integer-typed
+  /// "no valid value" sentinel (`nil`, as `LinAlg.svd`/`eig`/`pinv` use in 0.3.0).
+  public func ppf(_ q: Double) -> Int? {
+    guard q.isFinite, q >= 0, q <= 1 else { return nil }
     return (q <= 1.0 - p) ? 0 : 1
   }
 
@@ -55,7 +59,8 @@ public struct BernoulliDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Int] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Distribution mean.
@@ -90,7 +95,7 @@ public struct BinomialDistribution {
     if p == 0.0 { return k == 0 ? 1.0 : 0.0 }
     if p == 1.0 { return k == n ? 1.0 : 0.0 }
     let logPmf =
-      Darwin.log(comb(n, k))
+      Darwin.log(NumberTheory.comb(n, k))
       + Double(k) * Darwin.log(p)
       + Double(n - k) * Darwin.log(1.0 - p)
     return Darwin.exp(logPmf)
@@ -104,8 +109,10 @@ public struct BinomialDistribution {
   }
 
   /// Percent point function: smallest k such that cdf(k) >= q.
-  public func ppf(_ q: Double) -> Int {
-    precondition(q >= 0 && q <= 1, "BinomialDistribution.ppf: q must be in [0, 1]")
+  ///
+  /// Out-of-domain `q` (NaN, `< 0`, or `> 1`) returns `nil` rather than trapping.
+  public func ppf(_ q: Double) -> Int? {
+    guard q.isFinite, q >= 0, q <= 1 else { return nil }
     if q <= 0 { return 0 }
     if q >= 1 { return n }
     var cumulative = 0.0
@@ -127,7 +134,8 @@ public struct BinomialDistribution {
 
   /// Generate count random variates.
   public func rvs(_ count: Int) -> [Int] {
-    (0..<count).map { _ in rvs() }
+    guard count > 0 else { return [] }
+    return (0..<count).map { _ in rvs() }
   }
 
   /// Distribution mean.
@@ -144,9 +152,15 @@ public struct PoissonDistribution {
   /// Expected number of events (rate parameter).
   public let mu: Double
 
-  /// - Parameter mu: Mean rate, must be > 0.
+  /// - Parameter mu: Mean rate, must be finite, > 0, and `<= 2^62`.
+  ///   The `2^62` bound keeps both `Int(mu)` (ppf) and the `Int(floor(...))` PTRS
+  ///   sample cast safe: `Double(Int.max)` rounds up to `2^63` (unrepresentable as
+  ///   Int), and the PTRS candidate can exceed `mu` by several·√mu, so the bound
+  ///   leaves ample headroom below `Int.max`. (M14: an out-of-domain parameter is a
+  ///   programmer error → precondition.)
   public init(mu: Double) {
-    precondition(mu > 0, "PoissonDistribution: mu must be positive, got \(mu)")
+    precondition(mu.isFinite && mu > 0 && mu <= Double(Int.max) / 2,
+      "PoissonDistribution: mu must be finite, positive, and <= 2^62, got \(mu)")
     self.mu = mu
   }
 
@@ -169,8 +183,10 @@ public struct PoissonDistribution {
   }
 
   /// Percent point function: smallest k such that cdf(k) >= q.
-  public func ppf(_ q: Double) -> Int {
-    precondition(q >= 0 && q <= 1, "PoissonDistribution.ppf: q must be in [0, 1]")
+  ///
+  /// Out-of-domain `q` (NaN, `< 0`, or `> 1`) returns `nil` rather than trapping.
+  public func ppf(_ q: Double) -> Int? {
+    guard q.isFinite, q >= 0, q <= 1 else { return nil }
     if q <= 0 { return 0 }
     // Start search from floor(mu) as initial approximation
     var k = max(0, Int(mu) - 1)
@@ -181,23 +197,54 @@ public struct PoissonDistribution {
     return k
   }
 
-  /// Single random variate using Knuth's algorithm (efficient for small mu).
+  /// Single random variate.
+  ///
+  /// Uses Knuth's multiplication method for small `mu` (`< 10`), where it is exact
+  /// and fast, and Hörmann's PTRS transformed-rejection method (1993) for `mu >= 10`.
+  /// Knuth's `exp(-mu)` threshold underflows to 0 for `mu` beyond ~745 (making the
+  /// loop run a fixed ~1075 iterations independent of `mu` — both wrong and O(mu)
+  /// slow); PTRS is O(1) and correct across the large-`mu` regime. This mirrors
+  /// numpy's `random_poisson` regime split.
   public func rvs() -> Int {
-    // For large mu, normal approximation seeded into integer search would be
-    // preferable, but Knuth's method is correct for all mu.
-    let threshold = Darwin.exp(-mu)
-    var k = 0
-    var product = Double.random(in: 0..<1)
-    while product > threshold {
-      k += 1
-      product *= Double.random(in: 0..<1)
+    if mu < 10 {
+      // Knuth: exact and efficient for small mu (no exp(-mu) underflow here).
+      let threshold = Darwin.exp(-mu)
+      var k = 0
+      var product = Double.random(in: 0..<1)
+      while product > threshold {
+        k += 1
+        product *= Double.random(in: 0..<1)
+      }
+      return k
     }
-    return k
+
+    // Hörmann's PTRS (Transformed Rejection with Squeeze).
+    let logMu = Darwin.log(mu)
+    let smu = Darwin.sqrt(mu)
+    let b = 0.931 + 2.53 * smu
+    let a = -0.059 + 0.02483 * b
+    let invAlpha = 1.1239 + 1.1328 / (b - 3.4)
+    let vr = 0.9277 - 3.6224 / (b - 2.0)
+
+    while true {
+      let u = Double.random(in: 0..<1) - 0.5
+      let v = Double.random(in: 0..<1)
+      let us = 0.5 - Swift.abs(u)
+      let k = Int(Darwin.floor((2.0 * a / us + b) * u + mu + 0.43))
+
+      if us >= 0.07 && v <= vr { return k }
+      if k < 0 || (us < 0.013 && v > us) { continue }
+
+      let lhs = Darwin.log(v) + Darwin.log(invAlpha) - Darwin.log(a / (us * us) + b)
+      let rhs = -mu + Double(k) * logMu - lgamma(Double(k) + 1.0)
+      if lhs <= rhs { return k }
+    }
   }
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Int] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Distribution mean.

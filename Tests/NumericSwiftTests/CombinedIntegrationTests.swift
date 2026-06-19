@@ -104,7 +104,7 @@ final class CombinedIntegrationTests: XCTestCase {
         let symMatrix = LinAlg.Matrix(ndarray: symmetric)!
 
         // eig returns (values: [Double], imagParts: [Double], vectors: Matrix)
-        let (eigenvalues, _, eigenvectors) = try LinAlg.eig(symMatrix)
+        let (eigenvalues, _, eigenvectors) = try XCTUnwrap(LinAlg.eig(symMatrix))
 
         // Visualize eigenvectors
         let ctx = DrawingContext()
@@ -225,7 +225,7 @@ final class CombinedIntegrationTests: XCTestCase {
         let matrix = LinAlg.Matrix(ndarray: array)!
 
         // SVD returns (s: [Double], U: Matrix, Vt: Matrix)
-        let (s, U, Vt) = LinAlg.svd(matrix)
+        let (s, U, Vt) = try XCTUnwrap(LinAlg.svd(matrix))
 
         let ctx = DrawingContext()
 
