@@ -260,4 +260,23 @@ final class EdgeInputHardeningTests: XCTestCase {
     var rng = SystemRandomNumberGenerator()
     XCTAssertTrue(randomNormal(-3, using: &rng).isEmpty)
   }
+
+  /// complexMatrix^scalar enforces the same 6x peak-working-set soft cap as
+  /// complexMatmul (it allocates the same intermediates). With a tiny cap a power
+  /// whose peak exceeds it must throw, not silently allocate.
+  func testComplexMatrixPowEnforcesPeakSoftCap() throws {
+    let saved = LinAlg.maxEvaluatorMatrixElements
+    defer { try? LinAlg.setMaxEvaluatorMatrixElements(saved) }
+    try LinAlg.setMaxEvaluatorMatrixElements(10)  // 2x2 result = 4; peak 24 > 10
+    let cm = LinAlg.ComplexMatrix(rows: 2, cols: 2, real: [1, 0, 0, 1], imag: [0, 0, 0, 0])
+    XCTAssertThrowsError(
+      try NumericDispatch.applyBinary(.pow, lhs: .complexMatrix(cm), rhs: .scalar(2)))
+  }
+
+  /// primePi/chebyshev must not trap at the Double(Int.max) boundary (which rounds
+  /// to 2^63, unrepresentable as Int).
+  func testPrimeCountingIntMaxBoundaryNoTrap() {
+    XCTAssertEqual(NumberTheory.primePi(Double(Int.max)), 0)
+    XCTAssertEqual(NumberTheory.chebyshevTheta(Double(Int.max)), 0)
+  }
 }

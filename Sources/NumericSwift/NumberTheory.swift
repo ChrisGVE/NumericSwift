@@ -260,9 +260,11 @@ public enum NumberTheory {
     /// - Parameter x: Upper bound
     /// - Returns: Number of primes not exceeding x
     public static func primePi(_ x: Double) -> Int {
-        // `Int(x)` traps for +inf or x > Int.max (NaN already fails `x >= 2`).
-        guard x.isFinite, x >= 2, x <= Double(Int.max) else { return 0 }
-        return primesUpTo(Int(x)).count
+        // `Int(x)` traps for +inf or x > Int.max. `Double(Int.max)` rounds up to
+        // 2^63 (unrepresentable as Int), so `x <= Double(Int.max)` still admits a
+        // trapping boundary value — `Int(exactly:)` on the floor is exact.
+        guard x.isFinite, x >= 2, let xi = Int(exactly: x.rounded(.down)) else { return 0 }
+        return primesUpTo(xi).count
     }
 
     /// Chebyshev theta function θ(x) = Σ log(p) for primes p ≤ x.
@@ -270,8 +272,8 @@ public enum NumberTheory {
     /// - Parameter x: Upper bound
     /// - Returns: θ(x)
     public static func chebyshevTheta(_ x: Double) -> Double {
-        guard x.isFinite, x >= 2, x <= Double(Int.max) else { return 0 }
-        let primes = primesUpTo(Int(x))
+        guard x.isFinite, x >= 2, let xi = Int(exactly: x.rounded(.down)) else { return 0 }
+        let primes = primesUpTo(xi)
         var result = 0.0
         for p in primes { result += Darwin.log(Double(p)) }
         return result
@@ -282,9 +284,9 @@ public enum NumberTheory {
     /// - Parameter x: Upper bound
     /// - Returns: ψ(x)
     public static func chebyshevPsi(_ x: Double) -> Double {
-        guard x.isFinite, x >= 2, x <= Double(Int.max) else { return 0 }
+        guard x.isFinite, x >= 2, let xi = Int(exactly: x.rounded(.down)) else { return 0 }
         var result = 0.0
-        for n in 2...Int(x) { result += vonMangoldt(n) }
+        for n in 2...xi { result += vonMangoldt(n) }
         return result
     }
 

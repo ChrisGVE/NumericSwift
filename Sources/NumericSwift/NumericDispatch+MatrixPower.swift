@@ -122,6 +122,20 @@ extension NumericDispatch {
 
         let absN = n < 0 ? -n : n
 
+        // Peak-aware admission control. Each `complexMatrixMultiply` allocates the
+        // same six result-sized buffers as `complexMatmul` (4 real products + 2
+        // output arrays) but skips its soft-cap check; the caller (`applyPow`) only
+        // validated the result shape (dim×dim ≤ cap), not the 6× peak. The shape is
+        // constant dim×dim through the squaring loop, so check the peak once here.
+        let elements = dim * dim
+        let cap = LinAlg.maxEvaluatorMatrixElements
+        guard elements <= cap / complexMatmulWorkingSetMultiplier else {
+            throw LinAlg.LinAlgError.invalidParameter(
+                "complexMatrix^scalar peak working set (\(elements) × "
+                + "\(complexMatmulWorkingSetMultiplier) elements) exceeds soft cap \(cap) "
+                + "(per-matrix limit \(cap / complexMatmulWorkingSetMultiplier) for complex matmul)")
+        }
+
         // Exponentiation by squaring: O(log |n|) complex multiplications.
         var result = LinAlg.ComplexMatrix(LinAlg.eye(dim))   // accumulator = identity
         var base   = cm                                      // running square
