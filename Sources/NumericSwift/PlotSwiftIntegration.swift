@@ -310,6 +310,9 @@ public func histogramBins(
     }
 
     let range = maxVal - minVal
+    // Constant data (range == 0) → binWidth == 0 → Int((value - minVal)/0) =
+    // Int(NaN), a trap. All values are identical: report a single bin at that value.
+    guard range > 0 else { return [(minVal, data.count)] }
     let binWidth = range / Double(bins)
 
     var counts = [Int](repeating: 0, count: bins)
