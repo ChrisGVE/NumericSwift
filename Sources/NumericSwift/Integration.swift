@@ -738,26 +738,28 @@ public func cumulativeTrapezoid(_ y: [Double], x: [Double]) -> [Double] {
 /// - Returns: Cumulative integral values, or empty array if fewer than 2 points.
 public func cumulativeSimpson(_ y: [Double], dx: Double = 1) -> [Double] {
   guard y.count >= 2 else { return [] }
-  var result = [Double](repeating: 0.0, count: y.count - 1)
+  let n = y.count
+  var result = [Double](repeating: 0.0, count: n - 1)
 
-  // First interval: trapezoidal
-  result[0] = 0.5 * (y[0] + y[1]) * dx
+  // Only two points: a single interval cannot carry Simpson's three-point rule,
+  // so fall back to the trapezoid.
+  if n == 2 {
+    result[0] = 0.5 * (y[0] + y[1]) * dx
+    return result
+  }
 
-  // Subsequent pairs: use Simpson's 1/3 rule on each pair of intervals
-  var i = 1
-  while i < y.count - 1 {
-    if i + 1 < y.count - 1 {
-      // Simpson's rule over two intervals: (dx/3) * (y[i-1] + 4*y[i] + y[i+1])
-      // But we need cumulative, so we add Simpson increment for [x_{i}, x_{i+2}]
-      let simpsonIncrement = dx / 3.0 * (y[i] + 4.0 * y[i + 1] + y[i + 2])
-      result[i] = result[i - 1] + 0.5 * (y[i] + y[i + 1]) * dx
-      result[i + 1] = result[i - 1] + simpsonIncrement
-      i += 2
-    } else {
-      // Odd remaining interval: use trapezoidal
-      result[i] = result[i - 1] + 0.5 * (y[i] + y[i + 1]) * dx
-      i += 1
-    }
+  // Each interval's contribution is the integral of the local interpolating
+  // parabola over that interval — the two half-interval Simpson sub-integrals of
+  // the parabola through three consecutive points (x_{i-1}, x_i, x_{i+1}):
+  //   ∫ over the FIRST half  [x_i, x_{i+1}] = (dx/12)(5·y_i + 8·y_{i+1} − y_{i+2})
+  //   ∫ over the SECOND half [x_i, x_{i+1}] = (dx/12)(−y_{i-1} + 8·y_i + 5·y_{i+1})
+  // (they sum to the full Simpson pair (dx/3)(y+4y+y)). The first interval uses
+  // the first-half form of the parabola through points 0,1,2; every later interval
+  // uses the second-half form of the parabola through (i-1, i, i+1). This is exact
+  // for quadratics and O(dx⁴) in general — the previous code emitted trapezoids.
+  result[0] = dx / 12.0 * (5.0 * y[0] + 8.0 * y[1] - y[2])
+  for i in 1..<(n - 1) {
+    result[i] = result[i - 1] + dx / 12.0 * (-y[i - 1] + 8.0 * y[i] + 5.0 * y[i + 1])
   }
   return result
 }
