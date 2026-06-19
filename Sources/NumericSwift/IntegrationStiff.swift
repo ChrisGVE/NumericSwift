@@ -252,9 +252,19 @@ private func bdfAttemptStep(
 
   // Jacobian at the EE predictor (stiff-stable evaluation point).
   let f0 = f(yPredEE, tNew)
-  let J_f: [[Double]] = jacobianFn != nil
-    ? jacobianFn!(yPredEE, tNew)
-    : bdfJacobian(f, y: yPredEE, t: tNew, f0: f0)
+  let nDim = yPredEE.count
+  let J_f: [[Double]]
+  if let jacFn = jacobianFn {
+    // A user-supplied analytic Jacobian of the wrong shape would trap the
+    // J_f[i][j] indexing in the Newton solve. Validate it is n×n; otherwise fall
+    // back to the (always well-shaped) numerical Jacobian.
+    let analytic = jacFn(yPredEE, tNew)
+    J_f = (analytic.count == nDim && analytic.allSatisfy { $0.count == nDim })
+      ? analytic
+      : bdfJacobian(f, y: yPredEE, t: tNew, f0: f0)
+  } else {
+    J_f = bdfJacobian(f, y: yPredEE, t: tNew, f0: f0)
+  }
 
   let newton = bdfNewtonSolve(
     f, tNew: tNew, yPred: yPredNewton,

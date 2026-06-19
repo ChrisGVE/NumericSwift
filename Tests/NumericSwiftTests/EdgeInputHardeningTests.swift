@@ -178,4 +178,31 @@ final class EdgeInputHardeningTests: XCTestCase {
     XCTAssertTrue(BernoulliDistribution(p: 0.5).rvs(-1).isEmpty)
     XCTAssertTrue(BinomialDistribution(n: 10, p: 0.5).rvs(-1).isEmpty)
   }
+
+  // MARK: - Round 10: randomGamma shape / BFGS gradient / BDF analytic Jacobian
+
+  /// randomGamma with a non-finite or non-positive shape returns NaN instead of
+  /// hanging the rejection loop (NaN comparisons never accept).
+  func testRandomGammaInvalidShapeReturnsNaNNoHang() {
+    XCTAssertTrue(randomGamma(.nan).isNaN)
+    XCTAssertTrue(randomGamma(-1.0).isNaN)
+    XCTAssertTrue(randomGamma(0.0).isNaN)
+  }
+
+  /// bfgs with a malformed analytic gradient (wrong length) returns success=false
+  /// rather than falsely converging on an empty gradient or truncating the math.
+  func testBFGSMalformedGradientFails() {
+    let r = bfgs({ x in x[0] * x[0] }, x0: [1.0], grad: { _ in [] })
+    XCTAssertFalse(r.success)
+  }
+
+  /// solveIVP(.bdf) with a malformed analytic Jacobian falls back to the numerical
+  /// Jacobian and still integrates y' = -y correctly (no trap).
+  func testSolveIVPBDFMalformedJacobianFallsBack() {
+    let sol = solveIVP(
+      { y, _ in [-y[0]] }, tSpan: (0, 1), y0: [1.0],
+      method: .bdf, jacobian: { _, _ in [[]] })  // malformed Jacobian
+    XCTAssertTrue(sol.success)
+    XCTAssertEqual(sol.y.last![0], exp(-1.0), accuracy: 1e-2)  // y(1) = e^-1
+  }
 }

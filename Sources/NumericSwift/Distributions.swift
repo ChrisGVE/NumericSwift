@@ -56,6 +56,10 @@ public func randomNormal(_ n: Int) -> [Double] {
 
 /// Gamma random variate using Marsaglia and Tsang's method.
 public func randomGamma(_ shape: Double) -> Double {
+  // A non-finite or non-positive shape has no valid Gamma variate; NaN in
+  // particular would make the rejection loop's comparisons never accept (an
+  // infinite hang). Reject with NaN.
+  guard shape.isFinite, shape > 0 else { return .nan }
   if shape < 1 {
     // For shape < 1, use shape + 1 and transform
     return randomGamma(shape + 1) * Darwin.pow(Double.random(in: 0..<1), 1.0 / shape)

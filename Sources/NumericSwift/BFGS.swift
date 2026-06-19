@@ -80,6 +80,12 @@ public func bfgs(
   njev += 1
   var fVal = f(x)
   nfev += 1
+  // A malformed (analytic) gradient of the wrong length would let an empty vector
+  // pass the inf-norm convergence test (false success) and silently truncate the
+  // matrix-vector math via zip; reject dimension mismatch with an unsuccessful result.
+  guard g.count == n else {
+    return BFGSResult(x: x, fun: fVal, nfev: nfev, njev: njev, nit: nit, success: false)
+  }
 
   for _ in 0..<maxIter {
     // Convergence check: ‖g‖∞ < gtol
@@ -105,6 +111,10 @@ public func bfgs(
     fVal = f(xNew)
     nfev += 1
     nit += 1
+    // Gradient dimension can drift under a malformed analytic callback.
+    guard gNew.count == n else {
+      return BFGSResult(x: xNew, fun: fVal, nfev: nfev, njev: njev, nit: nit, success: false)
+    }
 
     // BFGS inverse-Hessian update
     let y = zip(gNew, g).map { $0 - $1 }  // y = g_new - g
