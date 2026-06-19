@@ -50,7 +50,8 @@ public func randomNormal() -> Double {
 
 /// Generate n standard normal random variates.
 public func randomNormal(_ n: Int) -> [Double] {
-  (0..<n).map { _ in randomNormal() }
+  guard n > 0 else { return [] }
+  return (0..<n).map { _ in randomNormal() }
 }
 
 /// Gamma random variate using Marsaglia and Tsang's method.
@@ -87,7 +88,8 @@ public func randomGamma(_ shape: Double) -> Double {
 
 /// Generate n gamma random variates.
 public func randomGamma(_ shape: Double, n: Int) -> [Double] {
-  (0..<n).map { _ in randomGamma(shape) }
+  guard n > 0 else { return [] }
+  return (0..<n).map { _ in randomGamma(shape) }
 }
 
 // MARK: - Normal Distribution
@@ -130,7 +132,8 @@ public struct NormalDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -223,7 +226,8 @@ public struct UniformDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -297,7 +301,8 @@ public struct ExponentialDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -462,7 +467,8 @@ public struct TDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -595,7 +601,8 @@ public struct ChiSquaredDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -725,7 +732,8 @@ public struct FDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -842,7 +850,8 @@ public struct GammaDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.
@@ -960,7 +969,8 @@ public struct BetaDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Double] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Log of the probability density function.

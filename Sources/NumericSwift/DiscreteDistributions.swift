@@ -55,7 +55,8 @@ public struct BernoulliDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Int] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Distribution mean.
@@ -127,7 +128,8 @@ public struct BinomialDistribution {
 
   /// Generate count random variates.
   public func rvs(_ count: Int) -> [Int] {
-    (0..<count).map { _ in rvs() }
+    guard count > 0 else { return [] }
+    return (0..<count).map { _ in rvs() }
   }
 
   /// Distribution mean.
@@ -227,7 +229,8 @@ public struct PoissonDistribution {
 
   /// Generate n random variates.
   public func rvs(_ n: Int) -> [Int] {
-    (0..<n).map { _ in rvs() }
+    guard n > 0 else { return [] }
+    return (0..<n).map { _ in rvs() }
   }
 
   /// Distribution mean.

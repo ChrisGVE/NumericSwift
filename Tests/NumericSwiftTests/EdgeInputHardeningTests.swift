@@ -164,4 +164,18 @@ final class EdgeInputHardeningTests: XCTestCase {
     let badStep = solveIVP({ y, _ in y }, tSpan: (0, 1), y0: [1.0], maxStep: 0)
     XCTAssertFalse(badStep.success)
   }
+
+  // MARK: - Round 9: batch random negative-count guards
+
+  /// Batch random / rvs APIs return [] for a non-positive count rather than
+  /// trapping on `0..<n` with a negative n.
+  func testBatchRandomNegativeCountReturnsEmpty() {
+    XCTAssertTrue(randomNormal(-1).isEmpty)
+    XCTAssertTrue(randomGamma(2.0, n: -1).isEmpty)
+    XCTAssertTrue(NormalDistribution(loc: 0, scale: 1).rvs(-5).isEmpty)
+    XCTAssertTrue(GammaDistribution(shape: 2).rvs(-1).isEmpty)
+    XCTAssertTrue(PoissonDistribution(mu: 3).rvs(-1).isEmpty)
+    XCTAssertTrue(BernoulliDistribution(p: 0.5).rvs(-1).isEmpty)
+    XCTAssertTrue(BinomialDistribution(n: 10, p: 0.5).rvs(-1).isEmpty)
+  }
 }
