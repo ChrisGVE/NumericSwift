@@ -181,18 +181,48 @@ public struct PoissonDistribution {
     return k
   }
 
-  /// Single random variate using Knuth's algorithm (efficient for small mu).
+  /// Single random variate.
+  ///
+  /// Uses Knuth's multiplication method for small `mu` (`< 10`), where it is exact
+  /// and fast, and Hörmann's PTRS transformed-rejection method (1993) for `mu >= 10`.
+  /// Knuth's `exp(-mu)` threshold underflows to 0 for `mu` beyond ~745 (making the
+  /// loop run a fixed ~1075 iterations independent of `mu` — both wrong and O(mu)
+  /// slow); PTRS is O(1) and correct across the large-`mu` regime. This mirrors
+  /// numpy's `random_poisson` regime split.
   public func rvs() -> Int {
-    // For large mu, normal approximation seeded into integer search would be
-    // preferable, but Knuth's method is correct for all mu.
-    let threshold = Darwin.exp(-mu)
-    var k = 0
-    var product = Double.random(in: 0..<1)
-    while product > threshold {
-      k += 1
-      product *= Double.random(in: 0..<1)
+    if mu < 10 {
+      // Knuth: exact and efficient for small mu (no exp(-mu) underflow here).
+      let threshold = Darwin.exp(-mu)
+      var k = 0
+      var product = Double.random(in: 0..<1)
+      while product > threshold {
+        k += 1
+        product *= Double.random(in: 0..<1)
+      }
+      return k
     }
-    return k
+
+    // Hörmann's PTRS (Transformed Rejection with Squeeze).
+    let logMu = Darwin.log(mu)
+    let smu = Darwin.sqrt(mu)
+    let b = 0.931 + 2.53 * smu
+    let a = -0.059 + 0.02483 * b
+    let invAlpha = 1.1239 + 1.1328 / (b - 3.4)
+    let vr = 0.9277 - 3.6224 / (b - 2.0)
+
+    while true {
+      let u = Double.random(in: 0..<1) - 0.5
+      let v = Double.random(in: 0..<1)
+      let us = 0.5 - Swift.abs(u)
+      let k = Int(Darwin.floor((2.0 * a / us + b) * u + mu + 0.43))
+
+      if us >= 0.07 && v <= vr { return k }
+      if k < 0 || (us < 0.013 && v > us) { continue }
+
+      let lhs = Darwin.log(v) + Darwin.log(invAlpha) - Darwin.log(a / (us * us) + b)
+      let rhs = -mu + Double(k) * logMu - lgamma(Double(k) + 1.0)
+      if lhs <= rhs { return k }
+    }
   }
 
   /// Generate n random variates.

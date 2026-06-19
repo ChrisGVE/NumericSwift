@@ -95,30 +95,63 @@ public enum ArrayOps {
         return result
     }
 
-    /// Floor array elements using vvfloor.
-    public static func floorArray(_ values: [Double]) -> [Double] {
+    /// Apply a vForce unary op `(out, in, count)` over an array of any length,
+    /// processing in `Int32.max`-bounded chunks. The vForce ABI takes the element
+    /// count as `Int32`; a single `Int32(values.count)` would trap for arrays with
+    /// more than `Int32.max` elements, so the count is chunked instead.
+    private static func vForceUnary(
+        _ values: [Double],
+        _ op: (UnsafeMutablePointer<Double>, UnsafePointer<Double>, UnsafePointer<Int32>) -> Void
+    ) -> [Double] {
         guard !values.isEmpty else { return [] }
         var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
+        let total = values.count
         values.withUnsafeBufferPointer { src in
             result.withUnsafeMutableBufferPointer { dst in
-                vvfloor(dst.baseAddress!, src.baseAddress!, &n)
+                var offset = 0
+                while offset < total {
+                    var c = Int32(Swift.min(total - offset, Int(Int32.max)))
+                    op(dst.baseAddress! + offset, src.baseAddress! + offset, &c)
+                    offset += Int(c)
+                }
             }
         }
         return result
     }
 
-    /// Ceiling array elements using vvceil.
-    public static func ceilArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvceil(dst.baseAddress!, src.baseAddress!, &n)
+    /// Apply a vForce binary op `(out, a, b, count)` (e.g. `vvpow`) with the same
+    /// `Int32.max`-bounded chunking as ``vForceUnary(_:_:)``.
+    private static func vForceBinary(
+        _ a: [Double], _ b: [Double],
+        _ op: (UnsafeMutablePointer<Double>, UnsafePointer<Double>, UnsafePointer<Double>, UnsafePointer<Int32>) -> Void
+    ) -> [Double] {
+        guard !a.isEmpty, a.count == b.count else { return [] }
+        var result = [Double](repeating: 0, count: a.count)
+        let total = a.count
+        a.withUnsafeBufferPointer { aPtr in
+            b.withUnsafeBufferPointer { bPtr in
+                result.withUnsafeMutableBufferPointer { dst in
+                    var offset = 0
+                    while offset < total {
+                        var c = Int32(Swift.min(total - offset, Int(Int32.max)))
+                        op(dst.baseAddress! + offset, aPtr.baseAddress! + offset,
+                           bPtr.baseAddress! + offset, &c)
+                        offset += Int(c)
+                    }
+                }
             }
         }
         return result
+    }
+
+    /// Floor array elements using vvfloor.
+    public static func floorArray(_ values: [Double]) -> [Double] {
+        vForceUnary(values) { vvfloor($0, $1, $2) }
+    }
+
+    /// Ceiling array elements using vvceil.
+    public static func ceilArray(_ values: [Double]) -> [Double] {
+        vForceUnary(values) { vvceil($0, $1, $2) }
     }
 
     /// Absolute value for array elements using vDSP_vabsD.
@@ -139,15 +172,7 @@ public enum ArrayOps {
 
     /// Square root for array elements using vvsqrt.
     public static func sqrtArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvsqrt(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvsqrt($0, $1, $2) }
     }
 
     /// Square for array elements using vDSP_vsqD.
@@ -160,41 +185,17 @@ public enum ArrayOps {
 
     /// Natural logarithm for array elements using vvlog.
     public static func logArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvlog(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvlog($0, $1, $2) }
     }
 
     /// Base-10 logarithm for array elements using vvlog10.
     public static func log10Array(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvlog10(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvlog10($0, $1, $2) }
     }
 
     /// Exponential for array elements using vvexp.
     public static func expArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvexp(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvexp($0, $1, $2) }
     }
 
     /// Power function for array elements using vvpow.
@@ -203,134 +204,54 @@ public enum ArrayOps {
     ///   - bases: Array of base values
     ///   - exponents: Array of exponent values (same length as bases)
     public static func powArray(_ bases: [Double], _ exponents: [Double]) -> [Double] {
-        guard !bases.isEmpty, bases.count == exponents.count else { return [] }
-        var result = [Double](repeating: 0, count: bases.count)
-        var n = Int32(bases.count)
-        bases.withUnsafeBufferPointer { basesPtr in
-            exponents.withUnsafeBufferPointer { expsPtr in
-                result.withUnsafeMutableBufferPointer { dst in
-                    vvpow(dst.baseAddress!, expsPtr.baseAddress!, basesPtr.baseAddress!, &n)
-                }
-            }
-        }
-        return result
+        // vvpow computes out = x^y as `vvpow(out, y, x, count)`, so pass exponents
+        // as the first (y) operand and bases as the second (x).
+        vForceBinary(exponents, bases) { vvpow($0, $1, $2, $3) }
     }
 
     /// Sine for array elements using vvsin.
     public static func sinArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvsin(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvsin($0, $1, $2) }
     }
 
     /// Cosine for array elements using vvcos.
     public static func cosArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvcos(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvcos($0, $1, $2) }
     }
 
     /// Tangent for array elements using vvtan.
     public static func tanArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvtan(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvtan($0, $1, $2) }
     }
 
     /// Arcsine for array elements using vvasin.
     public static func asinArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvasin(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvasin($0, $1, $2) }
     }
 
     /// Arccosine for array elements using vvacos.
     public static func acosArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvacos(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvacos($0, $1, $2) }
     }
 
     /// Arctangent for array elements using vvatan.
     public static func atanArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvatan(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvatan($0, $1, $2) }
     }
 
     /// Hyperbolic sine for array elements using vvsinh.
     public static func sinhArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvsinh(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvsinh($0, $1, $2) }
     }
 
     /// Hyperbolic cosine for array elements using vvcosh.
     public static func coshArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvcosh(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvcosh($0, $1, $2) }
     }
 
     /// Hyperbolic tangent for array elements using vvtanh.
     public static func tanhArray(_ values: [Double]) -> [Double] {
-        guard !values.isEmpty else { return [] }
-        var result = [Double](repeating: 0, count: values.count)
-        var n = Int32(values.count)
-        values.withUnsafeBufferPointer { src in
-            result.withUnsafeMutableBufferPointer { dst in
-                vvtanh(dst.baseAddress!, src.baseAddress!, &n)
-            }
-        }
-        return result
+        vForceUnary(values) { vvtanh($0, $1, $2) }
     }
 }
 

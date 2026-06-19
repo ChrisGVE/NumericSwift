@@ -309,4 +309,20 @@ final class SpatialDistanceTests: XCTestCase {
     let result = Spatial.cdist(XA, XB, metric: .braycurtis)
     XCTAssertEqual(result[0][0], Spatial.braycurtisDistance([1.0, 2.0], [3.0, 4.0]), accuracy: eps)
   }
+
+  // MARK: - Equal-dimension requirement (audit; replaces silent min(count))
+
+  /// Distance between vectors of differing dimension is undefined: metrics now
+  /// return NaN instead of silently truncating to the shorter length.
+  func testMismatchedDimensionReturnsNaN() {
+    let p = [1.0, 2.0]
+    let q = [1.0, 2.0, 3.0]
+    XCTAssertTrue(Spatial.euclideanDistance(p, q).isNaN)
+    XCTAssertTrue(Spatial.squaredEuclideanDistance(p, q).isNaN)
+    XCTAssertTrue(Spatial.manhattanDistance(p, q).isNaN)
+    XCTAssertTrue(Spatial.chebyshevDistance(p, q).isNaN)
+    XCTAssertTrue(Spatial.cosineDistance(p, q).isNaN)
+    // Equal dimension still computes normally.
+    XCTAssertEqual(Spatial.euclideanDistance([0.0, 0.0], [3.0, 4.0]), 5.0, accuracy: eps)
+  }
 }
