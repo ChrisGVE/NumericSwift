@@ -279,4 +279,19 @@ final class EdgeInputHardeningTests: XCTestCase {
     XCTAssertEqual(NumberTheory.primePi(Double(Int.max)), 0)
     XCTAssertEqual(NumberTheory.chebyshevTheta(Double(Int.max)), 0)
   }
+
+  /// Discrete ppf must not trap on out-of-domain q (NaN, <0, >1, ±inf). The
+  /// Int-typed quantile signals "no valid value" with `nil`, mirroring the
+  /// continuous ppf NaN contract and the 0.3.0 svd/eig/pinv -> optional convention.
+  func testDiscretePPFOutOfDomainReturnsNil() {
+    for q in [Double.nan, -0.1, 1.1, .infinity, -.infinity] {
+      XCTAssertNil(BernoulliDistribution(p: 0.3).ppf(q))
+      XCTAssertNil(BinomialDistribution(n: 10, p: 0.4).ppf(q))
+      XCTAssertNil(PoissonDistribution(mu: 3).ppf(q))
+    }
+    // In-domain q still returns a value.
+    XCTAssertNotNil(BernoulliDistribution(p: 0.3).ppf(0.5))
+    XCTAssertNotNil(BinomialDistribution(n: 10, p: 0.4).ppf(0.5))
+    XCTAssertNotNil(PoissonDistribution(mu: 3).ppf(0.5))
+  }
 }

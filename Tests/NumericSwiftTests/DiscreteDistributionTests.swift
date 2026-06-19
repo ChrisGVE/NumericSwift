@@ -58,7 +58,7 @@ final class DiscreteDistributionTests: XCTestCase {
   func testBernoulliPPFRoundTrip() {
     let dist = BernoulliDistribution(p: 0.4)
     for q in [0.1, 0.3, 0.5, 0.7, 0.9] {
-      let k = dist.ppf(q)
+      let k = dist.ppf(q)!
       XCTAssertGreaterThanOrEqual(dist.cdf(k), q)
     }
   }
@@ -147,7 +147,7 @@ final class DiscreteDistributionTests: XCTestCase {
   func testBinomialPPFRoundTrip() {
     let dist = BinomialDistribution(n: 20, p: 0.3)
     for q in [0.05, 0.25, 0.5, 0.75, 0.95] {
-      let k = dist.ppf(q)
+      let k = dist.ppf(q)!
       XCTAssertGreaterThanOrEqual(dist.cdf(k), q)
       // Also verify k is the smallest such integer
       if k > 0 {
@@ -254,7 +254,7 @@ final class DiscreteDistributionTests: XCTestCase {
     // ppf(0) should be 0
     XCTAssertEqual(dist.ppf(0.0), 0)
     // ppf(1) should return some finite k
-    XCTAssertGreaterThanOrEqual(dist.ppf(1.0), 0)
+    XCTAssertGreaterThanOrEqual(dist.ppf(1.0)!, 0)
     // Median of Poisson(3) is 3
     XCTAssertEqual(dist.ppf(0.5), 3)
   }
@@ -262,7 +262,7 @@ final class DiscreteDistributionTests: XCTestCase {
   func testPoissonPPFRoundTrip() {
     let dist = PoissonDistribution(mu: 4.0)
     for q in [0.05, 0.25, 0.5, 0.75, 0.95] {
-      let k = dist.ppf(q)
+      let k = dist.ppf(q)!
       XCTAssertGreaterThanOrEqual(dist.cdf(k), q)
       if k > 0 {
         XCTAssertLessThan(dist.cdf(k - 1), q)

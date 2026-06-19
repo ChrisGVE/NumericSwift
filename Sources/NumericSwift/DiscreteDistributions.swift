@@ -43,8 +43,12 @@ public struct BernoulliDistribution {
   }
 
   /// Percent point function (inverse CDF). Returns smallest k such that cdf(k) >= q.
-  public func ppf(_ q: Double) -> Int {
-    precondition(q >= 0 && q <= 1, "BernoulliDistribution.ppf: q must be in [0, 1]")
+  ///
+  /// Out-of-domain `q` (NaN, `< 0`, or `> 1`) returns `nil` rather than trapping,
+  /// mirroring the continuous `ppf` NaN contract through the integer-typed
+  /// "no valid value" sentinel (`nil`, as `LinAlg.svd`/`eig`/`pinv` use in 0.3.0).
+  public func ppf(_ q: Double) -> Int? {
+    guard q.isFinite, q >= 0, q <= 1 else { return nil }
     return (q <= 1.0 - p) ? 0 : 1
   }
 
@@ -105,8 +109,10 @@ public struct BinomialDistribution {
   }
 
   /// Percent point function: smallest k such that cdf(k) >= q.
-  public func ppf(_ q: Double) -> Int {
-    precondition(q >= 0 && q <= 1, "BinomialDistribution.ppf: q must be in [0, 1]")
+  ///
+  /// Out-of-domain `q` (NaN, `< 0`, or `> 1`) returns `nil` rather than trapping.
+  public func ppf(_ q: Double) -> Int? {
+    guard q.isFinite, q >= 0, q <= 1 else { return nil }
     if q <= 0 { return 0 }
     if q >= 1 { return n }
     var cumulative = 0.0
@@ -177,8 +183,10 @@ public struct PoissonDistribution {
   }
 
   /// Percent point function: smallest k such that cdf(k) >= q.
-  public func ppf(_ q: Double) -> Int {
-    precondition(q >= 0 && q <= 1, "PoissonDistribution.ppf: q must be in [0, 1]")
+  ///
+  /// Out-of-domain `q` (NaN, `< 0`, or `> 1`) returns `nil` rather than trapping.
+  public func ppf(_ q: Double) -> Int? {
+    guard q.isFinite, q >= 0, q <= 1 else { return nil }
     if q <= 0 { return 0 }
     // Start search from floor(mu) as initial approximation
     var k = max(0, Int(mu) - 1)
