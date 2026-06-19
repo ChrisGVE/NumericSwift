@@ -236,7 +236,8 @@ public func computeSplineCoeffs(x: [Double], y: [Double], bc: SplineBoundaryCond
   -> [CubicCoeffs]
 {
   let n = x.count
-  guard n >= 2 else { return [] }
+  // y is indexed up to n-1 in lockstep with x; require matching non-empty arrays.
+  guard n >= 2, y.count == n else { return [] }
 
   // Compute intervals h[i] = x[i+1] - x[i]
   var h = [Double](repeating: 0, count: n - 1)
@@ -511,7 +512,7 @@ private func pchipEdgeDerivative(h1: Double, h2: Double, d1: Double, d2: Double)
 /// - Returns: Derivative values at each point
 public func computePchipDerivatives(x: [Double], y: [Double]) -> [Double] {
   let n = x.count
-  guard n >= 2 else { return [] }
+  guard n >= 2, y.count == n else { return [] }
 
   // Compute slopes and intervals
   var h = [Double](repeating: 0, count: n - 1)
@@ -588,7 +589,7 @@ public func evalPchip(x: [Double], y: [Double], d: [Double], xNew: Double) -> Do
 /// - Returns: Cubic coefficients for each segment
 public func computeAkimaCoeffs(x: [Double], y: [Double]) -> [CubicCoeffs] {
   let n = x.count
-  guard n >= 2 else { return [] }
+  guard n >= 2, y.count == n else { return [] }
 
   // Compute slopes between points
   var m = [Double](repeating: 0, count: n + 3)

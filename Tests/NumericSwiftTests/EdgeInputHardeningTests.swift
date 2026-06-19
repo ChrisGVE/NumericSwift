@@ -122,4 +122,46 @@ final class EdgeInputHardeningTests: XCTestCase {
     let result = newtonMulti({ _ in [] }, x0: [1.0, 2.0])  // residual empty
     XCTAssertFalse(result.success)
   }
+
+  // MARK: - Round 7: coefficient builders + solver dimension drift
+
+  /// Coefficient builders reject a y vector whose length differs from x with [].
+  func testInterpolationCoeffBuildersLengthMismatchReturnEmpty() {
+    XCTAssertTrue(computeSplineCoeffs(x: [0, 1, 2], y: [0, 1]).isEmpty)
+    XCTAssertTrue(computePchipDerivatives(x: [0, 1, 2], y: [0, 1]).isEmpty)
+    XCTAssertTrue(computeAkimaCoeffs(x: [0, 1, 2], y: [0, 1]).isEmpty)
+  }
+
+  /// nelderMead with an empty x0 returns an unsuccessful result (the simplex loop
+  /// `for i in 1...n` traps for n == 0).
+  func testNelderMeadEmptyX0Fails() {
+    let r = nelderMead({ _ in 0 }, x0: [])
+    XCTAssertFalse(r.success)
+  }
+
+  /// newtonMulti probe-dimension drift: the residual matches x0 at the base point
+  /// but changes length under perturbation; must fail, not trap on fxp[i].
+  func testNewtonMultiProbeDriftFails() {
+    let r = newtonMulti({ x in x == [1.0] ? [0.5] : [] }, x0: [1.0])
+    XCTAssertFalse(r.success)
+  }
+
+  /// leastSquares probe-dimension drift must fail rather than trap during Jacobian
+  /// construction (both bounded and unbounded paths).
+  func testLeastSquaresProbeDriftFails() {
+    let drift: ([Double]) -> [Double] = { x in x == [1.0] ? [0.5] : [] }
+    XCTAssertFalse(leastSquares(drift, x0: [1.0]).success)
+    XCTAssertFalse(leastSquares(drift, x0: [1.0], bounds: ([-10], [10])).success)
+  }
+
+  /// solveIVP rejects a malformed rhs dimension and a non-positive maxStep with a
+  /// failed ODEResult rather than trapping in the RK stages.
+  func testSolveIVPMalformedConfigFails() {
+    // rhs returns wrong derivative length
+    let bad = solveIVP({ _, _ in [] }, tSpan: (0, 1), y0: [1.0, 2.0])
+    XCTAssertFalse(bad.success)
+    // non-positive maxStep
+    let badStep = solveIVP({ y, _ in y }, tSpan: (0, 1), y0: [1.0], maxStep: 0)
+    XCTAssertFalse(badStep.success)
+  }
 }

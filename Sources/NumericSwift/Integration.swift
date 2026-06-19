@@ -1162,13 +1162,31 @@ public func solveIVP(
   var denseSteps: [DenseStep] = []
   var nfev = 0
 
+  // Reject malformed configuration before stepping: a non-positive maxStep/firstStep
+  // stalls the integrator (the step budget burns without t advancing), and a
+  // derivative vector whose length differs from y0 traps the RK/BDF stage indexing.
+  // A deterministic rhs returns a fixed length, so validating the first evaluation
+  // covers the per-stage probes (including the delegated BDF solver).
+  guard maxStep > 0 else {
+    return ODEResult(t: [], y: [], success: false,
+      message: "solveIVP requires maxStep > 0; got \(maxStep).", nfev: 0)
+  }
+  if let first = firstStep, !(first > 0) {
+    return ODEResult(t: [], y: [], success: false,
+      message: "solveIVP requires firstStep > 0; got \(first).", nfev: 0)
+  }
+  let f0 = fun(y0, t0); nfev += 1
+  guard f0.count == n else {
+    return ODEResult(t: [], y: [], success: false,
+      message: "solveIVP: fun(y, t) returned \(f0.count) derivatives, expected \(n).",
+      nfev: nfev)
+  }
+
   // Initial step size estimation
   var h: Double
   if let first = firstStep {
     h = first
   } else {
-    let f0 = fun(y0, t0)
-    nfev += 1
     let d0 = max(y0.map { abs($0) }.max() ?? 1, 1e-5)
     let d1 = max(f0.map { abs($0) }.max() ?? 1, 1e-5)
     h = 0.01 * d0 / d1

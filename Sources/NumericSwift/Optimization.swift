@@ -737,6 +737,13 @@ public func nelderMead(
     maxiter: Int? = nil
 ) -> MinimizeResult {
     let n = x0.count
+    // A zero-dimensional start point traps the simplex loop (`for i in 1...n` with
+    // n == 0) and has no minimum to find.
+    guard n > 0 else {
+        return MinimizeResult(
+            x: x0, fun: .nan, nfev: 0, nit: 0,
+            success: false, message: "nelderMead requires a non-empty x0.")
+    }
     let maxIterations = maxiter ?? 200 * n
     var nfev = 0
     var nit = 0
@@ -920,6 +927,16 @@ public func newtonMulti(
             var xm = x; xm[j] -= h_j
             let fxp = f(xp); nfev += 1
             let fxm = f(xm); nfev += 1
+            // The residual dimension can drift under perturbation; a short probe
+            // result would trap the fxp[i]/fxm[i] indexing below.
+            guard fxp.count == n, fxm.count == n else {
+                return RootResult(
+                    x: x, fun: fx, success: false,
+                    message: "residual dimension changed under perturbation "
+                        + "(expected \(n), got \(fxp.count)/\(fxm.count)).",
+                    nfev: nfev, nit: nit
+                )
+            }
             for i in 0..<n {
                 jacobian[i][j] = (fxp[i] - fxm[i]) / (2.0 * h_j)
             }
@@ -1104,6 +1121,15 @@ public func leastSquares(
             var xm = x; xm[j] -= h_j
             let rp = residuals(xp); nfev += 1
             let rm = residuals(xm); nfev += 1
+            // Residual dimension can drift under perturbation; a short probe would
+            // trap the rp[i]/rm[i] indexing.
+            guard rp.count == m, rm.count == m else {
+                return LeastSquaresResult(
+                    x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+                    success: false,
+                    message: "residual dimension changed under perturbation "
+                        + "(expected \(m), got \(rp.count)/\(rm.count)).")
+            }
             for i in 0..<m {
                 J[i][j] = (rp[i] - rm[i]) / (2.0 * h_j)
             }
@@ -1337,6 +1363,15 @@ private func leastSquaresUnbounded(
             var xm = x; xm[j] -= h_j
             let rp = residuals(xp); nfev += 1
             let rm = residuals(xm); nfev += 1
+            // Residual dimension can drift under perturbation; a short probe would
+            // trap the rp[i]/rm[i] indexing.
+            guard rp.count == m, rm.count == m else {
+                return LeastSquaresResult(
+                    x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+                    success: false,
+                    message: "residual dimension changed under perturbation "
+                        + "(expected \(m), got \(rp.count)/\(rm.count)).")
+            }
             for i in 0..<m {
                 J[i][j] = (rp[i] - rm[i]) / (2.0 * h_j)
             }
