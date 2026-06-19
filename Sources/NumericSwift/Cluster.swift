@@ -246,6 +246,11 @@ public enum Cluster {
             return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
                                 diagnostics: [diag])
         }
+        // Same ragged/zero-dimensional guard as the main kmeans entry point.
+        if let diag = raggedInputDiagnostic(data, method: "kmeans") {
+            return KMeansResult(labels: [], centroids: [], inertia: 0, iterations: 0,
+                                diagnostics: [diag])
+        }
 
         // `runKMeans` traps on `for iter in 1...maxIter` when maxIter < 1.
         guard maxIterations > 0 else {
@@ -666,6 +671,10 @@ public enum Cluster {
     internal static func centroid(_ points: [[Double]]) -> [Double]? {
         guard !points.isEmpty else { return nil }
         let dim = points[0].count
+        // vDSP_vaddD reads `dim` elements from every point; a shorter row would
+        // read out of bounds. Reject ragged input (also covers the deprecated
+        // public computeCentroid(_:) shim).
+        guard points.allSatisfy({ $0.count == dim }) else { return nil }
         var centroidVec = [Double](repeating: 0, count: dim)
 
         for point in points {

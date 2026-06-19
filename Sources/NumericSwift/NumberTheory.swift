@@ -324,6 +324,10 @@ public enum NumberTheory {
     /// - Returns: (gcd, x, y) where ax + by = gcd
     public static func extendedGcd(_ a: Int, _ b: Int) -> (gcd: Int, x: Int, y: Int) {
         if b == 0 { return (a, 1, 0) }
+        // `Int.min % -1` and `Int.min / -1` overflow (|Int.min| is unrepresentable).
+        // b == -1 always bottoms the recursion at extendedGcd(-1, 0) → (-1, 0, 1)
+        // for every a (a·0 + (-1)·1 = -1); short-circuit it to avoid the trap.
+        if b == -1 { return (-1, 0, 1) }
         let (g, x1, y1) = extendedGcd(b, a % b)
         return (g, y1, x1 - (a / b) * y1)
     }

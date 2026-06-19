@@ -238,4 +238,26 @@ final class EdgeInputHardeningTests: XCTestCase {
     let drift: ([Double]) -> [Double] = { x in abs(x[0] - 1.0) < 1e-12 ? [0.0] : [] }
     XCTAssertFalse(leastSquares(drift, x0: [1.0]).success)
   }
+
+  // MARK: - Round 13: sibling-site guards
+
+  /// extendedGcd(Int.min, -1) must not trap on Int.min % -1 / Int.min / -1 overflow.
+  func testExtendedGcdIntMinMinusOne() {
+    let r = NumberTheory.extendedGcd(Int.min, -1)
+    XCTAssertEqual(r.gcd, -1)  // a·0 + (-1)·1 = -1
+  }
+
+  /// The deterministic-centroid kmeans overload and the deprecated computeCentroid
+  /// reject ragged input instead of running vDSP over a shorter row.
+  func testClusterRaggedSiblingSites() {
+    let ragged = [[1.0, 2.0], [3.0]]
+    XCTAssertFalse(Cluster.kmeans(ragged, initialCentroids: [[0.0, 0.0]]).diagnostics.isEmpty)
+    XCTAssertNil(Cluster.centroid(ragged))
+  }
+
+  /// Seeded randomNormal(_:using:) returns [] for a negative count (no `0..<n` trap).
+  func testSeededRandomNormalNegativeCountReturnsEmpty() {
+    var rng = SystemRandomNumberGenerator()
+    XCTAssertTrue(randomNormal(-3, using: &rng).isEmpty)
+  }
 }
