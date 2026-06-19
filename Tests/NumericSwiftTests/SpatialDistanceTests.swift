@@ -82,11 +82,12 @@ final class SpatialDistanceTests: XCTestCase {
   }
 
   func testMahalanobisInvalidInvCov() {
-    // Mismatched invCov dimensions returns 0
+    // A malformed (wrong-shape) inverse covariance is undefined, not zero distance:
+    // the metric returns NaN (audit hardening — was a misleading 0).
     let a = [1.0, 2.0]
     let b = [3.0, 4.0]
     let invCov = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    XCTAssertEqual(Spatial.mahalanobisDistance(a, b, invCov: invCov), 0.0, accuracy: eps)
+    XCTAssertTrue(Spatial.mahalanobisDistance(a, b, invCov: invCov).isNaN)
   }
 
   // MARK: - Jaccard Distance

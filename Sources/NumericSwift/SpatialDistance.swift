@@ -132,7 +132,8 @@ public enum Spatial {
     public static func minkowskiDistance(_ p1: [Double], _ p2: [Double], p: Double = 2) -> Double {
         guard p1.count == p2.count, p1.count <= Int(Int32.max) else { return .nan }
         let n = p1.count
-        guard n > 0, p > 0 else { return 0 }
+        guard n > 0 else { return 0 }          // distance between two empty points = 0
+        guard p > 0 else { return .nan }       // a non-positive order is not a valid norm
         if p == 1 { return manhattanDistance(p1, p2) }
         if p == 2 { return euclideanDistance(p1, p2) }
         if p == .infinity { return chebyshevDistance(p1, p2) }
@@ -292,7 +293,9 @@ public enum Spatial {
     public static func mahalanobisDistance(_ a: [Double], _ b: [Double], invCov: [[Double]]) -> Double {
         guard a.count == b.count, a.count <= Int(Int32.max) else { return .nan }
         let n = a.count
-        guard n > 0, invCov.count == n, invCov.allSatisfy({ $0.count == n }) else { return 0 }
+        guard n > 0 else { return 0 }  // distance between two empty points = 0
+        // A malformed inverse-covariance (wrong shape) is undefined, not zero distance.
+        guard invCov.count == n, invCov.allSatisfy({ $0.count == n }) else { return .nan }
         var diff = [Double](repeating: 0, count: n)
         vDSP_vsubD(b, 1, a, 1, &diff, 1, vDSP_Length(n))
         var tmp = [Double](repeating: 0, count: n)
@@ -381,6 +384,7 @@ public enum Spatial {
     /// - Returns: Condensed distance array
     public static func pdist(_ X: [[Double]], metric: DistanceMetric = .euclidean) -> [Double] {
         let n = X.count
+        guard n >= 1 else { return [] }  // n == 0 → `0..<(n-1)` is an invalid range
         let numPairs = n * (n - 1) / 2
         let distFunc = distanceFunction(for: metric)
 
@@ -402,6 +406,7 @@ public enum Spatial {
     /// - Returns: Condensed distance array (n*(n-1)/2 elements)
     public static func squareform(_ X: [[Double]]) -> [Double] {
         let n = X.count
+        guard n >= 1 else { return [] }  // n == 0 → `0..<(n-1)` is an invalid range
         var result: [Double] = []
         for i in 0..<(n - 1) {
             for j in (i + 1)..<n {

@@ -1231,6 +1231,14 @@ public func leastSquares(
         xNew = project(xNew)  // Project onto bounds
 
         let rNew = residuals(xNew); nfev += 1
+        // A trial residual whose length drifted would trap the later r[k] access
+        // once accepted (r = rNew); reject the dimension change.
+        guard rNew.count == m else {
+          return LeastSquaresResult(
+            x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+            success: false,
+            message: "residual dimension changed during the solve (expected \(m), got \(rNew.count)).")
+        }
         let costNew = 0.5 * rNew.reduce(0) { $0 + $1 * $1 }
 
         // Compute actual step after projection
@@ -1451,6 +1459,14 @@ private func leastSquaresUnbounded(
         }
 
         let rNew = residuals(xNew); nfev += 1
+        // A trial residual whose length drifted would trap the later r[k] access
+        // once accepted (r = rNew); reject the dimension change.
+        guard rNew.count == m else {
+          return LeastSquaresResult(
+            x: x, cost: .infinity, fun: r, nfev: nfev, njev: njev,
+            success: false,
+            message: "residual dimension changed during the solve (expected \(m), got \(rNew.count)).")
+        }
         let costNew = 0.5 * rNew.reduce(0) { $0 + $1 * $1 }
 
         // Check if step is accepted

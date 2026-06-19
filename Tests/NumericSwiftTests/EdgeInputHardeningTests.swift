@@ -205,4 +205,37 @@ final class EdgeInputHardeningTests: XCTestCase {
     XCTAssertTrue(sol.success)
     XCTAssertEqual(sol.y.last![0], exp(-1.0), accuracy: 1e-2)  // y(1) = e^-1
   }
+
+  // MARK: - Round 12: pdist/squareform/minkowski/mahalanobis/bspline/leastSquares
+
+  /// pdist / squareform on an empty point set return [] instead of trapping on
+  /// `0..<(n-1)` with n == 0.
+  func testPdistSquareformEmptyReturnsEmpty() {
+    XCTAssertTrue(Spatial.pdist([]).isEmpty)
+    XCTAssertTrue(Spatial.squareform([]).isEmpty)
+  }
+
+  /// minkowskiDistance with a non-positive order, and mahalanobisDistance with a
+  /// malformed inverse covariance, return NaN (undefined) — not a misleading 0.
+  func testInvalidDistanceParamsReturnNaN() {
+    XCTAssertTrue(Spatial.minkowskiDistance([1, 2], [3, 4], p: 0).isNaN)
+    XCTAssertTrue(Spatial.minkowskiDistance([1, 2], [3, 4], p: -1).isNaN)
+    XCTAssertTrue(Spatial.mahalanobisDistance([1, 2], [3, 4], invCov: [[1, 0]]).isNaN)
+  }
+
+  /// B-spline derivative APIs return zero for a custom knot vector shorter than
+  /// n+degree+1 rather than trapping on actualKnots[i+degree+1].
+  func testBSplineDerivativeShortKnotsReturnsZero() {
+    let cp = [Vec2(0, 0), Vec2(1, 1), Vec2(2, 0)]
+    let short: [Double] = [0, 1]  // far too short
+    XCTAssertEqual(Geometry.bsplineDerivative(controlPoints: cp, degree: 2, t: 0.5, knots: short), Vec2.zero)
+  }
+
+  /// leastSquares with a residual whose length drifts after an accepted step fails
+  /// rather than trapping on the later r[k] access.
+  func testLeastSquaresAcceptedResidualDriftFails() {
+    // Returns length 1 at x0=[1] (accepted), length 0 once x moves — drift.
+    let drift: ([Double]) -> [Double] = { x in abs(x[0] - 1.0) < 1e-12 ? [0.0] : [] }
+    XCTAssertFalse(leastSquares(drift, x0: [1.0]).success)
+  }
 }

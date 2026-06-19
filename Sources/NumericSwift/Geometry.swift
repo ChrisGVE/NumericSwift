@@ -1213,6 +1213,8 @@ public enum Geometry {
         guard degree >= 1, n >= 2 else { return Vec2.zero }
 
         let actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+        // A custom knot vector shorter than n+degree+1 traps actualKnots[i+degree+1].
+        guard actualKnots.count >= n + degree + 1 else { return Vec2.zero }
 
         // Compute derivative control points
         var derivCP = [Vec2]()
@@ -1236,6 +1238,7 @@ public enum Geometry {
         guard degree >= 1, n >= 2 else { return Vec3.zero }
 
         let actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+        guard actualKnots.count >= n + degree + 1 else { return Vec3.zero }
 
         // Compute derivative control points
         var derivCP = [Vec3]()
@@ -1267,6 +1270,7 @@ public enum Geometry {
         guard degree >= order, n >= 2, order >= 1 else { return Vec2.zero }
 
         var actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+        guard actualKnots.count >= n + degree + 1 else { return Vec2.zero }
         var Q = controlPoints
         var p = degree
 
@@ -1301,6 +1305,7 @@ public enum Geometry {
         guard degree >= order, n >= 2, order >= 1 else { return Vec3.zero }
 
         var actualKnots = knots ?? bsplineUniformKnots(n: n, degree: degree)
+        guard actualKnots.count >= n + degree + 1 else { return Vec3.zero }
         var Q = controlPoints
         var p = degree
 
